@@ -548,8 +548,8 @@ async def swap_multiswap(account_id, key, recipient):
 
     use_dex = ["syncswap", "skydrome", "zebra"]
 
-    min_swap = 3
-    max_swap = 4
+    min_swap = 1
+    max_swap = 1
 
     sleep_from = 3
     sleep_to = 7
@@ -558,8 +558,8 @@ async def swap_multiswap(account_id, key, recipient):
 
     back_swap = True
 
-    min_percent = 5
-    max_percent = 10
+    min_percent = 20
+    max_percent = 35
 
     multi = Multiswap(account_id, key, recipient)
     await multi.swap(
