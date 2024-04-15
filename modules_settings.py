@@ -300,12 +300,12 @@ async def deposit_layerbank(account_id, key, recipient):
     sleep_from = 5
     sleep_to = 24
 
-    make_withdraw = True
+    make_withdraw = False
 
     all_amount = True
 
-    min_percent = 5
-    max_percent = 10
+    min_percent = 30
+    max_percent = 60
 
     layerbank = LayerBank(account_id, key, recipient)
     await layerbank.deposit(
@@ -328,12 +328,12 @@ async def deposit_aave(account_id, key, recipient):
     sleep_from = 5
     sleep_to = 24
 
-    make_withdraw = True
+    make_withdraw = False
 
     all_amount = True
 
-    min_percent = 5
-    max_percent = 10
+    min_percent = 30
+    max_percent = 60
 
     aave = Aave(account_id, key, recipient)
     await aave.deposit(
