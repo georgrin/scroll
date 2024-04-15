@@ -105,11 +105,11 @@ async def bridge_nitro(account_id, key, recipient):
     to_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
     """
 
-    from_chain = "zksync"
-    to_chain = "scroll"
+    from_chain = "scroll"
+    to_chain = "zksync"
 
     min_amount = 0.005
-    max_amount = 0.0051
+    max_amount = 0.006
     decimal = 4
 
     all_amount = False
