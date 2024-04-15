@@ -546,7 +546,7 @@ async def swap_multiswap(account_id, key, recipient):
     If back_swap is True, then, if USDC remains, it will be swapped into ETH.
     """
 
-    use_dex = ["syncswap", "skydrome", "zebra"]
+    use_dex = ["syncswap", "skydrome", "zebra", "xyswap"]
 
     min_swap = 1
     max_swap = 1
