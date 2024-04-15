@@ -41,6 +41,7 @@ class Multiswap(Account):
 
         if back_swap and path[-1] == "ETH":
             path.append("USDC")
+            path.append("USDC")
 
         logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}")
 
