@@ -182,7 +182,7 @@ class LayerSwap(Account):
         if prepare_transaction is False:
             return
 
-        logger.info(f"[{self.account_id}][{self.address}] Bridge {from_chain} –> {to_chain} | {amount} ETH")
+        logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
 
         tx_data = await self.get_tx_data(amount_wei)
         tx_data.update({"to": self.w3.to_checksum_address(prepare_transaction["to_address"])})
