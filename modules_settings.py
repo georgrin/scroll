@@ -679,14 +679,14 @@ async def custom_routes(account_id, key, recipient):
         #create_omnisea,
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
-        #bridge_nitro,
-        #bridge_orbiter,
-        bridge_layerswap,
-        bridge_layerswap2,
+        bridge_nitro,
+        bridge_orbiter,
+        #bridge_layerswap,
+        #bridge_layerswap2,
     ]
 
-    sleep_from = 50
-    sleep_to = 100
+    sleep_from = 100
+    sleep_to = 120
 
     random_module = True
 
