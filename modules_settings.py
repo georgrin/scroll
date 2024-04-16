@@ -78,15 +78,15 @@ async def bridge_layerswap(account_id, key, recipient):
     all_amount - deposit from min_percent to max_percent
     """
 
-    from_chain = "zksync"
-    to_chain = "scroll"
+    from_chain = "scroll"
+    to_chain = "zksync"
 
-    min_amount = 0.003
-    max_amount = 0.004
+    min_amount = 0.004
+    max_amount = 0.006
 
     decimal = 5
 
-    all_amount = True
+    all_amount = False
 
     min_percent = 5
     max_percent = 5
@@ -96,7 +96,6 @@ async def bridge_layerswap(account_id, key, recipient):
         from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
     )
 
-
 async def bridge_nitro(account_id, key, recipient):
     """
     Bridge from nitro
@@ -105,10 +104,10 @@ async def bridge_nitro(account_id, key, recipient):
     to_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
     """
 
-    from_chain = "scroll"
-    to_chain = "zksync"
+    from_chain = "zksync"
+    to_chain = "scroll"
 
-    min_amount = 0.005
+    min_amount = 0.004
     max_amount = 0.006
     decimal = 4
 
@@ -647,13 +646,15 @@ async def custom_routes(account_id, key, recipient):
     """
 
     use_modules = [
-        create_omnisea,
-        [create_omnisea, mint_zerius, None],
-        (create_omnisea, 1, 3),
+        #create_omnisea,
+        #[create_omnisea, mint_zerius, None],
+        #(create_omnisea, 1, 3),
+        bridge_nitro,
+        bridge_layerswap
     ]
 
-    sleep_from = 300
-    sleep_to = 700
+    sleep_from = 50
+    sleep_to = 100
 
     random_module = True
 
