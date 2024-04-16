@@ -77,7 +77,7 @@ class Orbiter(Account):
         )
 
         logger.info(
-            f"[{self.account_id}][{self.address}] Bridge {self.chain} –> {destination_chain} | {amount} ETH"
+            f"[{self.account_id}][{self.address}] Bridge Orbiter {self.chain} –> {destination_chain} | {amount} ETH"
         )
 
         if ORBITER_CONTRACT == "":
