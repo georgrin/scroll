@@ -51,10 +51,10 @@ async def bridge_orbiter(account_id, key, recipient):
     """
 
     from_chain = "scroll"
-    to_chain = "base"
+    to_chain = "zksync"
 
-    min_amount = 0.005
-    max_amount = 0.0051
+    min_amount = 0.004
+    max_amount = 0.006
     decimal = 4
 
     all_amount = False
@@ -650,7 +650,7 @@ async def custom_routes(account_id, key, recipient):
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
         bridge_nitro,
-        bridge_layerswap
+        bridge_orbiter
     ]
 
     sleep_from = 50
