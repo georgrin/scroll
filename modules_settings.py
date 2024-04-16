@@ -78,6 +78,36 @@ async def bridge_layerswap(account_id, key, recipient):
     all_amount - deposit from min_percent to max_percent
     """
 
+    from_chain = "zksync"
+    to_chain = "scroll"
+
+    min_amount = 0.004
+    max_amount = 0.006
+
+    decimal = 5
+
+    all_amount = False
+
+    min_percent = 5
+    max_percent = 5
+
+    layerswap = LayerSwap(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
+    await layerswap.bridge(
+        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+    )
+
+async def bridge_layerswap2(account_id, key, recipient):
+    """
+    Bridge from Layerswap
+    ______________________________________________________
+    from_chain - Choose any chain: ethereum, arbitrum, optimism, avalanche, polygon, base, scroll
+    to_chain - Choose any chain: ethereum, arbitrum, optimism, avalanche, polygon, base, scroll
+
+    make_withdraw - True, if need withdraw after deposit
+
+    all_amount - deposit from min_percent to max_percent
+    """
+
     from_chain = "scroll"
     to_chain = "zksync"
 
@@ -649,8 +679,10 @@ async def custom_routes(account_id, key, recipient):
         #create_omnisea,
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
-        bridge_nitro,
-        bridge_orbiter
+        #bridge_nitro,
+        #bridge_orbiter,
+        bridge_layerswap,
+        bridge_layerswap2,
     ]
 
     sleep_from = 50
