@@ -149,6 +149,28 @@ async def bridge_nitro(account_id, key, recipient):
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
     await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
+async def bridge_nitro1(account_id, key, recipient):
+    """
+    Bridge from nitro
+    ______________________________________________________
+    from_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
+    to_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
+    """
+
+    from_chain = "scroll"
+    to_chain = "zksync"
+
+    min_amount = 0.004
+    max_amount = 0.006
+    decimal = 4
+
+    all_amount = False
+
+    min_percent = 5
+    max_percent = 10
+
+    nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
+    await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
 async def wrap_eth(account_id, key, recipient):
     """
@@ -679,6 +701,7 @@ async def custom_routes(account_id, key, recipient):
         #create_omnisea,
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
+        #bridge_nitro1,
         bridge_nitro,
         bridge_orbiter,
         #bridge_layerswap,
