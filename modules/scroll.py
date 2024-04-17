@@ -48,8 +48,10 @@ class Scroll(Account):
 
         tx_data = await self.get_tx_data(amount_wei + fee, False)
 
-        transaction = await contract.functions.depositETH(
+        transaction = await contract.functions.sendMessage(
+            self.address,
             amount_wei,
+            "0x",
             168000,
         ).build_transaction(tx_data)
 
