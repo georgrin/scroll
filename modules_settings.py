@@ -723,7 +723,7 @@ async def custom_routes(account_id, key, recipient):
 
 async def withdraw_layerbank(account_id, key, recipient):
     layerbank = LayerBank(account_id, key, recipient)
-    await layerbank.withdraw()
+    return await layerbank.withdraw()
 
 
 async def withdraw_aave(account_id, key, recipient):
