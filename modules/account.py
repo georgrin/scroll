@@ -139,7 +139,7 @@ class Account:
 
             await sleep(5, 20)
 
-    async def wait_until_tx_finished(self, hash: str, max_wait_time=180) -> None:
+    async def wait_until_tx_finished(self, hash: str, max_wait_time=180) -> bool:
         start_time = time.time()
         while True:
             try:
@@ -147,16 +147,16 @@ class Account:
                 status = receipts.get("status")
                 if status == 1:
                     logger.success(f"[{self.account_id}][{self.address}] {self.explorer}{hash} successfully!")
-                    return
+                    return True
                 elif status is None:
                     await asyncio.sleep(0.3)
                 else:
                     logger.error(f"[{self.account_id}][{self.address}] {self.explorer}{hash} transaction failed!")
-                    return
+                    return False
             except TransactionNotFound:
                 if time.time() - start_time > max_wait_time:
                     print(f'FAILED TX: {hash}')
-                    return
+                    return False
                 await asyncio.sleep(1)
 
     async def sign(self, transaction) -> Any:

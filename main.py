@@ -97,14 +97,13 @@ def get_wallets(use_recipients: bool = False):
 async def run_module(module, account_id, key, recipient: Union[str, None] = None):
     try:
         result = await module(account_id, key, recipient)
+        if REMOVE_WALLET:
+            remove_wallet(key)
+
+        if result and account_id != quantity:
+            await sleep(SLEEP_FROM, SLEEP_TO)
     except Exception as e:
         logger.error(e)
-
-    if REMOVE_WALLET:
-        remove_wallet(key)
-
-    if result != False:
-        await sleep(SLEEP_FROM, SLEEP_TO)
 
 
 def _async_run_module(module, account_id, key, recipient):
@@ -117,11 +116,14 @@ def main(module):
     else:
         wallets = get_wallets()
 
+    global quantity
+    quantity = len(wallets)
+
     if RANDOM_WALLET:
         random.shuffle(wallets)
 
     with ThreadPoolExecutor(max_workers=QUANTITY_THREADS) as executor:
-        for _, account in enumerate(wallets, start=1):
+        for index, account in enumerate(wallets, start=1):
             executor.submit(
                 _async_run_module,
                 module,
@@ -129,7 +131,8 @@ def main(module):
                 account.get("key"),
                 account.get("recipient", None)
             )
-            time.sleep(random.randint(THREAD_SLEEP_FROM, THREAD_SLEEP_TO))
+            if index != quantity:
+                time.sleep(random.randint(THREAD_SLEEP_FROM, THREAD_SLEEP_TO))
 
 
 if __name__ == '__main__':

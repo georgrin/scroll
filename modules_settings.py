@@ -1,6 +1,7 @@
 import asyncio
 from modules import *
 
+sinceLastTXInterval = 3600
 
 async def deposit_scroll(account_id, key, recipient):
     """
@@ -63,7 +64,8 @@ async def bridge_orbiter(account_id, key, recipient):
     max_percent = 10
 
     orbiter = Orbiter(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+    result = await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, sinceLastTXInterval)
+    return result
 
 
 async def bridge_layerswap(account_id, key, recipient):
@@ -92,9 +94,12 @@ async def bridge_layerswap(account_id, key, recipient):
     max_percent = 5
 
     layerswap = LayerSwap(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await layerswap.bridge(
-        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+    result = await layerswap.bridge(
+        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+        sinceLastTXInterval
     )
+    return result
+
 
 async def bridge_layerswap2(account_id, key, recipient):
     """
@@ -122,9 +127,12 @@ async def bridge_layerswap2(account_id, key, recipient):
     max_percent = 5
 
     layerswap = LayerSwap(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await layerswap.bridge(
-        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+    result = await layerswap.bridge(
+        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+        sinceLastTXInterval
     )
+    return result
+
 
 async def bridge_nitro(account_id, key, recipient):
     """
@@ -147,30 +155,9 @@ async def bridge_nitro(account_id, key, recipient):
     max_percent = 10
 
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+    result = await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, sinceLastTXInterval)
+    return result
 
-async def bridge_nitro1(account_id, key, recipient):
-    """
-    Bridge from nitro
-    ______________________________________________________
-    from_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
-    to_chain – ethereum, arbitrum, optimism, zksync, scroll, base, linea | Select one
-    """
-
-    from_chain = "scroll"
-    to_chain = "zksync"
-
-    min_amount = 0.004
-    max_amount = 0.006
-    decimal = 4
-
-    all_amount = False
-
-    min_percent = 5
-    max_percent = 10
-
-    nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
 async def wrap_eth(account_id, key, recipient):
     """
@@ -238,7 +225,7 @@ async def swap_skydrome(account_id, key, recipient):
     max_percent = 100
 
     skydrome = Skydrome(account_id, key, recipient)
-    return await skydrome.swap(
+    await skydrome.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
@@ -269,7 +256,7 @@ async def swap_zebra(account_id, key, recipient):
     max_percent = 100
 
     zebra = Zebra(account_id, key, recipient)
-    return await zebra.swap(
+    await zebra.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
@@ -300,7 +287,7 @@ async def swap_syncswap(account_id, key, recipient):
     max_percent = 100
 
     syncswap = SyncSwap(account_id, key, recipient)
-    return await syncswap.swap(
+    await syncswap.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
@@ -331,7 +318,7 @@ async def swap_xyswap(account_id, key, recipient):
     max_percent = 100
 
     xyswap = XYSwap(account_id, key, recipient)
-    return await xyswap.swap(
+    await xyswap.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
@@ -344,6 +331,7 @@ async def deposit_layerbank(account_id, key, recipient):
 
     all_amount - deposit from min_percent to max_percent
     """
+
     min_amount = 0.0001
     max_amount = 0.0002
     decimal = 5
@@ -359,9 +347,11 @@ async def deposit_layerbank(account_id, key, recipient):
     max_percent = 60
 
     layerbank = LayerBank(account_id, key, recipient)
-    return await layerbank.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent
+    result = await layerbank.deposit(
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        sinceLastTXInterval
     )
+    return result
 
 
 async def deposit_aave(account_id, key, recipient):
@@ -372,6 +362,7 @@ async def deposit_aave(account_id, key, recipient):
 
     all_amount - deposit from min_percent to max_percent
     """
+
     min_amount = 0.0001
     max_amount = 0.0002
     decimal = 5
@@ -381,15 +372,17 @@ async def deposit_aave(account_id, key, recipient):
 
     make_withdraw = False
 
-    all_amount = True
+    all_amount = False
 
     min_percent = 30
     max_percent = 60
 
     aave = Aave(account_id, key, recipient)
-    return await aave.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent
+    result = await aave.deposit(
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        sinceLastTXInterval
     )
+    return result
 
 
 async def mint_zerius(account_id, key, recipient):
@@ -613,7 +606,7 @@ async def swap_multiswap(account_id, key, recipient):
     max_percent = 35
 
     multi = Multiswap(account_id, key, recipient)
-    return await multi.swap(
+    await multi.swap(
         use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent
     )
 
@@ -701,9 +694,8 @@ async def custom_routes(account_id, key, recipient):
         #create_omnisea,
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
-        #bridge_nitro1,
         bridge_nitro,
-        bridge_orbiter,
+        deposit_aave
         #bridge_layerswap,
         #bridge_layerswap2,
     ]
@@ -711,10 +703,10 @@ async def custom_routes(account_id, key, recipient):
     sleep_from = 100
     sleep_to = 120
 
-    random_module = False
+    random_module = True
 
     routes = Routes(account_id, key, recipient)
-    return await routes.start(use_modules, sleep_from, sleep_to, random_module)
+    await routes.start(use_modules, sleep_from, sleep_to, random_module)
 
 
 #########################################
@@ -723,12 +715,12 @@ async def custom_routes(account_id, key, recipient):
 
 async def withdraw_layerbank(account_id, key, recipient):
     layerbank = LayerBank(account_id, key, recipient)
-    return await layerbank.withdraw()
+    await layerbank.withdraw()
 
 
 async def withdraw_aave(account_id, key, recipient):
     aave = Aave(account_id, key, recipient)
-    return await aave.withdraw()
+    await aave.withdraw()
 
 
 async def send_mail(account_id, key, recipient):
