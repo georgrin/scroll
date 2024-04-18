@@ -35,16 +35,11 @@ class Routes(Account):
         if random_module:
             random.shuffle(run_modules)
 
-        for module in run_modules:
-            actionDone = False
+        for index, module in enumerate(run_modules, start=1):
             if module is None:
                 logger.info(f"[{self.account_id}][{self.address}] Skip module")
                 continue
 
             result = await module(self.account_id, self.private_key, self.recipient)
-
-            if result != False:
-                actionDone = True
+            if result and index != len(run_modules):
                 await sleep(sleep_from, sleep_to)
-
-        return actionDone
