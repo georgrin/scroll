@@ -711,7 +711,7 @@ async def custom_routes(account_id, key, recipient):
     sleep_from = 100
     sleep_to = 120
 
-    random_module = True
+    random_module = False
 
     routes = Routes(account_id, key, recipient)
     await routes.start(use_modules, sleep_from, sleep_to, random_module)
