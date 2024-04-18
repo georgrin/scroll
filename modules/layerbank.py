@@ -90,3 +90,4 @@ class LayerBank(Account):
             await self.wait_until_tx_finished(txn_hash.hex())
         else:
             logger.error(f"[{self.account_id}][{self.address}] Deposit not found")
+            return False
