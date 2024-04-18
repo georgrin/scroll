@@ -96,14 +96,15 @@ def get_wallets(use_recipients: bool = False):
 
 async def run_module(module, account_id, key, recipient: Union[str, None] = None):
     try:
-        await module(account_id, key, recipient)
+        result = await module(account_id, key, recipient)
     except Exception as e:
         logger.error(e)
 
     if REMOVE_WALLET:
         remove_wallet(key)
 
-    await sleep(SLEEP_FROM, SLEEP_TO)
+    if result != False:
+        await sleep(SLEEP_FROM, SLEEP_TO)
 
 
 def _async_run_module(module, account_id, key, recipient):
