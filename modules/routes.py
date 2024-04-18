@@ -40,6 +40,7 @@ class Routes(Account):
                 logger.info(f"[{self.account_id}][{self.address}] Skip module")
                 continue
 
-            await module(self.account_id, self.private_key, self.recipient)
+            result = await module(self.account_id, self.private_key, self.recipient)
 
-            await sleep(sleep_from, sleep_to)
+            if result != False:
+                await sleep(sleep_from, sleep_to)
