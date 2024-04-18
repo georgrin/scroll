@@ -1,6 +1,8 @@
 import asyncio
 from modules import *
 
+moduleCooldown = 3600
+
 
 async def deposit_scroll(account_id, key, recipient):
     """
@@ -63,7 +65,7 @@ async def bridge_orbiter(account_id, key, recipient):
     max_percent = 10
 
     orbiter = Orbiter(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+    return await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, moduleCooldown)
 
 
 async def bridge_layerswap(account_id, key, recipient):
@@ -93,7 +95,7 @@ async def bridge_layerswap(account_id, key, recipient):
 
     layerswap = LayerSwap(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
     return await layerswap.bridge(
-        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, moduleCooldown
     )
 
 async def bridge_layerswap2(account_id, key, recipient):
@@ -123,7 +125,7 @@ async def bridge_layerswap2(account_id, key, recipient):
 
     layerswap = LayerSwap(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
     return await layerswap.bridge(
-        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+        from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, moduleCooldown
     )
 
 async def bridge_nitro(account_id, key, recipient):
@@ -147,7 +149,7 @@ async def bridge_nitro(account_id, key, recipient):
     max_percent = 10
 
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, moduleCooldown)
 
 async def bridge_nitro1(account_id, key, recipient):
     """
@@ -170,7 +172,7 @@ async def bridge_nitro1(account_id, key, recipient):
     max_percent = 10
 
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, moduleCooldown)
 
 async def wrap_eth(account_id, key, recipient):
     """
@@ -360,7 +362,7 @@ async def deposit_layerbank(account_id, key, recipient):
 
     layerbank = LayerBank(account_id, key, recipient)
     return await layerbank.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, moduleCooldown
     )
 
 
@@ -388,7 +390,7 @@ async def deposit_aave(account_id, key, recipient):
 
     aave = Aave(account_id, key, recipient)
     return await aave.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, moduleCooldown
     )
 
 

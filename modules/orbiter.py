@@ -2,7 +2,7 @@ import aiohttp
 from loguru import logger
 
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 from config import ORBITER_CONTRACT
 
@@ -64,7 +64,8 @@ class Orbiter(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -84,21 +85,29 @@ class Orbiter(Account):
             logger.error(f"[{self.account_id}][{self.address}] Don't have orbiter contract")
             return
 
-        bridge_amount = await self.get_bridge_amount(self.chain, destination_chain, amount)
-
-        if bridge_amount is False:
-            return
-
-        balance = await self.w3.eth.get_balance(self.address)
-
-        if bridge_amount > balance:
-            logger.error(f"[{self.account_id}][{self.address}] Insufficient funds!")
-        else:
-            tx_data = await self.get_tx_data(bridge_amount)
-            tx_data.update({"to": self.w3.to_checksum_address(ORBITER_CONTRACT)})
-
-            signed_txn = await self.sign(tx_data)
-
-            txn_hash = await self.send_raw_transaction(signed_txn)
-
-            await self.wait_until_tx_finished(txn_hash.hex())
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=ORBITER_CONTRACT,
+            chain=self.chain,
+            log_prefix='Orbiter'
+        )
+        if last_iter:
+            bridge_amount = await self.get_bridge_amount(self.chain, destination_chain, amount)
+            
+            if bridge_amount is False:
+                return
+            
+            balance = await self.w3.eth.get_balance(self.address)
+            
+            if bridge_amount > balance:
+                logger.error(f"[{self.account_id}][{self.address}] Insufficient funds!")
+            else:
+                tx_data = await self.get_tx_data(bridge_amount)
+                tx_data.update({"to": self.w3.to_checksum_address(ORBITER_CONTRACT)})
+            
+                signed_txn = await self.sign(tx_data)
+            
+                txn_hash = await self.send_raw_transaction(signed_txn)
+            
+                await self.wait_until_tx_finished(txn_hash.hex())

@@ -1,7 +1,7 @@
 from loguru import logger
 from config import LAYERBANK_CONTRACT, LAYERBANK_WETH_CONTRACT, LAYERBANK_ABI
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
 from .account import Account
 
@@ -31,7 +31,8 @@ class LayerBank(Account):
             make_withdraw: bool,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ) -> None:
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -42,27 +43,35 @@ class LayerBank(Account):
             min_percent,
             max_percent
         )
-
-        logger.info(f"[{self.account_id}][{self.address}] Make deposit on LayerBank | {amount} ETH")
-
-        tx_data = await self.get_tx_data(amount_wei)
-
-        transaction = await self.contract.functions.supply(
-            self.w3.to_checksum_address(LAYERBANK_WETH_CONTRACT),
-            amount_wei,
-        ).build_transaction(tx_data)
-
-        signed_txn = await self.sign(transaction)
-
-        txn_hash = await self.send_raw_transaction(signed_txn)
-
-        await self.wait_until_tx_finished(txn_hash.hex())
-
-        if make_withdraw:
-            await sleep(sleep_from, sleep_to)
-
-            await self.withdraw()
-
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='Layerbank'
+        )
+        if last_iter:
+            
+            logger.info(f"[{self.account_id}][{self.address}] Make deposit on LayerBank | {amount} ETH")
+            
+            tx_data = await self.get_tx_data(amount_wei)
+            
+            transaction = await self.contract.functions.supply(
+                self.w3.to_checksum_address(LAYERBANK_WETH_CONTRACT),
+                amount_wei,
+            ).build_transaction(tx_data)
+            
+            signed_txn = await self.sign(transaction)
+            
+            txn_hash = await self.send_raw_transaction(signed_txn)
+            
+            await self.wait_until_tx_finished(txn_hash.hex())
+            
+            if make_withdraw:
+                await sleep(sleep_from, sleep_to)
+            
+                await self.withdraw()
+            
     @retry
     @check_gas
     async def withdraw(self) -> None:

@@ -5,7 +5,7 @@ from loguru import logger
 
 from settings import LAYERSWAP_API_KEY
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -148,7 +148,8 @@ class LayerSwap(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -182,13 +183,21 @@ class LayerSwap(Account):
         if prepare_transaction is False:
             return
 
-        logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
-
-        tx_data = await self.get_tx_data(amount_wei)
-        tx_data.update({"to": self.w3.to_checksum_address(prepare_transaction["to_address"])})
-
-        signed_txn = await self.sign(tx_data)
-
-        txn_hash = await self.send_raw_transaction(signed_txn)
-
-        await self.wait_until_tx_finished(txn_hash.hex())
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=prepare_transaction["to_address"],
+            chain=from_chain,
+            log_prefix='Layerswap'
+        )
+        if last_iter:
+            logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
+            
+            tx_data = await self.get_tx_data(amount_wei)
+            tx_data.update({"to": self.w3.to_checksum_address(prepare_transaction["to_address"])})
+            
+            signed_txn = await self.sign(tx_data)
+            
+            txn_hash = await self.send_raw_transaction(signed_txn)
+            
+            await self.wait_until_tx_finished(txn_hash.hex())

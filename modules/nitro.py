@@ -1,7 +1,7 @@
 import aiohttp
 from loguru import logger
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -58,7 +58,8 @@ class Nitro(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -80,18 +81,26 @@ class Nitro(Account):
 
         transaction_data = await self.build_transaction(quote)
 
-        tx_data = await self.get_tx_data()
-        tx_data.update(
-            {
-                "from": self.w3.to_checksum_address(transaction_data["txn"]["from"]),
-                "to": self.w3.to_checksum_address(transaction_data["txn"]["to"]),
-                "value": int(transaction_data["txn"]["value"], 16),
-                "data": transaction_data["txn"]["data"],
-            }
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=transaction_data["txn"]["to"],
+            chain=self.chain,
+            log_prefix='Nitro'
         )
+        if last_iter:
+            tx_data = await self.get_tx_data()
+            tx_data.update(
+                {
+                    "from": self.w3.to_checksum_address(transaction_data["txn"]["from"]),
+                    "to": self.w3.to_checksum_address(transaction_data["txn"]["to"]),
+                    "value": int(transaction_data["txn"]["value"], 16),
+                    "data": transaction_data["txn"]["data"],
+                }
+            )
 
-        signed_txn = await self.sign(tx_data)
+            signed_txn = await self.sign(tx_data)
 
-        txn_hash = await self.send_raw_transaction(signed_txn)
+            txn_hash = await self.send_raw_transaction(signed_txn)
 
-        await self.wait_until_tx_finished(txn_hash.hex())
+            await self.wait_until_tx_finished(txn_hash.hex())
