@@ -83,7 +83,7 @@ class Orbiter(Account):
 
         if ORBITER_CONTRACT == "":
             logger.error(f"[{self.account_id}][{self.address}] Don't have orbiter contract")
-            return
+            return False
 
         last_iter = await checkLastIteration(
             interval=moduleCooldown,
@@ -92,22 +92,24 @@ class Orbiter(Account):
             chain=self.chain,
             log_prefix='Orbiter'
         )
-        if last_iter:
-            bridge_amount = await self.get_bridge_amount(self.chain, destination_chain, amount)
-            
-            if bridge_amount is False:
-                return
-            
-            balance = await self.w3.eth.get_balance(self.address)
-            
-            if bridge_amount > balance:
-                logger.error(f"[{self.account_id}][{self.address}] Insufficient funds!")
-            else:
-                tx_data = await self.get_tx_data(bridge_amount)
-                tx_data.update({"to": self.w3.to_checksum_address(ORBITER_CONTRACT)})
-            
-                signed_txn = await self.sign(tx_data)
-            
-                txn_hash = await self.send_raw_transaction(signed_txn)
-            
-                await self.wait_until_tx_finished(txn_hash.hex())
+        if not last_iter:
+            return False
+        bridge_amount = await self.get_bridge_amount(self.chain, destination_chain, amount)
+
+        if bridge_amount is False:
+            return False
+
+        balance = await self.w3.eth.get_balance(self.address)
+
+        if bridge_amount > balance:
+            logger.error(f"[{self.account_id}][{self.address}] Insufficient funds!")
+            return False
+        else:
+            tx_data = await self.get_tx_data(bridge_amount)
+            tx_data.update({"to": self.w3.to_checksum_address(ORBITER_CONTRACT)})
+
+            signed_txn = await self.sign(tx_data)
+
+            txn_hash = await self.send_raw_transaction(signed_txn)
+
+            await self.wait_until_tx_finished(txn_hash.hex())

@@ -33,7 +33,7 @@ class Aave(Account):
             min_percent: int,
             max_percent: int,
             moduleCooldown: int
-    ) -> None:
+    ):
 
         last_iter = await checkLastIteration(
             interval=moduleCooldown,
@@ -42,41 +42,43 @@ class Aave(Account):
             chain='scroll',
             log_prefix='Aave'
         )
-        if last_iter:
-            amount_wei, amount, balance = await self.get_amount(
-                "ETH",
-                min_amount,
-                max_amount,
-                decimal,
-                all_amount,
-                min_percent,
-                max_percent
-            )
-            
-            logger.info(f"[{self.account_id}][{self.address}] Make deposit on Aave | {amount} ETH")
-            
-            tx_data = await self.get_tx_data(amount_wei)
-            
-            transaction = await self.contract.functions.depositETH(
-                self.w3.to_checksum_address("0x11fCfe756c05AD438e312a7fd934381537D3cFfe"),
-                self.address,
-                0
-            ).build_transaction(tx_data)
-            
-            signed_txn = await self.sign(transaction)
-            
-            txn_hash = await self.send_raw_transaction(signed_txn)
-            
-            await self.wait_until_tx_finished(txn_hash.hex())
-            
-            if make_withdraw:
-                await sleep(sleep_from, sleep_to)
-            
-                await self.withdraw()
+        if not last_iter:
+            return False
+
+        amount_wei, amount, balance = await self.get_amount(
+            "ETH",
+            min_amount,
+            max_amount,
+            decimal,
+            all_amount,
+            min_percent,
+            max_percent
+        )
+        
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Aave | {amount} ETH")
+        
+        tx_data = await self.get_tx_data(amount_wei)
+        
+        transaction = await self.contract.functions.depositETH(
+            self.w3.to_checksum_address("0x11fCfe756c05AD438e312a7fd934381537D3cFfe"),
+            self.address,
+            0
+        ).build_transaction(tx_data)
+        
+        signed_txn = await self.sign(transaction)
+        
+        txn_hash = await self.send_raw_transaction(signed_txn)
+        
+        await self.wait_until_tx_finished(txn_hash.hex())
+        
+        if make_withdraw:
+            await sleep(sleep_from, sleep_to)
+        
+            return await self.withdraw()
 
     @retry
     @check_gas
-    async def withdraw(self) -> None:
+    async def withdraw(self):
         amount = await self.get_deposit_amount()
 
         if amount > 0:
@@ -102,3 +104,4 @@ class Aave(Account):
             await self.wait_until_tx_finished(txn_hash.hex())
         else:
             logger.error(f"[{self.account_id}][{self.address}] Deposit not found")
+            return False

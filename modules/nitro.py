@@ -88,19 +88,20 @@ class Nitro(Account):
             chain=self.chain,
             log_prefix='Nitro'
         )
-        if last_iter:
-            tx_data = await self.get_tx_data()
-            tx_data.update(
-                {
-                    "from": self.w3.to_checksum_address(transaction_data["txn"]["from"]),
-                    "to": self.w3.to_checksum_address(transaction_data["txn"]["to"]),
-                    "value": int(transaction_data["txn"]["value"], 16),
-                    "data": transaction_data["txn"]["data"],
-                }
-            )
+        if not last_iter:
+            return False
+        tx_data = await self.get_tx_data()
+        tx_data.update(
+            {
+                "from": self.w3.to_checksum_address(transaction_data["txn"]["from"]),
+                "to": self.w3.to_checksum_address(transaction_data["txn"]["to"]),
+                "value": int(transaction_data["txn"]["value"], 16),
+                "data": transaction_data["txn"]["data"],
+            }
+        )
 
-            signed_txn = await self.sign(tx_data)
+        signed_txn = await self.sign(tx_data)
 
-            txn_hash = await self.send_raw_transaction(signed_txn)
+        txn_hash = await self.send_raw_transaction(signed_txn)
 
-            await self.wait_until_tx_finished(txn_hash.hex())
+        await self.wait_until_tx_finished(txn_hash.hex())

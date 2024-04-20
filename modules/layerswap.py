@@ -164,7 +164,7 @@ class LayerSwap(Account):
         available_route = await self.check_available_route(from_chain, to_chain)
 
         if available_route is False:
-            return
+            return False
 
         swap_rate = await self.get_swap_rate(from_chain, to_chain)
 
@@ -173,15 +173,15 @@ class LayerSwap(Account):
                 f"[{self.account_id}][{self.address}][{self.chain}] Limit range amount for bridge " +
                 f"{swap_rate['min_amount']} – {swap_rate['max_amount']} ETH | {amount} ETH"
             )
-            return
+            return False
 
         if swap_rate is False:
-            return
+            return False
 
         prepare_transaction = await self.prepare_transaction(from_chain, to_chain, amount)
 
         if prepare_transaction is False:
-            return
+            return False
 
         last_iter = await checkLastIteration(
             interval=moduleCooldown,
@@ -190,14 +190,15 @@ class LayerSwap(Account):
             chain=from_chain,
             log_prefix='Layerswap'
         )
-        if last_iter:
-            logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
-            
-            tx_data = await self.get_tx_data(amount_wei)
-            tx_data.update({"to": self.w3.to_checksum_address(prepare_transaction["to_address"])})
-            
-            signed_txn = await self.sign(tx_data)
-            
-            txn_hash = await self.send_raw_transaction(signed_txn)
-            
-            await self.wait_until_tx_finished(txn_hash.hex())
+        if not last_iter:
+            return False
+        logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
+
+        tx_data = await self.get_tx_data(amount_wei)
+        tx_data.update({"to": self.w3.to_checksum_address(prepare_transaction["to_address"])})
+
+        signed_txn = await self.sign(tx_data)
+
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())

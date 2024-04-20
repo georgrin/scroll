@@ -33,7 +33,7 @@ class LayerBank(Account):
             min_percent: int,
             max_percent: int,
             moduleCooldown: int
-    ) -> None:
+    ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
             min_amount,
@@ -50,31 +50,32 @@ class LayerBank(Account):
             chain='scroll',
             log_prefix='Layerbank'
         )
-        if last_iter:
+        if not last_iter:
+            return False
             
-            logger.info(f"[{self.account_id}][{self.address}] Make deposit on LayerBank | {amount} ETH")
-            
-            tx_data = await self.get_tx_data(amount_wei)
-            
-            transaction = await self.contract.functions.supply(
-                self.w3.to_checksum_address(LAYERBANK_WETH_CONTRACT),
-                amount_wei,
-            ).build_transaction(tx_data)
-            
-            signed_txn = await self.sign(transaction)
-            
-            txn_hash = await self.send_raw_transaction(signed_txn)
-            
-            await self.wait_until_tx_finished(txn_hash.hex())
-            
-            if make_withdraw:
-                await sleep(sleep_from, sleep_to)
-            
-                await self.withdraw()
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on LayerBank | {amount} ETH")
+
+        tx_data = await self.get_tx_data(amount_wei)
+
+        transaction = await self.contract.functions.supply(
+            self.w3.to_checksum_address(LAYERBANK_WETH_CONTRACT),
+            amount_wei,
+        ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+        if make_withdraw:
+            await sleep(sleep_from, sleep_to)
+
+            return await self.withdraw()
             
     @retry
     @check_gas
-    async def withdraw(self) -> None:
+    async def withdraw(self):
         amount = await self.get_deposit_amount()
 
         if amount > 0:
