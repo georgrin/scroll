@@ -35,8 +35,9 @@ class Routes(Account):
         if random_module:
             random.shuffle(run_modules)
 
+        actionDone = False
+        
         for module in run_modules:
-            actionDone = False
             if module is None:
                 logger.info(f"[{self.account_id}][{self.address}] Skip module")
                 continue
