@@ -704,8 +704,8 @@ async def custom_routes(account_id, key, recipient):
         #bridge_nitro1,
         #bridge_nitro,
         #bridge_orbiter,
-        #bridge_layerswap,
-        #bridge_layerswap2,
+        bridge_layerswap,
+        bridge_layerswap2,
     ]
 
     sleep_from = 100
