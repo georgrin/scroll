@@ -128,8 +128,7 @@ def main(module):
     # Фильтруем кошельки, проверяя наличие их адресов в файле
     filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
     
-    print(filtered_wallets)
-    return
+    wallets = filtered_wallets
 
     if RANDOM_WALLET:
         random.shuffle(wallets)
