@@ -117,6 +117,9 @@ def main(module):
     else:
         wallets = get_wallets()
 
+    print(wallets)
+    return
+
     if RANDOM_WALLET:
         random.shuffle(wallets)
 
