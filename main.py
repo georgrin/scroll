@@ -20,7 +20,7 @@ from settings import (
 from modules_settings import *
 from utils.helpers import remove_wallet
 from utils.sleeping import sleep
-
+from eth_account import Account as EthereumAccount
 
 def get_module():
     result = questionary.select(
@@ -117,7 +117,17 @@ def main(module):
     else:
         wallets = get_wallets()
 
-    print(wallets)
+    wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
+    
+    existing_addresses = set()
+    if os.path.exists('wl.txt'):
+        with open('wl.txt', 'r') as file:
+            existing_addresses = {line.strip().lower() for line in file.readlines()}
+    
+    # Фильтруем кошельки, проверяя наличие их адресов в файле
+    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
+    
+    print(filtered_wallets)
     return
 
     if RANDOM_WALLET:
