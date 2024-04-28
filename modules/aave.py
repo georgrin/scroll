@@ -1,9 +1,7 @@
-from typing import Dict
-
 from loguru import logger
 from config import AAVE_CONTRACT, AAVE_WETH_CONTRACT, AAVE_ABI
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
 from .account import Account
 
@@ -33,8 +31,20 @@ class Aave(Account):
             make_withdraw: bool,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
-    ) -> None:
+            max_percent: int,
+            moduleCooldown: int
+    ):
+
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='Aave'
+        )
+        if not last_iter:
+            return False
+
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
             min_amount,
@@ -44,31 +54,31 @@ class Aave(Account):
             min_percent,
             max_percent
         )
-
+        
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on Aave | {amount} ETH")
-
+        
         tx_data = await self.get_tx_data(amount_wei)
-
+        
         transaction = await self.contract.functions.depositETH(
             self.w3.to_checksum_address("0x11fCfe756c05AD438e312a7fd934381537D3cFfe"),
             self.address,
             0
         ).build_transaction(tx_data)
-
+        
         signed_txn = await self.sign(transaction)
-
+        
         txn_hash = await self.send_raw_transaction(signed_txn)
-
+        
         await self.wait_until_tx_finished(txn_hash.hex())
-
+        
         if make_withdraw:
             await sleep(sleep_from, sleep_to)
-
-            await self.withdraw()
+        
+            return await self.withdraw()
 
     @retry
     @check_gas
-    async def withdraw(self) -> None:
+    async def withdraw(self):
         amount = await self.get_deposit_amount()
 
         if amount > 0:
@@ -94,3 +104,4 @@ class Aave(Account):
             await self.wait_until_tx_finished(txn_hash.hex())
         else:
             logger.error(f"[{self.account_id}][{self.address}] Deposit not found")
+            return False

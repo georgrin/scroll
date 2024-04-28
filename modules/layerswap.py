@@ -5,7 +5,7 @@ from loguru import logger
 
 from settings import LAYERSWAP_API_KEY
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -148,7 +148,8 @@ class LayerSwap(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -163,7 +164,7 @@ class LayerSwap(Account):
         available_route = await self.check_available_route(from_chain, to_chain)
 
         if available_route is False:
-            return
+            return False
 
         swap_rate = await self.get_swap_rate(from_chain, to_chain)
 
@@ -172,16 +173,25 @@ class LayerSwap(Account):
                 f"[{self.account_id}][{self.address}][{self.chain}] Limit range amount for bridge " +
                 f"{swap_rate['min_amount']} – {swap_rate['max_amount']} ETH | {amount} ETH"
             )
-            return
+            return False
 
         if swap_rate is False:
-            return
+            return False
 
         prepare_transaction = await self.prepare_transaction(from_chain, to_chain, amount)
 
         if prepare_transaction is False:
-            return
+            return False
 
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=prepare_transaction["to_address"],
+            chain=from_chain,
+            log_prefix='Layerswap'
+        )
+        if not last_iter:
+            return False
         logger.info(f"[{self.account_id}][{self.address}] Bridge Layerswap {from_chain} –> {to_chain} | {amount} ETH")
 
         tx_data = await self.get_tx_data(amount_wei)

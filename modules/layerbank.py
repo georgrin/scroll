@@ -1,7 +1,7 @@
 from loguru import logger
 from config import LAYERBANK_CONTRACT, LAYERBANK_WETH_CONTRACT, LAYERBANK_ABI
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
 from .account import Account
 
@@ -31,8 +31,9 @@ class LayerBank(Account):
             make_withdraw: bool,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
-    ) -> None:
+            max_percent: int,
+            moduleCooldown: int
+    ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
             min_amount,
@@ -42,7 +43,16 @@ class LayerBank(Account):
             min_percent,
             max_percent
         )
-
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='Layerbank'
+        )
+        if not last_iter:
+            return False
+            
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on LayerBank | {amount} ETH")
 
         tx_data = await self.get_tx_data(amount_wei)
@@ -61,11 +71,11 @@ class LayerBank(Account):
         if make_withdraw:
             await sleep(sleep_from, sleep_to)
 
-            await self.withdraw()
-
+            return await self.withdraw()
+            
     @retry
     @check_gas
-    async def withdraw(self) -> None:
+    async def withdraw(self):
         amount = await self.get_deposit_amount()
 
         if amount > 0:

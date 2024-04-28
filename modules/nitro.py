@@ -1,7 +1,7 @@
 import aiohttp
 from loguru import logger
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -58,7 +58,8 @@ class Nitro(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            moduleCooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -80,6 +81,15 @@ class Nitro(Account):
 
         transaction_data = await self.build_transaction(quote)
 
+        last_iter = await checkLastIteration(
+            interval=moduleCooldown,
+            account=self.account,
+            deposit_contract_address=transaction_data["txn"]["to"],
+            chain=self.chain,
+            log_prefix='Nitro'
+        )
+        if not last_iter:
+            return False
         tx_data = await self.get_tx_data()
         tx_data.update(
             {
