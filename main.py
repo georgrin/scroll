@@ -74,8 +74,8 @@ def get_module():
         pointer="✅ "
     ).ask()
     if result == "exit":
-        print("\n❤️ Subscribe to me – https://t.me/sybilwave\n")
-        print("🤑 Donate me: 0x00000b0ddce0bfda4531542ad1f2f5fad7b9cde9")
+        # https://etherscan.io/tx/0xee7f7c6181df7611e3373899775778444577a8ee4556b678734599ce296fddd3
+        # похоже мы единственные кто донатил автору
         sys.exit()
     return result
 
