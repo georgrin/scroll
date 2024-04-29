@@ -585,7 +585,7 @@ async def swap_tokens(account_id, key, recipient):
     max_percent = 100
 
     swap_tokens = SwapTokens(account_id, key, recipient)
-    await swap_tokens.swap(use_dex, use_tokens, sleep_from, sleep_to, slippage, min_percent, max_percent)
+    return await swap_tokens.swap(use_dex, use_tokens, sleep_from, sleep_to, slippage, min_percent, max_percent)
 
 
 async def swap_multiswap(account_id, key, recipient):
@@ -703,7 +703,7 @@ async def custom_routes(account_id, key, recipient):
         #[create_omnisea, mint_zerius, None],
         #(create_omnisea, 1, 3),
         # bridge_nitro,
-        bridge_layerswap,
+        # bridge_layerswap,
         # bridge_layerswap2,
         # bridge_nitro1,
         # bridge_orbiter,        
