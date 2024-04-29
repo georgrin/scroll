@@ -39,13 +39,13 @@ class SwapTokens(Account):
         for _, token in enumerate(tokens, start=1):
             if token == "ETH":
                 continue
+                
+            balance = await self.get_balance(SCROLL_TOKENS[token])
 
             if balance["balance"] <= 1:
                 logger.info(f"[{self.account_id}][{self.address}] Balance <= 1, skipping...")
                 return False
-                
-            balance = await self.get_balance(SCROLL_TOKENS[token])
-
+            
             if balance["balance_wei"] > 0:
                 swap_module = self.get_swap_module(use_dex)(self.account_id, self.private_key, self.recipient)
                 await swap_module.swap(
