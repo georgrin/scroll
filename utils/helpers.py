@@ -31,9 +31,8 @@ def remove_wallet(private_key: str):
             if private_key not in line:
                 file.write(line)
 
-
 async def get_account_transfer_tx_list(account_address: str, chain: str):
-    explorer_data = {
+    explorers_data = {
         'zksync': {
             'url': 'https://block-explorer-api.mainnet.zksync.io/api',
         },
@@ -42,8 +41,13 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
             'api_key': SCROLL_API_KEY
         }
     }
-    explorer_api_url = explorer_data.get(chain, None).get('url', None)
-    explorer_api_key = explorer_data.get(chain, None).get('api_key', None)
+
+    explorer_data = explorers_data.get(chain)
+    if explorer_data is None:
+        raise ValueError(f"Unsupported chain: {chain}")
+
+    explorer_api_url = explorer_data.get('url')
+    explorer_api_key = explorer_data.get('api_key')
 
     params = {
         "module": "account",
@@ -57,29 +61,31 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
     if explorer_api_key:
         params['apikey'] = explorer_api_key
 
-    response = requests.get(explorer_api_url, params=params)
+    while True:
+        try:
+            response = requests.get(explorer_api_url, params=params)
+            response.raise_for_status()
+            data = response.json()
 
-    try:
-        data = response.json()
+            if "result" not in data:
+                # logger.error("No 'result' field in the response")
+                raise Exception("Response does not contain 'result' field")
 
-        if "error" in data:
-            if data["statusCode"] == 404 or data["error"] == "Not Found":
-                return []
-            raise data["error"]
-
-        if "result" in data:
             if "Invalid API Key" in data["result"]:
-                logger.error("Invalid API Key")
-                raise data["result"]
+                # logger.error("Invalid API Key")
+                raise Exception(data["result"])
             if "rate limit" in data["result"]:
-                logger.error("Explorer api max rate limit reached")
-                raise data["result"]
+                # logger.error("Explorer api max rate limit reached")
+                raise Exception(data["result"])
 
-        return data["result"]
-    except Exception:
-        await sleep(5, 5)
-        await get_account_transfer_tx_list(account_address, explorer_api_url)
+            if "error" in data:
+                raise Exception(data["error"])
 
+            return data["result"]
+
+        except (requests.exceptions.HTTPError, json.decoder.JSONDecodeError, Exception) as e:
+            logger.error(f"Error: {e}")
+            await sleep(7)   
 
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
@@ -87,8 +93,8 @@ async def get_last_action_tx(address: str, dst: str, chain: str):
     last = None
     for tx in tx_list:
         if tx["from"].lower() == address.lower() and tx["to"].lower() == dst.lower() and tx["isError"] == "0":
-                last = tx
-                break
+            last = tx
+            break
 
     return last
 
