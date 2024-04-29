@@ -3,6 +3,7 @@ import sys
 import time
 import os
 import asyncio
+import signal
 from typing import Union
 
 import questionary
@@ -23,6 +24,11 @@ from modules_settings import *
 from utils.helpers import remove_wallet
 from utils.sleeping import sleep
 from eth_account import Account as EthereumAccount
+
+def signal_handler(sig, frame):
+    print('Ctrl+C!')
+    asyncio.get_event_loop().stop() 
+    sys.exit(0)
 
 def get_module():
     result = questionary.select(
@@ -107,6 +113,8 @@ async def run_module(module, account_id, key, recipient: Union[str, None] = None
         await sleep(SLEEP_FROM, SLEEP_TO)
 
 async def main(module):
+    signal.signal(signal.SIGINT, signal_handler)
+    
     if module in [make_transfer]:
         wallets = get_wallets(True)
     else:
