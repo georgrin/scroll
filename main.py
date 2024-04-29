@@ -136,7 +136,7 @@ async def main(module):
     sem = asyncio.Semaphore(QUANTITY_THREADS)
 
     async def _worker(module, account_id, key, recipient):
-        async with sem:  # Захватываем семафор перед выполнением задачи
+        async with sem:
             await run_module(module, account_id, key, recipient)
 
     tasks = []
