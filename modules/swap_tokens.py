@@ -40,6 +40,10 @@ class SwapTokens(Account):
             if token == "ETH":
                 continue
 
+            if balance["balance"] <= 1:
+                logger.info(f"[{self.account_id}][{self.address}] Balance <= 1, skipping...")
+                return False
+                
             balance = await self.get_balance(SCROLL_TOKENS[token])
 
             if balance["balance_wei"] > 0:
