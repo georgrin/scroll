@@ -2,8 +2,7 @@ import random
 import sys
 import time
 import os
-from concurrent.futures import ThreadPoolExecutor
-from typing import Union
+import asyncio
 
 import questionary
 from loguru import logger
@@ -16,7 +15,8 @@ from settings import (
     SLEEP_FROM,
     QUANTITY_THREADS,
     THREAD_SLEEP_FROM,
-    THREAD_SLEEP_TO, REMOVE_WALLET
+    THREAD_SLEEP_TO,
+    REMOVE_WALLET
 )
 from modules_settings import *
 from utils.helpers import remove_wallet
@@ -72,7 +72,6 @@ def get_module():
         sys.exit()
     return result
 
-
 def get_wallets(use_recipients: bool = False):
     if use_recipients:
         account_with_recipients = dict(zip(ACCOUNTS, RECIPIENTS))
@@ -94,7 +93,6 @@ def get_wallets(use_recipients: bool = False):
 
     return wallets
 
-
 async def run_module(module, account_id, key, recipient: Union[str, None] = None):
     try:
         result = await module(account_id, key, recipient)
@@ -107,12 +105,7 @@ async def run_module(module, account_id, key, recipient: Union[str, None] = None
     if result != False:
         await sleep(SLEEP_FROM, SLEEP_TO)
 
-
-def _async_run_module(module, account_id, key, recipient):
-    asyncio.run(run_module(module, account_id, key, recipient))
-
-
-def main(module):
+async def main(module):
     if module in [make_transfer]:
         wallets = get_wallets(True)
     else:
@@ -121,38 +114,34 @@ def main(module):
     if os.path.exists('wl.txt'):
         wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
         existing_addresses = set()
-        
+
         with open('wl.txt', 'r') as file:
             existing_addresses = {line.strip().lower() for line in file.readlines()}
-        
+
         filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
         wallets = filtered_wallets
 
     if RANDOM_WALLET:
         random.shuffle(wallets)
 
-    with ThreadPoolExecutor(max_workers=QUANTITY_THREADS) as executor:
-        for _, account in enumerate(wallets, start=1):
-            executor.submit(
-                _async_run_module,
-                module,
-                account.get("id"),
-                account.get("key"),
-                account.get("recipient", None)
-            )
-            time.sleep(random.randint(THREAD_SLEEP_FROM, THREAD_SLEEP_TO))
+    sem = asyncio.Semaphore(QUANTITY_THREADS)
 
+    async def _worker(module, account_id, key, recipient):
+        async with sem:  # Захватываем семафор перед выполнением задачи
+            await run_module(module, account_id, key, recipient)
+
+    tasks = []
+    for _, account in enumerate(wallets, start=1):
+        task = asyncio.create_task(_worker(module, account.get("id"), account.get("key"), account.get("recipient", None)))
+        tasks.append(task)
+
+    await asyncio.gather(*tasks)
 
 if __name__ == '__main__':
-    print("❤️ Subscribe to me – https://t.me/sybilwave\n")
-
     logger.add("logging.log")
 
     module = get_module()
     if module == "tx_checker":
         get_tx_count()
     else:
-        main(module)
-
-    print("\n❤️ Subscribe to me – https://t.me/sybilwave\n")
-    print("🤑 Donate me: 0x00000b0ddce0bfda4531542ad1f2f5fad7b9cde9")
+        asyncio.run(main(module))
