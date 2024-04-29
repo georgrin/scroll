@@ -708,7 +708,9 @@ async def custom_routes(account_id, key, recipient):
         # bridge_nitro1,
         # bridge_orbiter,
         withdraw_layerbank,
-        withdraw_aave
+        withdraw_aave,
+        depost_layerbank,
+        deposit_aave
     ]
 
     sleep_from = 10
