@@ -3,6 +3,7 @@ import sys
 import time
 import os
 import asyncio
+from typing import Union
 
 import questionary
 from loguru import logger
