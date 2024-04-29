@@ -1,3 +1,4 @@
+import traceback
 from loguru import logger
 from settings import RETRY_COUNT, SCROLL_API_KEY
 from utils.sleeping import sleep
@@ -13,7 +14,8 @@ def retry(func):
                 result = await func(*args, **kwargs)
                 return result
             except Exception as e:
-                logger.error(f"Error | {e}")
+                trace = traceback.format_exc()
+                logger.error(f"Error | {e}\n{trace}")                
                 await sleep(10, 20)
                 retries += 1
 
