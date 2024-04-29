@@ -118,17 +118,15 @@ def main(module):
     else:
         wallets = get_wallets()
 
-    wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
-    
-    existing_addresses = set()
     if os.path.exists('wl.txt'):
+        wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
+        existing_addresses = set()
+        
         with open('wl.txt', 'r') as file:
             existing_addresses = {line.strip().lower() for line in file.readlines()}
-    
-    # Фильтруем кошельки, проверяя наличие их адресов в файле
-    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
-    
-    wallets = filtered_wallets
+        
+        filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
+        wallets = filtered_wallets
 
     if RANDOM_WALLET:
         random.shuffle(wallets)
