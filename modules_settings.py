@@ -709,7 +709,7 @@ async def custom_routes(account_id, key, recipient):
         # bridge_orbiter,
         withdraw_layerbank,
         withdraw_aave,
-        depost_layerbank,
+        deposit_layerbank,
         deposit_aave
     ]
 
