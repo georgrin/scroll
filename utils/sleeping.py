@@ -8,10 +8,12 @@ async def sleep(sleep_from, sleep_to, key='q'):
     print(f"💤 Sleep {delay} s. Press '{key}' to interrupt.")
 
     async def wait_for_key():
-        while True:
-            key_pressed = await asyncio.to_thread(getch)
-            if key_pressed == key:
-                return True  # Прерываем sleep, если нажата нужная клавиша
+        try:
+            # Ожидаем нажатия клавиши с таймаутом
+            key_pressed = await asyncio.wait_for(asyncio.to_thread(getch), timeout=delay)  
+            return key_pressed == key
+        except asyncio.TimeoutError:
+            return False  # Таймаут, клавиша не нажата
 
     async def sleep_task():
         try:
@@ -33,7 +35,3 @@ async def sleep(sleep_from, sleep_to, key='q'):
     # Прерываем sleep_task, если она еще не завершена
     for task in pending:
         task.cancel()
-    # Прерываем sleep_task, если она еще не завершена
-    for task in pending:
-        task.cancel()
-
