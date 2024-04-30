@@ -3,20 +3,16 @@ import random
 
 from getch import getch
 
-async def sleep(sleep_from, sleep_to, key='q'):
+async def sleep(sleep_from, sleep_to, interrupt_key='q'):
     delay = random.randint(sleep_from, sleep_to)
-    print(f"💤 Sleep {delay} s. Press '{key}' to interrupt or any other key to exit.")
+    print(f"💤 Sleep {delay} s. Press '{interrupt_key}' to interrupt.")
 
-async def wait_for_key():
-    while True:
-        try:
+    async def wait_for_key():
+        while True:
             key_pressed = await asyncio.to_thread(getch)
-            if key_pressed == key:
+            if key_pressed == interrupt_key:
                 return True
-        except KeyboardInterrupt:
-            print("Interrupted by keyboard!")
-            return False
-
+            
     async def sleep_task():
         try:
             for _ in range(delay):
