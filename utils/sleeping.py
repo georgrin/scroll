@@ -5,7 +5,7 @@ from loguru import logger
 import asyncio
 import aioconsole
 
-async def sleep(sleep_from, sleep_to, key='space'):
+async def sleep(sleep_from, sleep_to, key='escape'):
     delay = random.randint(sleep_from, sleep_to)
     print(f"💤 Sleep {delay} s. Press '{key}' to interrupt.")
 
