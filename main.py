@@ -99,10 +99,10 @@ def get_wallets(use_recipients: bool = False):
     return wallets
 
 async def run_module(module, account_id, key, recipient: Union[str, None] = None):
-    result = False
     try:
         result = await module(account_id, key, recipient)
     except Exception as e:
+        result = False
         logger.error(e)
 
     if REMOVE_WALLET:
