@@ -1,23 +1,17 @@
 import asyncio
 import random
 
-from getch import getch
+import aioconsole
 
 async def sleep(sleep_from, sleep_to, key='q'):
     delay = random.randint(sleep_from, sleep_to)
-    print(f"💤 Sleep {delay} s. Press '{key}' to interrupt.")
+    print(f"💤 Sleep {delay} s. Press '{key} and Enter' to interrupt.")
 
     async def wait_for_key():
-        try:
-            # Ожидаем нажатия клавиши с таймаутом
-            key_pressed = await asyncio.wait_for(asyncio.to_thread(getch), timeout=delay)  
-            # Проверяем, нажата ли нужная клавиша
+        while True:
+            key_pressed = await aioconsole.ainput()
             if key_pressed == key:
-                return True  # Прерываем sleep
-            else:
-                return False  # Игнорируем другие клавиши
-        except asyncio.TimeoutError:
-            return False  # Таймаут, клавиша не нажата
+                return True
 
     async def sleep_task():
         try:
@@ -26,13 +20,9 @@ async def sleep(sleep_from, sleep_to, key='q'):
         except asyncio.CancelledError:
             print("Sleep interrupted!")
 
-    # Создаём задачи
-    sleep_task = asyncio.create_task(sleep_task())
-    wait_for_key_task = asyncio.create_task(wait_for_key())
-
-    # Запускаем задачи одновременно и ожидаем завершения любой из них
+    # Запускаем задачи одновременно
     done, pending = await asyncio.wait(
-        [sleep_task, wait_for_key_task],
+        [sleep_task(), wait_for_key()],
         return_when=asyncio.FIRST_COMPLETED
     )
 
