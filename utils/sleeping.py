@@ -11,7 +11,11 @@ async def sleep(sleep_from, sleep_to, key='q'):
         try:
             # Ожидаем нажатия клавиши с таймаутом
             key_pressed = await asyncio.wait_for(asyncio.to_thread(getch), timeout=delay)  
-            return key_pressed == key
+            # Проверяем, нажата ли нужная клавиша
+            if key_pressed == key:
+                return True  # Прерываем sleep
+            else:
+                return False  # Игнорируем другие клавиши
         except asyncio.TimeoutError:
             return False  # Таймаут, клавиша не нажата
 
