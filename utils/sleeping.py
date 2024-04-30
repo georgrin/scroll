@@ -1,9 +1,8 @@
+import asyncio
 import random
 
-from loguru import logger
+from getch import getch
 
-import asyncio
-import aioconsole
 
 async def sleep(sleep_from, sleep_to, key='q'):
     delay = random.randint(sleep_from, sleep_to)
@@ -11,7 +10,7 @@ async def sleep(sleep_from, sleep_to, key='q'):
 
     async def wait_for_key():
         while True:
-            key_pressed = await aioconsole.ainput()
+            key_pressed = await asyncio.to_thread(getch)
             if key_pressed == key:
                 return True
 
