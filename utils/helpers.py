@@ -114,4 +114,5 @@ async def checkLastIteration(interval: int, account, deposit_contract_address: s
             logger.info(f"{log_prefix} done more then {interval} seconds ago, working")
             return True
     else:
+        logger.info(f"{log_prefix} previous TX not found, working")
         return True
