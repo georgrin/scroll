@@ -4,6 +4,7 @@ from settings import RETRY_COUNT, SCROLL_API_KEY
 from utils.sleeping import sleep
 from datetime import datetime
 import requests
+import json
 
 
 def retry(func):
