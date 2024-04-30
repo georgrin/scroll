@@ -1,30 +1,36 @@
-import asyncio
 import random
 
 from loguru import logger
 
-from pynput import keyboard
+import asyncio
+import aioconsole
 
-async def sleep(sleep_from: int, sleep_to: int):
+async def sleep(sleep_from, sleep_to, key='space'):
     delay = random.randint(sleep_from, sleep_to)
-    logger.info(f"💤 Sleep {delay} s.")
+    print(f"💤 Sleep {delay} s. Press '{key}' to interrupt.")
 
-    def on_press(key):
-        if key == keyboard.Key.space:
-            # Stop listener
-            return False
+    async def wait_for_key():
+        while True:
+            key_pressed = await aioconsole.ainput()
+            if key_pressed == key:
+                return True
 
-    # Start the keyboard listener
-    listener = keyboard.Listener(on_press=on_press)
-    listener.start()
+    async def sleep_task():
+        try:
+            for _ in range(delay):
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            print("Sleep interrupted!")
 
-    try:
-        for _ in range(delay):
-            await asyncio.sleep(1)
-            if not listener.is_alive():
-                break  # Прерываем sleep, если слушатель остановлен
-    finally:
-        listener.stop()  # Останавливаем слушатель в любом случае
+    # Запускаем задачи одновременно
+    done, pending = await asyncio.wait(
+        [sleep_task(), wait_for_key()],
+        return_when=asyncio.FIRST_COMPLETED
+    )
+
+    # Прерываем sleep_task, если она еще не завершена
+    for task in pending:
+        task.cancel()
 
 """
 async def sleep(sleep_from: int, sleep_to: int):
