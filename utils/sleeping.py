@@ -20,6 +20,9 @@ async def sleep(sleep_from, sleep_to, interrupt_key='q'):
         except asyncio.CancelledError:
             print("Sleep interrupted!")
 
+    sleep_task = asyncio.create_task(sleep_task())
+    wait_for_key_task = asyncio.create_task(wait_for_key())
+
     done, pending = await asyncio.wait(
         [sleep_task(), wait_for_key()],
         return_when=asyncio.FIRST_COMPLETED
