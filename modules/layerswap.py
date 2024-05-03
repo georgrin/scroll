@@ -149,7 +149,7 @@ class LayerSwap(Account):
             all_amount: bool,
             min_percent: int,
             max_percent: int,
-            moduleCooldown: int
+            module_cooldown: int
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -184,7 +184,7 @@ class LayerSwap(Account):
             return False
 
         last_iter = await checkLastIteration(
-            interval=moduleCooldown,
+            interval=module_cooldown,
             account=self.account,
             deposit_contract_address=prepare_transaction["to_address"],
             chain=from_chain,

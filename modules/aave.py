@@ -32,11 +32,11 @@ class Aave(Account):
             all_amount: bool,
             min_percent: int,
             max_percent: int,
-            moduleCooldown: int
+            module_cooldown: int
     ):
 
         last_iter = await checkLastIteration(
-            interval=moduleCooldown,
+            interval=module_cooldown,
             account=self.account,
             deposit_contract_address=self.contract.address,
             chain='scroll',

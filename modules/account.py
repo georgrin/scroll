@@ -28,7 +28,8 @@ class Account:
 
         self.w3 = AsyncWeb3(
             AsyncWeb3.AsyncHTTPProvider(random.choice(RPC[chain]["rpc"])),
-            middlewares=[async_geth_poa_middleware]
+            middlewares=[async_geth_poa_middleware],
+            request_kwargs={'timeout': 60}
         )
 
         self.account = EthereumAccount.from_key(private_key)

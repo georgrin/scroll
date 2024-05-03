@@ -3,7 +3,7 @@ import time
 from loguru import logger
 from config import SAFE_ABI, SAFE_CONTRACT, ZERO_ADDRESS
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -15,8 +15,18 @@ class GnosisSafe(Account):
 
     @retry
     @check_gas
-    async def create_safe(self):
+    async def create_safe(self, module_cooldown: int):
         logger.info(f"[{self.account_id}][{self.address}] Create gnosis safe")
+
+        last_iter = await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='GnosisSafe'
+        )
+        if not last_iter:
+            return False
 
         setup_data = self.contract.encodeABI(
             fn_name="setup",
