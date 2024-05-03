@@ -8,6 +8,7 @@ from .zebra import Zebra
 from .syncswap import SyncSwap
 from .xyswap import XYSwap
 from .aave import Aave
+from .compound import CompoundFinance
 from .layerbank import LayerBank
 from .zerius import Zerius
 from .l2pass import L2Pass

@@ -66,6 +66,7 @@ def get_module():
             Choice("32) Use custom routes", custom_routes),
             Choice("33) Make transfer", make_transfer),
             Choice("34) Check transaction count", "tx_checker"),
+            Choice("35) Deposit Compound Finance", deposit_compound_finance),
             Choice("35) Exit", "exit"),
         ],
         qmark="⚙️ ",
