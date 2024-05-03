@@ -1,5 +1,5 @@
 from loguru import logger
-from config import COMPOUND_FINANCE_CONTRACT, COMPOUND_FINANCE_ABI
+from config import COMPOUND_FINANCE_CONTRACT, COMPOUND_FINANCE_ABI, SCROLL_TOKENS
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
@@ -52,7 +52,8 @@ class CompoundFinance(Account):
             all_amount: bool,
             min_percent: int,
             max_percent: int,
-            module_cooldown: int
+            module_cooldown: int,
+            wrap_eth: bool
     ):
 
         last_iter = await checkLastIteration(
@@ -77,17 +78,16 @@ class CompoundFinance(Account):
         
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on CompoundFinance | {amount} ETH")
 
-        # await self._wrap_eth(amount_wei, amount)
-
-        print(amount_wei)
+        if wrap_eth:
+            await self._wrap_eth(amount_wei, amount)
 
         tx_data = await self.get_tx_data()
-        
+
         transaction = await self.contract.functions.supply(
-            self.w3.to_checksum_address("0x5300000000000000000000000000000000000004"),
-            1130547689970441
+            self.w3.to_checksum_address(SCROLL_TOKENS["WETH"]),
+            amount_wei
         ).build_transaction(tx_data)
-        
+
         signed_txn = await self.sign(transaction)
         
         txn_hash = await self.send_raw_transaction(signed_txn)

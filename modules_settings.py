@@ -408,15 +408,16 @@ async def deposit_compound_finance(account_id, key, recipient):
     sleep_to = 24
 
     make_withdraw = False
+    wrap_eth = False
 
-    all_amount = True
+    all_amount = False
 
     min_percent = 100
     max_percent = 100
 
     compound_finance = CompoundFinance(account_id, key, recipient)
     return await compound_finance.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown, wrap_eth
     )
 
 
