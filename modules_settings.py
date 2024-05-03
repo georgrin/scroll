@@ -392,6 +392,33 @@ async def deposit_aave(account_id, key, recipient):
         min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
     )
 
+async def deposit_compound_finance(account_id, key, recipient):
+    """
+    Make deposit on Compound Finance
+    ______________________________________________________
+    make_withdraw - True, if need withdraw after deposit
+
+    all_amount - deposit from min_percent to max_percent
+    """
+    min_amount = 0.001
+    max_amount = 0.0012
+    decimal = 5
+
+    sleep_from = 5
+    sleep_to = 24
+
+    make_withdraw = False
+
+    all_amount = True
+
+    min_percent = 100
+    max_percent = 100
+
+    compound_finance = CompoundFinance(account_id, key, recipient)
+    return await compound_finance.deposit(
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
+    )
+
 
 async def mint_zerius(account_id, key, recipient):
     """

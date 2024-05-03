@@ -42,6 +42,9 @@ with open("data/abi/zebra/abi.json", "r") as file:
 with open("data/abi/aave/abi.json", "r") as file:
     AAVE_ABI = json.load(file)
 
+with open("data/abi/compound_finance/abi.json", "r") as file:
+    COMPOUND_FINANCE_ABI = json.load(file)
+
 with open("data/abi/layerbank/abi.json", "r") as file:
     LAYERBANK_ABI = json.load(file)
 
@@ -129,6 +132,8 @@ XYSWAP_CONTRACT = {
 AAVE_CONTRACT = "0xff75a4b698e3ec95e608ac0f22a03b8368e05f5d"
 
 AAVE_WETH_CONTRACT = "0xf301805be1df81102c957f6d4ce29d2b8c056b2a"
+
+COMPOUND_FINANCE_CONTRACT = "0xB2f97c1Bd3bf02f5e74d13f02E3e26F93D77CE44"
 
 LAYERBANK_CONTRACT = "0xec53c830f4444a8a56455c6836b5d2aa794289aa"
 
