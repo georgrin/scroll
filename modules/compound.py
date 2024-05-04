@@ -53,8 +53,8 @@ class CompoundFinance(Account):
             min_percent: int,
             max_percent: int,
             module_cooldown: int,
-            wrap_eth: bool
     ):
+        token = "USDC"
 
         last_iter = await checkLastIteration(
             interval=module_cooldown,
@@ -67,7 +67,7 @@ class CompoundFinance(Account):
             return False
 
         amount_wei, amount, balance = await self.get_amount(
-            "ETH",
+            token,
             min_amount,
             max_amount,
             decimal,
@@ -82,10 +82,8 @@ class CompoundFinance(Account):
 
         tx_data = await self.get_tx_data()
 
-        await self.approve(amount_wei * 10, SCROLL_TOKENS["WETH"], self.w3.to_checksum_address(COMPOUND_FINANCE_CONTRACT))
-
         transaction = await self.contract.functions.supply(
-            self.w3.to_checksum_address(SCROLL_TOKENS["WETH"]),
+            self.w3.to_checksum_address(SCROLL_TOKENS[token]),
             amount_wei
         ).build_transaction(tx_data)
 
@@ -105,17 +103,18 @@ class CompoundFinance(Account):
     @check_gas
     async def withdraw(self):
         amount = await self.get_deposit_amount()
+        token = "USDC"
 
         if amount > 0:
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from CompoundFinance | " +
-                f"{self.w3.from_wei(amount, 'ether')} ETH"
+                f"{(amount / 10 ** 6)} {token}"
             )
 
             tx_data = await self.get_tx_data()
 
-            transaction = await self.contract.functions.withdrawETH(
-                self.w3.to_checksum_address(SCROLL_TOKENS["WETH"]),
+            transaction = await self.contract.functions.withdraw(
+                self.w3.to_checksum_address(SCROLL_TOKENS[token]),
                 amount,
             ).build_transaction(tx_data)
 
