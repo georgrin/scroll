@@ -82,6 +82,8 @@ class CompoundFinance(Account):
 
         tx_data = await self.get_tx_data()
 
+        await self.approve(amount_wei * 10, SCROLL_TOKENS["WETH"], self.w3.to_checksum_address(COMPOUND_FINANCE_CONTRACT))
+
         transaction = await self.contract.functions.supply(
             self.w3.to_checksum_address(SCROLL_TOKENS["WETH"]),
             amount_wei
@@ -94,7 +96,34 @@ class CompoundFinance(Account):
         await self.wait_until_tx_finished(txn_hash.hex())
         
         if make_withdraw:
-            print("Make withdraw")
-            # await sleep(sleep_from, sleep_to)
-            #
-            # return await self.withdraw()
+            logger.info("Sleep before withdraw")
+            await sleep(sleep_from, sleep_to)
+
+            return await self.withdraw()
+
+    @retry
+    @check_gas
+    async def withdraw(self):
+        amount = await self.get_deposit_amount()
+
+        if amount > 0:
+            logger.info(
+                f"[{self.account_id}][{self.address}] Make withdraw from CompoundFinance | " +
+                f"{self.w3.from_wei(amount, 'ether')} ETH"
+            )
+
+            tx_data = await self.get_tx_data()
+
+            transaction = await self.contract.functions.withdrawETH(
+                self.w3.to_checksum_address(SCROLL_TOKENS["WETH"]),
+                amount,
+            ).build_transaction(tx_data)
+
+            signed_txn = await self.sign(transaction)
+
+            txn_hash = await self.send_raw_transaction(signed_txn)
+
+            await self.wait_until_tx_finished(txn_hash.hex())
+        else:
+            logger.error(f"[{self.account_id}][{self.address}] Deposit not found")
+            return False
