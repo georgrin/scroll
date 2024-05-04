@@ -76,10 +76,9 @@ class CompoundFinance(Account):
             max_percent
         )
         
-        logger.info(f"[{self.account_id}][{self.address}] Make deposit on CompoundFinance | {amount} ETH")
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on CompoundFinance | {amount} {token}")
 
-        if wrap_eth:
-            await self._wrap_eth(amount_wei, amount)
+        await self.approve(amount_wei * 10, SCROLL_TOKENS[token], self.w3.to_checksum_address(COMPOUND_FINANCE_CONTRACT))
 
         tx_data = await self.get_tx_data()
 
