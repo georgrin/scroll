@@ -94,9 +94,10 @@ class CompoundFinance(Account):
         amount_hex = format(amount_wei, 'x').zfill(64)
 
         data_hex = "0x" + comet_address[2:].zfill(64) + from_address[2:].zfill(64) + amount_hex
+        action = bytes.fromhex('414354494f4e5f535550504c595f4e41544956455f544f4b454e000000000000')
 
         transaction = await self.contract.functions.invoke(
-            [Web3.to_bytes(text='ACTION_SUPPLY_NATIVE_TOKEN').zfill(32)],
+            [action],
             [Web3.to_bytes(text=data_hex)]
         ).build_transaction(tx_data)
 
