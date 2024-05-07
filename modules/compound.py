@@ -6,7 +6,6 @@ from utils.sleeping import sleep
 from .account import Account
 from .scroll import Scroll
 from eth_abi import encode
-from hexbytes import HexBytes
 from web3 import Web3
 
 class CompoundFinance(Account):
@@ -89,13 +88,14 @@ class CompoundFinance(Account):
         comet_address = self.contract_comet.address.lower()
         from_address = self.address.lower()
         amount_hex = format(amount_wei, 'x').zfill(64)
-
         data_hex = "0x" + comet_address[2:].zfill(64) + from_address[2:].zfill(64) + amount_hex
+
         # 'ACTION_SUPPLY_NATIVE_TOKEN' is 414354494f4e5f535550504c595f4e41544956455f544f4b454e, but we need bytes32 type so we add zeros
-        action = bytes.fromhex('414354494f4e5f535550504c595f4e41544956455f544f4b454e000000000000')
+        action = "ACTION_SUPPLY_NATIVE_TOKEN"
+        action_hex = action.encode('utf-8').hex().upper().ljust(64, "0")
 
         transaction = await self.contract.functions.invoke(
-            [action],
+            [Web3.to_bytes(hexstr=action_hex)],
             [Web3.to_bytes(hexstr=data_hex)]
         ).build_transaction(tx_data)
 
@@ -130,10 +130,11 @@ class CompoundFinance(Account):
             amount_hex = format(amount, 'x').zfill(64)
             data_hex = "0x" + comet_address[2:].zfill(64) + to_address[2:].zfill(64) + amount_hex
             # 'ACTION_WITHDRAW_NATIVE_TOKEN' is 0x414354494f4e5f57495448445241575f4e41544956455f544f4b454e, but we need bytes32 type so we add zeros
-            action = Web3.to_bytes(hexstr='0x414354494f4e5f57495448445241575f4e41544956455f544f4b454e00000000')
+            action = 'ACTION_WITHDRAW_NATIVE_TOKEN'
+            action_hex = action.encode('utf-8').hex().upper().ljust(64, "0")
 
             transaction = await self.contract.functions.invoke(
-                [action],
+                [Web3.to_bytes(hexstr=action_hex)],
                 [Web3.to_bytes(hexstr=data_hex)]
             ).build_transaction(tx_data)
             signed_txn = await self.sign(transaction)
