@@ -1,5 +1,5 @@
 from loguru import logger
-from config import COMPOUND_FINANCE_USDC_CONTRACT, COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_USDC_ABI, COMPOUND_FINANCE_BULKER_ABI, SCROLL_TOKENS
+from config import COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_USDC_ABI, COMPOUND_FINANCE_BULKER_ABI, SCROLL_TOKENS
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
@@ -13,23 +13,23 @@ class CompoundFinance(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
-        self.contract_usdc = self.get_contract(COMPOUND_FINANCE_USDC_CONTRACT, COMPOUND_FINANCE_USDC_ABI)
+        self.contract_comet = self.get_contract(COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_USDC_ABI)
         self.contract = self.get_contract(COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_BULKER_ABI)
 
     async def get_deposit_amount(self):
-        amount = await self.contract_usdc.functions.collateralBalanceOf(self.address, SCROLL_TOKENS["WETH"]).call()
+        amount = await self.contract_comet.functions.collateralBalanceOf(self.address, SCROLL_TOKENS["WETH"]).call()
 
         return amount
 
     async def is_allow(self):
-        return await self.contract_usdc.functions.isAllowed(self.w3.to_checksum_address(self.address), self.w3.to_checksum_address(self.contract.address)).call()
+        return await self.contract_comet.functions.isAllowed(self.w3.to_checksum_address(self.address), self.w3.to_checksum_address(self.contract.address)).call()
 
     async def allow(self, contract_address):
         logger.info(f"Allow {contract_address} for {self.address}")
 
         tx_data = await self.get_tx_data()
 
-        transaction = await self.contract_usdc.functions.allow(
+        transaction = await self.contract_comet.functions.allow(
             self.w3.to_checksum_address(COMPOUND_FINANCE_BULKER_CONTRACT),
             True
         ).build_transaction(tx_data)
@@ -86,7 +86,7 @@ class CompoundFinance(Account):
 
         tx_data = await self.get_tx_data(amount_wei)
 
-        comet_address = self.contract_usdc.address.lower()
+        comet_address = self.contract_comet.address.lower()
         from_address = self.address.lower()
         amount_hex = format(amount_wei, 'x').zfill(64)
 
@@ -125,7 +125,7 @@ class CompoundFinance(Account):
 
             tx_data = await self.get_tx_data()
 
-            comet_address = self.contract_usdc.address.lower()
+            comet_address = self.contract_comet.address.lower()
             to_address = self.address.lower()
             amount_hex = format(amount, 'x').zfill(64)
             data_hex = "0x" + comet_address[2:].zfill(64) + to_address[2:].zfill(64) + amount_hex
