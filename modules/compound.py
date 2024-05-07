@@ -88,7 +88,6 @@ class CompoundFinance(Account):
 
         comet_address = self.contract_usdc.address.lower()
         from_address = self.address.lower()
-
         amount_hex = format(amount_wei, 'x').zfill(64)
 
         data_hex = "0x" + comet_address[2:].zfill(64) + from_address[2:].zfill(64) + amount_hex
@@ -96,7 +95,7 @@ class CompoundFinance(Account):
 
         transaction = await self.contract.functions.invoke(
             [action],
-            [Web3.to_bytes(text=data_hex)]
+            [Web3.to_bytes(hexstr=data_hex)]
         ).build_transaction(tx_data)
 
         signed_txn = await self.sign(transaction)
