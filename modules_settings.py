@@ -763,6 +763,9 @@ async def withdraw_aave(account_id, key, recipient):
     aave = Aave(account_id, key, recipient)
     return await aave.withdraw()
 
+async def withdraw_compound_finance(account_id, key, recipient):
+    compound_finance = CompoundFinance(account_id, key, recipient)
+    return await compound_finance.withdraw()
 
 async def send_mail(account_id, key, recipient):
     dmail = Dmail(account_id, key, recipient)
