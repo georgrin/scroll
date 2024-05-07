@@ -17,7 +17,7 @@ class CompoundFinance(Account):
         self.contract = self.get_contract(COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_BULKER_ABI)
 
     async def get_deposit_amount(self):
-        amount = await self.contract_usdc.functions.balanceOf(self.address).call()
+        amount = await self.contract_usdc.functions.collateralBalanceOf(self.address, SCROLL_TOKENS["WETH"]).call()
 
         return amount
 
