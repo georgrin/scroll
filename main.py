@@ -67,7 +67,8 @@ def get_module():
             Choice("33) Make transfer", make_transfer),
             Choice("34) Check transaction count", "tx_checker"),
             Choice("35) Deposit Compound Finance", deposit_compound_finance),
-            Choice("35) Exit", "exit"),
+            Choice("36) Withdraw Compound Finance", withdraw_compound_finance)
+            Choice("37) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "
