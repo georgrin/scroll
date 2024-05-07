@@ -45,8 +45,8 @@ with open("data/abi/aave/abi.json", "r") as file:
 with open("data/abi/compound_finance/abi_bulker.json", "r") as file:
     COMPOUND_FINANCE_BULKER_ABI = json.load(file)
 
-with open("data/abi/compound_finance/abi_usdc.json", "r") as file:
-    COMPOUND_FINANCE_USDC_ABI = json.load(file)
+with open("data/abi/compound_finance/abi_comet.json", "r") as file:
+    COMPOUND_FINANCE_COMET_ABI = json.load(file)
 
 with open("data/abi/layerbank/abi.json", "r") as file:
     LAYERBANK_ABI = json.load(file)

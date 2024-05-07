@@ -1,5 +1,5 @@
 from loguru import logger
-from config import COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_USDC_ABI, COMPOUND_FINANCE_BULKER_ABI, SCROLL_TOKENS
+from config import COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_COMET_ABI, COMPOUND_FINANCE_BULKER_ABI, SCROLL_TOKENS
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
@@ -13,7 +13,7 @@ class CompoundFinance(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
-        self.contract_comet = self.get_contract(COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_USDC_ABI)
+        self.contract_comet = self.get_contract(COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_COMET_ABI)
         self.contract = self.get_contract(COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_BULKER_ABI)
 
     async def get_deposit_amount(self):
