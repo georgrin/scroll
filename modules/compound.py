@@ -27,20 +27,18 @@ class CompoundFinance(Account):
     async def allow(self, contract_address):
         logger.info(f"Allow {contract_address} for {self.address}")
 
-        # await self.approve(amount_wei * 10, self.w3.to_checksum_address(COMPOUND_FINANCE_BULKER_CONTRACT), self.w3.to_checksum_address(COMPOUND_FINANCE_USDC_CONTRACT))
+        tx_data = await self.get_tx_data()
 
-        # tx_data = await self.get_tx_data()
-        #
-        # transaction = await self.contract_usdc.functions.allow(
-        #     self.w3.to_checksum_address(COMPOUND_FINANCE_BULKER_CONTRACT),
-        #     True
-        # ).build_transaction(tx_data)
-        #
-        # signed_txn = await self.sign(transaction)
-        #
-        # txn_hash = await self.send_raw_transaction(signed_txn)
-        #
-        # await self.wait_until_tx_finished(txn_hash.hex())
+        transaction = await self.contract_usdc.functions.allow(
+            self.w3.to_checksum_address(COMPOUND_FINANCE_BULKER_CONTRACT),
+            True
+        ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
 
 
     @retry
