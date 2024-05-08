@@ -90,7 +90,7 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
 
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
-
+    print(tx_list)
     last = None
     for tx in tx_list:
         if tx["from"].lower() == address.lower() and tx["to"].lower() == dst.lower() and tx["isError"] == "0":
