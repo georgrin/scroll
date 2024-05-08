@@ -4,7 +4,7 @@ import random
 import aioconsole
 
 
-async def sleep(sleep_from, sleep_to, key='q'):
+async def sleep(sleep_from, sleep_to=sleep_from, key='q'):
     delay = random.randint(sleep_from, sleep_to)
     print(f"💤 Sleep {delay} s. Press '{key} and Enter' to interrupt.")
 
