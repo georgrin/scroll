@@ -324,7 +324,7 @@ async def swap_xyswap(account_id, key, recipient):
     min_amount = 0.0001
     max_amount = 0.0001
     decimal = 6
-    slippage = 1
+    slippage = 3
 
     all_amount = True
 
