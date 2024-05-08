@@ -45,6 +45,7 @@ class Multiswap(Account):
 
         logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}")
 
+        needToSleep = True
         for _, token in enumerate(path):
             if token == "ETH":
                 decimal = 6
@@ -68,7 +69,8 @@ class Multiswap(Account):
                 # костыль на весь баланс usdc
                 if balance["balance"] <= 1:
                     logger.info(f"[{self.account_id}][{self.address}] USDC balance <= 1")
-                    return False
+                    needToSleep = False
+                    continue
                 min_amount = balance["balance"]
                 max_amount = min_amount
                 
@@ -88,3 +90,5 @@ class Multiswap(Account):
 
             if _ + 1 != len(path):
                 await sleep(sleep_from, sleep_to)
+        
+        return needToSleep
