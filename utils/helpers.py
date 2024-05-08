@@ -102,6 +102,7 @@ async def get_last_action_tx(address: str, dst: str, chain: str):
 
 async def checkLastIteration(interval: int, account, deposit_contract_address: str, chain: str, log_prefix: str):
     current_datetime = datetime.now()
+    print(deposit_contract_address)
     last_tx = await get_last_action_tx(address=account.address, dst=deposit_contract_address, chain=chain)
     if last_tx:
         tx_time = datetime.fromtimestamp(int(last_tx["timeStamp"]))
