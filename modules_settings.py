@@ -409,10 +409,10 @@ async def deposit_compound_finance(account_id, key, recipient):
 
     make_withdraw = True
 
-    all_amount = False
+    all_amount = True
 
-    min_percent = 100
-    max_percent = 100
+    min_percent = 30
+    max_percent = 50
 
     compound_finance = CompoundFinance(account_id, key, recipient)
     return await compound_finance.deposit(
