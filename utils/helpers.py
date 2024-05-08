@@ -82,6 +82,11 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
             if "error" in data:
                 raise Exception(data["error"])
 
+            if data["result"]:
+                last_tx = data["result"][0]
+                logger.info(f"Last known tx for address in block {last_tx['blockNumber']}, hash: {last_tx['hash']}")
+                await sleep(3)
+
             return data["result"]
 
         except (requests.exceptions.HTTPError, json.decoder.JSONDecodeError, Exception) as e:
@@ -90,7 +95,6 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
 
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
-    print(tx_list)
     last = None
     for tx in tx_list:
         if tx["from"].lower() == address.lower() and tx["to"].lower() == dst.lower() and tx["isError"] == "0":
@@ -102,7 +106,6 @@ async def get_last_action_tx(address: str, dst: str, chain: str):
 
 async def checkLastIteration(interval: int, account, deposit_contract_address: str, chain: str, log_prefix: str):
     current_datetime = datetime.now()
-    print(deposit_contract_address)
     last_tx = await get_last_action_tx(address=account.address, dst=deposit_contract_address, chain=chain)
     if last_tx:
         tx_time = datetime.fromtimestamp(int(last_tx["timeStamp"]))
