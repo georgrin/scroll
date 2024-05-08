@@ -69,7 +69,7 @@ class Multiswap(Account):
                 # костыль на весь баланс usdc
                 if balance["balance"] <= 1:
                     logger.info(f"[{self.account_id}][{self.address}] USDC balance <= 1")
-                    needToSleep = False
+                    # needToSleep = False
                     continue
                 min_amount = balance["balance"]
                 max_amount = min_amount
