@@ -407,7 +407,7 @@ async def deposit_compound_finance(account_id, key, recipient):
     sleep_from = 5
     sleep_to = 24
 
-    make_withdraw = True
+    make_withdraw = False
 
     all_amount = True
 
