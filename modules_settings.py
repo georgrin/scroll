@@ -633,7 +633,7 @@ async def swap_multiswap(account_id, key, recipient):
     sleep_from = 10
     sleep_to = 30
 
-    slippage = 0.1
+    slippage = 0.2
 
     back_swap = True
 
