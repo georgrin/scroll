@@ -80,7 +80,7 @@ class Aave(Account):
     @check_gas
     async def withdraw(self):
         amount = await self.get_deposit_amount()
-        if amount > 5000000000000: # 0,0005 ETH
+        if amount > 500000000000000: # 0,0005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from Aave | " +
                 f"{self.w3.from_wei(amount, 'ether')} ETH"
