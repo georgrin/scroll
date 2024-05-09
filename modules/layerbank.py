@@ -78,7 +78,7 @@ class LayerBank(Account):
     async def withdraw(self):
         amount = await self.get_deposit_amount()
 
-        if amount > 0:
+        if amount > 50000000000000: # 0,00005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from LayerBank | " +
                 f"{self.w3.from_wei(amount, 'ether')} ETH"
@@ -99,5 +99,5 @@ class LayerBank(Account):
 
             await self.wait_until_tx_finished(txn_hash.hex())
         else:
-            logger.error(f"[{self.account_id}][{self.address}] Deposit not found")
+            logger.error(f"[{self.account_id}][{self.address}] Deposit not found or deposited amount too small: {amount} WEI")
             return False
