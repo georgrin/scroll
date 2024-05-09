@@ -80,7 +80,7 @@ class Aave(Account):
     @check_gas
     async def withdraw(self):
         amount = await self.get_deposit_amount()
-
+        print(amount)
         if amount > 0:
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from Aave | " +
