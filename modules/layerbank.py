@@ -78,7 +78,7 @@ class LayerBank(Account):
     async def withdraw(self):
         amount = await self.get_deposit_amount()
 
-        if amount > 50000000000000: # 0,00005 ETH
+        if amount > 5000000000000: # 0,0005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from LayerBank | " +
                 f"{self.w3.from_wei(amount, 'ether')} ETH"
