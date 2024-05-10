@@ -243,6 +243,36 @@ async def swap_skydrome(account_id, key, recipient):
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
+async def swap_ambient_finance(account_id, key, recipient):
+    """
+    Make swap on Ambient Finance
+    ______________________________________________________
+    from_token – Choose SOURCE token ETH, USDC | Select one
+    to_token – Choose DESTINATION token ETH, USDC | Select one
+
+    Disclaimer - You can swap only ETH to any token or any token to ETH!
+    ______________________________________________________
+    all_amount - swap from min_percent to max_percent
+    """
+
+    from_token = "USDC"
+    to_token = "ETH"
+
+    min_amount = 0.0007
+    max_amount = 0.001
+    decimal = 6
+    slippage = 3
+
+    all_amount = True
+
+    min_percent = 100
+    max_percent = 100
+
+    ambient_finance = AmbientFinance(account_id, key, recipient)
+    return await ambient_finance.swap(
+        from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
+    )
+
 
 async def swap_zebra(account_id, key, recipient):
     """
@@ -400,8 +430,8 @@ async def deposit_compound_finance(account_id, key, recipient):
 
     all_amount - deposit from min_percent to max_percent
     """
-    min_amount = 0.001
-    max_amount = 0.0012
+    min_amount = 0.0005
+    max_amount = 0.0005
     decimal = 5
 
     sleep_from = 5

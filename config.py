@@ -36,6 +36,12 @@ with open('data/abi/syncswap/classic_pool_data.json') as file:
 with open("data/abi/skydrome/abi.json", "r") as file:
     SKYDROME_ROUTER_ABI = json.load(file)
 
+with open("data/abi/ambient_finance/abi_cmd.json", "r") as file:
+    AMBIENT_FINANCE_ROUTER_ABI = json.load(file)
+
+with open("data/abi/ambient_finance/abi_croc.json", "r") as file:
+    AMBIENT_FINANCE_CROC_ABI = json.load(file)
+
 with open("data/abi/zebra/abi.json", "r") as file:
     ZEBRA_ROUTER_ABI = json.load(file)
 
@@ -116,6 +122,11 @@ SYNCSWAP_CONTRACTS = {
 
 SKYDROME_CONTRACTS = {
     "router": "0xAA111C62cDEEf205f70E6722D1E22274274ec12F"
+}
+
+AMBIENT_FINANCE_CONTRACTS = {
+    "router": "0xaaaaAAAACB71BF2C8CaE522EA5fa455571A74106",
+    "croc_query": "0x62223e90605845Cf5CC6DAE6E0de4CDA130d6DDf"  # позволяет получить цену
 }
 
 ZEBRA_CONTRACTS = {
