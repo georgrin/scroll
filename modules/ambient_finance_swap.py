@@ -111,7 +111,8 @@ class AmbientFinance(Account):
 
         min_amount_out_wei = int(float(price) * float(amount_wei))
         min_amount_out_wei =  int(min_amount_out_wei * (1 - slippage / 100))
-        print(price, min_amount_out_wei)
+
+        logger.info(f"Get pool price: {price}, set min amount out wei")
 
         # Using a meaningful value here is not necessary if the caller is uninterested in partial fills and slippage is set with minOut parameter value
         # In this case this value can be set to "max values" below based on the direction of the swap:

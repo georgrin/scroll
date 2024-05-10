@@ -16,6 +16,7 @@ class Multiswap(Account):
             "skydrome": Skydrome,
             "zebra": Zebra,
             "xyswap": XYSwap,
+            "ambient_finance": AmbientFinance
         }
 
     def get_swap_module(self, use_dex: list):

@@ -255,15 +255,15 @@ async def swap_ambient_finance(account_id, key, recipient):
     all_amount - swap from min_percent to max_percent
     """
 
-    from_token = "USDC"
-    to_token = "ETH"
+    from_token = "ETH"
+    to_token = "USDC"
 
     min_amount = 0.0007
     max_amount = 0.001
     decimal = 6
-    slippage = 3
+    slippage = 2
 
-    all_amount = True
+    all_amount = False
 
     min_percent = 100
     max_percent = 100
@@ -649,13 +649,13 @@ async def swap_multiswap(account_id, key, recipient):
     """
     Multi-Swap module: Automatically performs the specified number of swaps in one of the dexes.
     ______________________________________________________
-    use_dex - Choose any dex: syncswap, skydrome, zebra, xyswap
+    use_dex - Choose any dex: syncswap, skydrome, zebra, xyswap, ambient_finance
     quantity_swap - Quantity swaps
     ______________________________________________________
     If back_swap is True, then, if USDC remains, it will be swapped into ETH.
     """
 
-    use_dex = ["syncswap", "skydrome", "zebra", "xyswap"]
+    use_dex = ["syncswap", "skydrome", "zebra", "xyswap", "ambient_finance"]
 
     min_swap = 1
     max_swap = 1
