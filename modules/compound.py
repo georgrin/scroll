@@ -82,6 +82,7 @@ class CompoundFinance(Account):
         if not await self.is_allow():
             logger.info(f"Not allow to deposit")
             await self.allow(COMPOUND_FINANCE_BULKER_CONTRACT)
+            await sleep(10, 20)
 
         tx_data = await self.get_tx_data(amount_wei)
 
@@ -98,6 +99,9 @@ class CompoundFinance(Account):
             [Web3.to_bytes(hexstr=action_hex)],
             [Web3.to_bytes(hexstr=data_hex)]
         ).build_transaction(tx_data)
+
+        print(transaction)
+
 
         signed_txn = await self.sign(transaction)
 
