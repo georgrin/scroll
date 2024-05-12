@@ -5,6 +5,7 @@ from .orbiter import Orbiter
 from .nitro import Nitro
 from .layerswap import LayerSwap
 from .skydrome import Skydrome
+from .kyberswap import KyberSwap
 from .zebra import Zebra
 from .syncswap import SyncSwap
 from .xyswap import XYSwap

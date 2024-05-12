@@ -243,6 +243,36 @@ async def swap_skydrome(account_id, key, recipient):
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
+async def swap_kyberswap(account_id, key, recipient):
+    """
+    Make swap on Kyberswap
+    ______________________________________________________
+    from_token – Choose SOURCE token ETH, USDC | Select one
+    to_token – Choose DESTINATION token ETH, USDC | Select one
+
+    Disclaimer - You can swap only ETH to any token or any token to ETH!
+    ______________________________________________________
+    all_amount - swap from min_percent to max_percent
+    """
+
+    from_token = "ETH"
+    to_token = "USDC"
+
+    min_amount = 0.001
+    max_amount = 0.005
+    decimal = 6
+    slippage = 1
+
+    all_amount = True
+
+    min_percent = 100
+    max_percent = 100
+
+    kyberswap = KyberSwap(account_id, key, recipient)
+    return await kyberswap.swap(
+        from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
+    )
+
 async def swap_ambient_finance(account_id, key, recipient):
     """
     Make swap on Ambient Finance
