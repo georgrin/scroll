@@ -431,7 +431,7 @@ async def deposit_compound_finance(account_id, key, recipient):
     all_amount - deposit from min_percent to max_percent
     """
     min_amount = 0.0005
-    max_amount = 0.0005
+    max_amount = 0.0009
     decimal = 5
 
     sleep_from = 5

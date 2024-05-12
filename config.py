@@ -39,6 +39,9 @@ with open("data/abi/skydrome/abi.json", "r") as file:
 with open("data/abi/sushiswap/abi.json", "r") as file:
     SUSHISWAP_ROUTER_ABI = json.load(file)
 
+with open("data/abi/kyberswap/abi.json", "r") as file:
+    KYBERSWAP_ROUTER_ABI = json.load(file)
+
 with open("data/abi/ambient_finance/abi_cmd.json", "r") as file:
     AMBIENT_FINANCE_ROUTER_ABI = json.load(file)
 
@@ -129,6 +132,10 @@ SKYDROME_CONTRACTS = {
 
 SUSHISWAP_CONTRACTS = {
     "router": "0x734583f62Bb6ACe3c9bA9bd5A53143CA2Ce8C55A"
+}
+
+KYBERSWAP_CONTRACTS = {
+    "router": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5"
 }
 
 AMBIENT_FINANCE_CONTRACTS = {
