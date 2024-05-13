@@ -87,24 +87,19 @@ class SushiSwap(Account):
 
         swap = await self.build_swap(from_token, to_token, amount_wei)
 
-
         if swap is None:
             return False
 
         tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
 
-        # tx_swap = await self.swap_contract.functions.processRoute(
-        #     Web3.to_checksum_address(from_token),
-        #     amount_wei,
-        #     Web3.to_checksum_address(to_token),
-        #     int(swap["routeProcessorArgs"]["amountOutMin"]),
-        #     Web3.to_checksum_address(self.address),
-        #
-        # ).build_transaction(tx_data)
-
-        tx_swap = { "data": Web3.to_bytes(hexstr=swap["routeProcessorArgs"]["txdata"]), "gas": swap["gasSpent"], "to": swap["routeProcessorAddr"], **tx_data }
-
-        print(tx_swap)
+        tx_swap = await self.swap_contract.functions.processRoute(
+            Web3.to_checksum_address(from_token),
+            amount_wei,
+            Web3.to_checksum_address(to_token),
+            int(swap["routeProcessorArgs"]["amountOutMin"]),
+            Web3.to_checksum_address(self.address),
+            Web3.to_bytes(hexstr=swap["routeProcessorArgs"]["routeCode"]),
+        ).build_transaction(tx_data)
 
         signed_txn = await self.sign(tx_swap)
         txn_hash = await self.send_raw_transaction(signed_txn)
