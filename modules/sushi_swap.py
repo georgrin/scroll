@@ -80,7 +80,7 @@ class SushiSwap(Account):
 
         if from_token != "ETH":
             logger.info(f"Check if {from_token} is allow to swap")
-            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], SUSHISWAP_CONTRACTS["router"])
 
         from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
         to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
