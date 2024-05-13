@@ -84,6 +84,7 @@ class KyberSwap(Account):
 
         self.swap_contract = self.get_contract(KYBERSWAP_CONTRACTS["router"], KYBERSWAP_ROUTER_ABI)
         self.api = KyberSwapAPI()
+        self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
     @retry
     @check_gas
@@ -113,8 +114,12 @@ class KyberSwap(Account):
             f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
         )
 
-        from_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if from_token == "ETH" else SCROLL_TOKENS[from_token]
-        to_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if to_token == "ETH" else SCROLL_TOKENS[to_token]
+        if from_token != "ETH":
+            logger.info(f"Check if {from_token} is allow to swap")
+            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+
+        from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
+        to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
 
         async with self.api as api:
             route = await api.get_route(from_token, to_token, amount_wei)
