@@ -27,58 +27,56 @@ class KyberSwapAPI:
             await self._session.close()
 
     async def get_route(self, from_token: str, to_token: str, amount) -> dict:
-        url = "https://aggregator-api.kyberswap.com/534352/api/v1/routes"
+        url = "https://aggregator-api.kyberswap.com/scroll/api/v1/routes"
 
         params = {
             "tokenIn": from_token,
             "tokenOut": to_token,
             "amountIn": amount,
+            "gasInclude": "True"
         }
 
-        async with self._session as session:
-            response = await session.get(url=url, params=params)
+        response = await self._session.get(url=url, params=params)
 
-            if response.status == 200:
-                res_json = await response.json()
+        if response.status == 200:
+            res_json = await response.json()
 
-                if res_json["data"]:
-                    return res_json["data"]
-                else:
-                    logger.error("Kyberswap did not return the best route")
-
-                    return None
+            if res_json["data"]:
+                return res_json["data"]
             else:
-                print(response)
-                logger.error("Bad Kyberswap request")
+                logger.error("Kyberswap did not return the best route")
 
                 return None
+        else:
+            logger.error(f"Bad Kyberswap request: {response}")
+
+            return None
 
     async def build_swap(self, route: dict, sender: str, recipient: str, slippage: int) -> dict:
-        url = "https://aggregator-api.kyberswap.com/534352/api/v1/route/build"
+        url = "https://aggregator-api.kyberswap.com/scroll/api/v1/route/build"
 
         body = {
-            "routeSummary": route,
+            "routeSummary": route["routeSummary"],
             "slippageTolerance": slippage,
             "sender": sender,
             "recipient": recipient,
         }
 
-        async with self._session as session:
-            response = await session.post(url=url, body=body)
+        response = await self._session.post(url=url, json=body)
 
-            if response.status == 200:
-                res_json = await response.json()
+        if response.status == 200:
+            res_json = await response.json()
 
-                if res_json["data"]:
-                    return res_json["data"]
-                else:
-                    logger.error("Kyberswap did not return swap data")
-
-                    return None
+            if res_json["data"]:
+                return res_json["data"]
             else:
-                logger.error("Bad Kyberswap request")
+                logger.error("Kyberswap did not return swap data")
 
                 return None
+        else:
+            logger.error(f"Bad Kyberswap request: {response}")
+
+            return None
 
 class KyberSwap(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
@@ -99,7 +97,7 @@ class KyberSwap(Account):
             slippage: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
     ):
         amount_wei, amount, balance = await self.get_amount(
             from_token,
@@ -115,16 +113,6 @@ class KyberSwap(Account):
             f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
         )
 
-        last_iter = await checkLastIteration(
-            interval=module_cooldown,
-            account=self.account,
-            deposit_contract_address=KYBERSWAP_CONTRACTS["router"],
-            chain=from_chain,
-            log_prefix='KyberSwap'
-        )
-        if not last_iter:
-            return False
-
         from_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if from_token == "ETH" else SCROLL_TOKENS[from_token]
         to_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if to_token == "ETH" else SCROLL_TOKENS[to_token]
 
@@ -138,13 +126,13 @@ class KyberSwap(Account):
 
             swap = await api.build_swap(route, self.address, self.address, slippage)
 
-            encoded_swap_data = swap["data"]
-            tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
-            contract_txn = await self.swap_contract.functions.swap(
-                encoded_swap_data
-            ).build_transaction(tx_data)
+            if swap is None:
+                return False
 
-            signed_txn = await self.sign(contract_txn)
+            tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
+            tx_swap = { "data": Web3.to_bytes(hexstr=swap["data"]), "gas": swap["gas"], **tx_data }
+
+            signed_txn = await self.sign(tx_swap)
             txn_hash = await self.send_raw_transaction(signed_txn)
 
             await self.wait_until_tx_finished(txn_hash.hex())

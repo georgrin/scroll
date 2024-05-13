@@ -265,8 +265,8 @@ async def swap_kyberswap(account_id, key, recipient):
 
     all_amount = True
 
-    min_percent = 100
-    max_percent = 100
+    min_percent = 30
+    max_percent = 60
 
     kyberswap = KyberSwap(account_id, key, recipient)
     return await kyberswap.swap(
