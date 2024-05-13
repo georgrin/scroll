@@ -130,7 +130,7 @@ class KyberSwap(Account):
                 return False
 
             tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
-            tx_swap = { "data": Web3.to_bytes(hexstr=swap["data"]), "gas": swap["gas"], **tx_data }
+            tx_swap = { "data": Web3.to_bytes(hexstr=swap["data"]), "gas": swap["gas"], "to": swap["routerAddress"], **tx_data }
 
             signed_txn = await self.sign(tx_swap)
             txn_hash = await self.send_raw_transaction(signed_txn)
