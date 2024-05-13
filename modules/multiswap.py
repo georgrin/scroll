@@ -17,7 +17,8 @@ class Multiswap(Account):
             "zebra": Zebra,
             "xyswap": XYSwap,
             "ambient_finance": AmbientFinance,
-            "kyberswap": KyberSwap
+            "kyberswap": KyberSwap,
+            "sushiswap": SushiSwap,
         }
 
     def get_swap_module(self, use_dex: list):
