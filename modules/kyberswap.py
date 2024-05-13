@@ -1,8 +1,10 @@
 import time
 import aiohttp
 
+from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from loguru import logger
 from web3 import Web3
+
 from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
 from utils.helpers import retry
@@ -11,7 +13,8 @@ from .account import Account
 
 class KyberSwapAPI:
     def __init__(self):
-        self._session = aiohttp.ClientSession()
+        connector = ProxyConnector.from_url(f"socks5://127.0.0.1:1080")
+        self._session = aiohttp.ClientSession(connector=connector)
 
     async def __aenter__(self):
         return self
@@ -50,8 +53,8 @@ class KyberSwapAPI:
 
                 return None
 
-    async def prepare_swap_tx(self, route: dict, sender: str, recipient: str, slippage: int) -> dict:
-        url = "https://aggregator-api.kyberswap.com/{chain}/api/v1/route/build"
+    async def build_swap(self, route: dict, sender: str, recipient: str, slippage: int) -> dict:
+        url = "https://aggregator-api.kyberswap.com/534352/api/v1/route/build"
 
         body = {
             "routeSummary": route,
@@ -112,6 +115,16 @@ class KyberSwap(Account):
             f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
         )
 
+        last_iter = await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=KYBERSWAP_CONTRACTS["router"],
+            chain=from_chain,
+            log_prefix='KyberSwap'
+        )
+        if not last_iter:
+            return False
+
         from_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if from_token == "ETH" else SCROLL_TOKENS[from_token]
         to_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if to_token == "ETH" else SCROLL_TOKENS[to_token]
 
@@ -123,6 +136,15 @@ class KyberSwap(Account):
             if route is None:
                 return False
 
-            tx = await api.prepare_swap_tx(route, self.address, self.address, slippage)
+            swap = await api.build_swap(route, self.address, self.address, slippage)
 
-            print(tx)
+            encoded_swap_data = swap["data"]
+            tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
+            contract_txn = await self.swap_contract.functions.swap(
+                encoded_swap_data
+            ).build_transaction(tx_data)
+
+            signed_txn = await self.sign(contract_txn)
+            txn_hash = await self.send_raw_transaction(signed_txn)
+
+            await self.wait_until_tx_finished(txn_hash.hex())
