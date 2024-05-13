@@ -71,7 +71,8 @@ def get_module():
             Choice("37) Swap Ambient Finance", swap_ambient_finance),
             Choice("38) Swap Kyberswap", swap_kyberswap),
             Choice("39) Swap Sushiswap", swap_sushiswap),
-            Choice("40) Exit", "exit"),
+            Choice("40) Swap OpenOcean", swap_openocean),
+            Choice("41) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

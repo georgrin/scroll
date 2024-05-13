@@ -72,6 +72,9 @@ with open("data/abi/l2pass/abi.json", "r") as file:
 with open("data/abi/dmail/abi.json", "r") as file:
     DMAIL_ABI = json.load(file)
 
+with open("data/abi/open_ocean/abi.json", "r") as file:
+    OPENOCEAN_ROUTER_ABI = json.load(file)
+
 with open("data/abi/omnisea/abi.json", "r") as file:
     OMNISEA_ABI = json.load(file)
 
@@ -132,6 +135,10 @@ SKYDROME_CONTRACTS = {
 
 SUSHISWAP_CONTRACTS = {
     "router": "0x734583f62Bb6ACe3c9bA9bd5A53143CA2Ce8C55A"
+}
+
+OPENOCEAN_CONTRACTS = {
+    "router": "0x6352a56caadc4f1e25cd6c75970fa768a3304e64"
 }
 
 KYBERSWAP_CONTRACTS = {

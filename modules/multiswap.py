@@ -19,6 +19,7 @@ class Multiswap(Account):
             "ambient_finance": AmbientFinance,
             "kyberswap": KyberSwap,
             "sushiswap": SushiSwap,
+            "openocean": OpenOcean,
         }
 
     def get_swap_module(self, use_dex: list):
