@@ -1,4 +1,5 @@
 import time
+import aiohttp
 
 from loguru import logger
 from web3 import Web3
@@ -13,11 +14,37 @@ class SushiSwap(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.swap_contract = self.get_contract(SUSHISWAP_CONTRACTS["router"], SUSHISWAP_ROUTER_ABI)
+        self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
-    async def _swap(self, from_token: str, to_token: str, amount: int, slippage: int):
-        tx_data = await self.get_tx_data(amount)
+    async def build_swap(self, from_token: str, to_token: str, amount: int) -> dict:
+        url = "https://api.sushi.com/swap/v4/534352"
 
-        pass
+        params = {
+            "tokenIn": from_token,
+            "tokenOut": to_token,
+            "amount": amount,
+            "gasInclude": "true",
+            "preferSushi": "true",
+            "to": self.address,
+            "maxPriceImpact": 0.05
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                res_json = await response.json()
+
+                if "routeProcessorArgs" in res_json and res_json["routeProcessorArgs"]:
+                    return res_json
+                else:
+                    logger.error(f"Sushiswap did not return swap data: {res_json}")
+
+                    return None
+            else:
+                logger.error(f"Bad Sushiswap request: {response}")
+
+                return None
 
     @retry
     @check_gas
@@ -31,7 +58,7 @@ class SushiSwap(Account):
             slippage: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
     ):
         amount_wei, amount, balance = await self.get_amount(
             from_token,
@@ -44,10 +71,42 @@ class SushiSwap(Account):
         )
 
         logger.info(
-            f"[{self.account_id}][{self.address}] Swap on SushiSwap – {from_token} -> {to_token} | {amount} {from_token}"
+            f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
         )
+        if amount < 10 ** -6:
+            logger.info(f"Cannot swap {amount} {from_token}, amount too small")
 
-        from_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if from_token == "ETH" else SCROLL_TOKENS[from_token]
-        to_token = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" if to_token == "ETH" else SCROLL_TOKENS[to_token]
+            return False
 
-        pass
+        if from_token != "ETH":
+            logger.info(f"Check if {from_token} is allow to swap")
+            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+
+        from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
+        to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
+
+        swap = await self.build_swap(from_token, to_token, amount_wei)
+
+
+        if swap is None:
+            return False
+
+        tx_data = await self.get_tx_data(amount_wei if from_token == "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE" else 0)
+
+        # tx_swap = await self.swap_contract.functions.processRoute(
+        #     Web3.to_checksum_address(from_token),
+        #     amount_wei,
+        #     Web3.to_checksum_address(to_token),
+        #     int(swap["routeProcessorArgs"]["amountOutMin"]),
+        #     Web3.to_checksum_address(self.address),
+        #
+        # ).build_transaction(tx_data)
+
+        tx_swap = { "data": Web3.to_bytes(hexstr=swap["routeProcessorArgs"]["txdata"]), "gas": swap["gasSpent"], "to": swap["routeProcessorAddr"], **tx_data }
+
+        print(tx_swap)
+
+        signed_txn = await self.sign(tx_swap)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())

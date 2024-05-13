@@ -69,8 +69,9 @@ def get_module():
             Choice("35) Deposit Compound Finance", deposit_compound_finance),
             Choice("36) Withdraw Compound Finance", withdraw_compound_finance),
             Choice("37) Swap Ambient Finance", swap_ambient_finance),
-            Choice("37) Swap Kyberswap", swap_kyberswap),
-            Choice("38) Exit", "exit"),
+            Choice("38) Swap Kyberswap", swap_kyberswap),
+            Choice("39) Swap Sushiswap", swap_sushiswap),
+            Choice("40) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

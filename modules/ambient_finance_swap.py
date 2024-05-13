@@ -37,8 +37,6 @@ class AmbientFinance(Account):
         # ('0x0000000000000000000000000000000000000000', '0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4', 420, True, True,
         #  700000000000000, 0, 21267430153580247136652501917186561137, 2059128, 0)
 
-        print(base,quote,pool_id,is_buy,in_base_amount,amount,0,limit_price,min_out,settle_flags)
-
         callpath_code = 1
         cmd = encode(
             ["address","address","uint256","bool","bool","uint128","uint16","uint128","uint128","uint8"],
