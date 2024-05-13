@@ -5,7 +5,7 @@ from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from loguru import logger
 from web3 import Web3
 
-from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS
+from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS, PROXY
 from utils.gas_checker import check_gas
 from utils.helpers import retry
 from .account import Account
@@ -13,8 +13,11 @@ from .account import Account
 
 class KyberSwapAPI:
     def __init__(self):
-        connector = ProxyConnector.from_url(f"socks5://127.0.0.1:1080")
-        self._session = aiohttp.ClientSession(connector=connector)
+        if PROXY is None or PROXY.strip() == "":
+            self._session = aiohttp.ClientSession()
+        else:
+            connector = ProxyConnector.from_url(PROXY)
+            self._session = aiohttp.ClientSession(connector=connector)
 
     async def __aenter__(self):
         return self
@@ -100,31 +103,33 @@ class KyberSwap(Account):
             min_percent: int,
             max_percent: int,
     ):
-        amount_wei, amount, balance = await self.get_amount(
-            from_token,
-            min_amount,
-            max_amount,
-            decimal,
-            all_amount,
-            min_percent,
-            max_percent
-        )
-
-        logger.info(
-            f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
-        )
-
-        if from_token != "ETH":
-            logger.info(f"Check if {from_token} is allow to swap")
-            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
-
-        from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
-        to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
-
         async with self.api as api:
-            route = await api.get_route(from_token, to_token, amount_wei)
+            amount_wei, amount, balance = await self.get_amount(
+                from_token,
+                min_amount,
+                max_amount,
+                decimal,
+                all_amount,
+                min_percent,
+                max_percent
+            )
 
-            print(route)
+            logger.info(
+                f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
+            )
+            if amount < 10 ** -6:
+                logger.info(f"Cannot swap {amount} {from_token}, amount too small")
+
+                return False
+
+            if from_token != "ETH":
+                logger.info(f"Check if {from_token} is allow to swap")
+                await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+
+            from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
+            to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
+
+            route = await api.get_route(from_token, to_token, amount_wei)
 
             if route is None:
                 return False
