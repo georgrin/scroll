@@ -47,11 +47,11 @@ class OpenOcean(Account):
                 if "data" in res_json and res_json["data"]:
                     return res_json
                 else:
-                    logger.error(f"OpenOceanSwap did not return swap data: {res_json}")
+                    logger.error(f"OpenOcean did not return swap data: {res_json}")
 
                     return None
             else:
-                logger.error(f"Bad OpenOceanSwap request: {response}")
+                logger.error(f"Bad OpenOcean request: {response}")
 
                 return None
 
@@ -80,7 +80,7 @@ class OpenOcean(Account):
         )
 
         logger.info(
-            f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
+            f"[{self.account_id}][{self.address}] Swap on OpenOcean – {from_token} -> {to_token} | {amount} {from_token}"
         )
         if amount < 10 ** -6:
             logger.info(f"Cannot swap {amount} {from_token}, amount too small")

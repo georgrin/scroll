@@ -38,11 +38,11 @@ class SushiSwap(Account):
                 if "routeProcessorArgs" in res_json and res_json["routeProcessorArgs"]:
                     return res_json
                 else:
-                    logger.error(f"Sushiswap did not return swap data: {res_json}")
+                    logger.error(f"SushiSwap did not return swap data: {res_json}")
 
                     return None
             else:
-                logger.error(f"Bad Sushiswap request: {response}")
+                logger.error(f"Bad SushiSwap request: {response}")
 
                 return None
 
@@ -71,7 +71,7 @@ class SushiSwap(Account):
         )
 
         logger.info(
-            f"[{self.account_id}][{self.address}] Swap on KyberSwap – {from_token} -> {to_token} | {amount} {from_token}"
+            f"[{self.account_id}][{self.address}] Swap on SushiSwap – {from_token} -> {to_token} | {amount} {from_token}"
         )
         if amount < 10 ** -6:
             logger.info(f"Cannot swap {amount} {from_token}, amount too small")
