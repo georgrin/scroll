@@ -12,6 +12,15 @@ class LayerBank(Account):
 
         self.contract = self.get_contract(LAYERBANK_CONTRACT, LAYERBANK_ABI)
 
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='LayerBank'
+        )
+
     async def get_deposit_amount(self):
         weth_contract = self.get_contract(LAYERBANK_WETH_CONTRACT)
 

@@ -1,10 +1,12 @@
 import traceback
+from onecache import AsyncCacheDecorator
 from loguru import logger
-from settings import RETRY_COUNT, SCROLL_API_KEY
+from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_S
 from utils.sleeping import sleep
 from datetime import datetime
 import requests
 import json
+import aiohttp
 
 
 def retry(func):
@@ -32,6 +34,7 @@ def remove_wallet(private_key: str):
             if private_key not in line:
                 file.write(line)
 
+@AsyncCacheDecorator(ttl=EXPLORER_CACHE_S)
 async def get_account_transfer_tx_list(account_address: str, chain: str):
     explorers_data = {
         'zksync': {
@@ -85,13 +88,13 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
             if data["result"]:
                 last_tx = data["result"][0]
                 logger.info(f"Last known tx for address in block {last_tx['blockNumber']}, hash: {last_tx['hash']}")
-                await sleep(3)
+                # await sleep(3)
 
             return data["result"]
 
         except (requests.exceptions.HTTPError, json.decoder.JSONDecodeError, Exception) as e:
-            logger.error(f"Error: {e}")
-            await sleep(7)   
+            logger.error(f"Error get_account_transfer_tx_list: {e}")
+            await sleep(7)
 
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)

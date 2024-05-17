@@ -35,6 +35,9 @@ class Account:
         self.account = EthereumAccount.from_key(private_key)
         self.address = self.account.address
 
+    def get_name(self):
+        return type(self).__name__
+
     async def get_tx_data(self, value: int = 0, gas_price: bool = True):
         tx = {
             "chainId": await self.w3.eth.chain_id,

@@ -4,7 +4,7 @@ from loguru import logger
 from web3 import Web3
 from config import SKYDROME_ROUTER_ABI, SKYDROME_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -13,6 +13,15 @@ class Skydrome(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.swap_contract = self.get_contract(SKYDROME_CONTRACTS["router"], SKYDROME_ROUTER_ABI)
+
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.swap_contract.address,
+            chain='scroll',
+            log_prefix='Skydrome'
+        )
 
     async def get_min_amount_out(self, from_token: str, to_token: str, amount: int, slippage: float):
         min_amount_out, swap_type = await self.swap_contract.functions.getAmountOut(

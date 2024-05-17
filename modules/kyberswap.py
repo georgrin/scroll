@@ -7,7 +7,7 @@ from web3 import Web3
 
 from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS, PROXY
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -88,6 +88,15 @@ class KyberSwap(Account):
         self.swap_contract = self.get_contract(KYBERSWAP_CONTRACTS["router"], KYBERSWAP_ROUTER_ABI)
         self.api = KyberSwapAPI()
         self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.swap_contract.address,
+            chain='scroll',
+            log_prefix='KyberSwap'
+        )
 
     @retry
     @check_gas

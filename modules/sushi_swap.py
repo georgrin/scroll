@@ -5,7 +5,7 @@ from loguru import logger
 from web3 import Web3
 from config import SUSHISWAP_ROUTER_ABI, SUSHISWAP_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 
@@ -15,6 +15,15 @@ class SushiSwap(Account):
 
         self.swap_contract = self.get_contract(SUSHISWAP_CONTRACTS["router"], SUSHISWAP_ROUTER_ABI)
         self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.swap_contract.address,
+            chain='scroll',
+            log_prefix='SushiSwap'
+        )
 
     async def build_swap(self, from_token: str, to_token: str, amount: int) -> dict:
         url = "https://api.sushi.com/swap/v4/534352"

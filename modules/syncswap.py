@@ -11,7 +11,7 @@ from config import (
     SYNCSWAP_CLASSIC_POOL_DATA_ABI
 )
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 from eth_abi import abi
 
@@ -21,6 +21,15 @@ class SyncSwap(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.swap_contract = self.get_contract(SYNCSWAP_CONTRACTS["router"], SYNCSWAP_ROUTER_ABI)
+
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.swap_contract.address,
+            chain='scroll',
+            log_prefix='SyncSwap'
+        )
 
     async def get_pool(self, from_token: str, to_token: str):
         contract = self.get_contract(SYNCSWAP_CONTRACTS["classic_pool"], SYNCSWAP_CLASSIC_POOL_ABI)

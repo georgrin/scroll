@@ -12,6 +12,15 @@ class Aave(Account):
 
         self.contract = self.get_contract(AAVE_CONTRACT, AAVE_ABI)
 
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='Aave'
+        )
+
     async def get_deposit_amount(self):
         aave_weth_contract = self.get_contract(AAVE_WETH_CONTRACT)
 

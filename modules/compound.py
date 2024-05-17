@@ -39,6 +39,14 @@ class CompoundFinance(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
+    async def check_last_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=self.contract.address,
+            chain='scroll',
+            log_prefix='CompoundFinance'
+        )
 
     @retry
     @check_gas
@@ -57,13 +65,7 @@ class CompoundFinance(Account):
     ):
         token = "ETH"
 
-        last_iter = await checkLastIteration(
-            interval=module_cooldown,
-            account=self.account,
-            deposit_contract_address=self.contract.address,
-            chain='scroll',
-            log_prefix='CompoundFinance'
-        )
+        last_iter = await self.check_last_iteration(module_cooldown)
         if not last_iter:
             return False
 
