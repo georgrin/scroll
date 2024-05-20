@@ -50,26 +50,32 @@ class Multiswap(Account):
             max_percent: int,
             dex_max_tx: int,
     ):
+        USDC = "USDC"
+        ETH = "ETH"
+
         quantity_swap = random.randint(min_swap, max_swap)
-        usdc_balance = await self.get_balance(SCROLL_TOKENS["USDC"])
+        usdc_balance = await self.get_balance(SCROLL_TOKENS[USDC])
         usdc_balance = usdc_balance["balance"]
 
-        first_swap_currency = "USDC" if usdc_balance > 1 else "ETH"
-        second_swap_currency = "ETH" if first_swap_currency == "USDC" else "USDC"
+        first_swap_currency = USDC if usdc_balance > 1 else ETH
+        second_swap_currency = ETH if first_swap_currency == USDC else USDC
 
         path = [first_swap_currency if _ % 2 == 0 else second_swap_currency for _ in range(quantity_swap)]
 
-        if back_swap and path[-1] == "ETH":
-            path.append("USDC")
-            path.append("USDC")
+        if back_swap and path[-1] == ETH:
+            path.append(USDC)
+            path.append(USDC)
 
-        logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}, start with {path[0]}, end with {path[-1]}")
+        start_swap = f"{path[0]}->{USDC if path[0] == ETH else ETH}"
+        end_swap = f"{path[-1]}->{USDC if path[-1] == ETH else ETH}"
+
+        logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}, start with {start_swap}, end with {end_swap}")
 
         needToSleep = True
         for _, token in enumerate(path):
-            if token == "ETH":
+            if token == ETH:
                 decimal = 6
-                to_token = "USDC"
+                to_token = USDC
 
                 balance = await self.w3.eth.get_balance(self.address)
 
@@ -77,9 +83,9 @@ class Multiswap(Account):
                 max_amount = float(self.w3.from_wei(int(balance / 100 * max_percent), "ether"))
             else:
                 decimal = 18
-                to_token = "ETH"
+                to_token = ETH
 
-                balance = await self.get_balance(SCROLL_TOKENS["USDC"])
+                balance = await self.get_balance(SCROLL_TOKENS[USDC])
 
                 min_amount = balance["balance"] if balance["balance"] <= 1 or _ + 1 == len(path) \
                     else balance["balance"] / 100 * min_percent
