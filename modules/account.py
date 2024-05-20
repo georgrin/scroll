@@ -89,7 +89,7 @@ class Account:
             min_percent: int,
             max_percent: int
     ) -> [int, float, float]:
-        random_amount = round(random.uniform(min_amount, max_amount) if min_amount != max_amount else min_amount, decimal)
+        random_amount = round(random.uniform(min_amount, max_amount), decimal)
         random_percent = random.randint(min_percent, max_percent)
         percent = 1 if random_percent == 100 else random_percent / 100
 

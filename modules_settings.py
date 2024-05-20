@@ -749,9 +749,10 @@ async def swap_multiswap(account_id, key, recipient):
     SLEEP_TO = 600  # Second
     
     use_dex = ["syncswap", "skydrome", "zebra", "xyswap", "ambient_finance", "kyberswap", "sushiswap", "openocean"]
+    dex_max_tx = 1
 
     min_swap = 1
-    max_swap = 1
+    max_swap = 3
 
     sleep_from = 10
     sleep_to = 30
@@ -765,7 +766,7 @@ async def swap_multiswap(account_id, key, recipient):
 
     multi = Multiswap(account_id, key, recipient)
     return await multi.swap(
-        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent
+        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent, dex_max_tx
     )
 
 

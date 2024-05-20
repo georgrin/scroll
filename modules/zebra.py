@@ -4,7 +4,7 @@ from loguru import logger
 from web3 import Web3
 from config import ZEBRA_ROUTER_ABI, ZEBRA_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, get_action_tx_count
 from .account import Account
 
 
@@ -13,6 +13,12 @@ class Zebra(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.swap_contract = self.get_contract(ZEBRA_CONTRACTS["router"], ZEBRA_ROUTER_ABI)
+
+    async def get_action_tx_count(self):
+        return await get_action_tx_count(
+            self.account.address,
+            self.swap_contract.address,
+            'scroll')
 
     async def get_min_amount_out(self, from_token: str, to_token: str, amount: int, slippage: float):
         min_amount_out = await self.swap_contract.functions.getAmountsOut(

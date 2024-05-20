@@ -4,13 +4,19 @@ import aiohttp
 from loguru import logger
 from config import XYSWAP_CONTRACT, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, get_action_tx_count
 from .account import Account
 
 
 class XYSwap(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
+
+    async def get_action_tx_count(self):
+        return await get_action_tx_count(
+            self.account.address,
+            XYSWAP_CONTRACT["router"],
+            'scroll')
 
     async def get_quote(self, from_token: str, to_token: str, amount: int, slippage: float):
         url = "https://aggregator-api.xy.finance/v1/quote"

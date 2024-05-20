@@ -96,6 +96,15 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
             logger.error(f"Error get_account_transfer_tx_list: {e}")
             await sleep(7)
 
+async def get_action_tx_count(address: str, dst: str, chain: str):
+    tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
+    action_tx_list = []
+    for tx in tx_list:
+        if tx["from"].lower() == address.lower() and tx["to"].lower() == dst.lower() and tx["isError"] == "0":
+            action_tx_list.append(tx)
+
+    return len(action_tx_list)
+
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
     last = None

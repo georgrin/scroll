@@ -5,7 +5,7 @@ from web3 import Web3
 from eth_abi import encode
 from config import AMBIENT_FINANCE_ROUTER_ABI, AMBIENT_FINANCE_CROC_ABI, AMBIENT_FINANCE_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry, checkLastIteration
+from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
 from decimal import Decimal
 
@@ -18,6 +18,12 @@ class AmbientFinance(Account):
         self.croc_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["croc_query"], AMBIENT_FINANCE_CROC_ABI)
         self.pool_ids = { "ETH/USDC": 420 }
         self.eth_address = "0x0000000000000000000000000000000000000000"
+
+    async def get_action_tx_count(self):
+        return await get_action_tx_count(
+            self.account.address,
+            self.swap_contract.address,
+            'scroll')
 
     async def check_last_iteration(self, module_cooldown):
         return await checkLastIteration(

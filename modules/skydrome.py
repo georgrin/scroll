@@ -4,7 +4,7 @@ from loguru import logger
 from web3 import Web3
 from config import SKYDROME_ROUTER_ABI, SKYDROME_CONTRACTS, SCROLL_TOKENS
 from utils.gas_checker import check_gas
-from utils.helpers import retry, checkLastIteration
+from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
 
 
@@ -13,6 +13,12 @@ class Skydrome(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.swap_contract = self.get_contract(SKYDROME_CONTRACTS["router"], SKYDROME_ROUTER_ABI)
+
+    async def get_action_tx_count(self):
+        return await get_action_tx_count(
+            self.account.address,
+            self.swap_contract.address,
+            'scroll')
 
     async def check_last_iteration(self, module_cooldown):
         return await checkLastIteration(
