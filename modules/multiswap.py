@@ -63,7 +63,7 @@ class Multiswap(Account):
             path.append("USDC")
             path.append("USDC")
 
-        logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}, start with {path[0]}")
+        logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}, start with {path[0]}, end with {path[-1]}")
 
         needToSleep = True
         for _, token in enumerate(path):
