@@ -31,7 +31,7 @@ class Multiswap(Account):
         logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs TX count: {modules_tx_count}")
 
         use_dex = [dex for dex in use_dex if modules_tx_count[dex] < max_tx]
-        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs with less than {max_tx}: {use_dex}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs with TX count less than {max_tx}: {use_dex}")
 
         swap_module = random.choice(use_dex)
 
