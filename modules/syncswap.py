@@ -91,12 +91,13 @@ class SyncSwap(Account):
         pool_address = await self.get_pool(from_token, to_token)
 
         if pool_address != ZERO_ADDRESS:
+            if from_token != "ETH":
+                await self.approve(amount_wei, token_address, Web3.to_checksum_address(SYNCSWAP_CONTRACTS["router"]))
+
             tx_data = await self.get_tx_data()
 
             if from_token == "ETH":
                 tx_data.update({"value": amount_wei})
-            else:
-                await self.approve(amount_wei, token_address, Web3.to_checksum_address(SYNCSWAP_CONTRACTS["router"]))
 
             min_amount_out = await self.get_min_amount_out(pool_address, token_address, amount_wei, slippage)
 
