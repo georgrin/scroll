@@ -33,9 +33,27 @@ class Multiswap(Account):
         use_dex = [dex for dex in use_dex if modules_tx_count[dex] < max_tx]
         logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs with TX count less than {max_tx}: {use_dex}")
 
+        if len(use_dex) == 0:
+            raise Exception(f"No dex with tx count less than {max_tx}")
+
         swap_module = random.choice(use_dex)
 
         return self.swap_modules[swap_module]
+
+    async def choose_swap_modules(self, use_dex: list, max_tx: int = 1):
+        modules_tx_count = await self.get_swap_modules_tx_count()
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs TX count: {modules_tx_count}")
+
+        modules_sorted = sorted(modules_tx_count.keys(), key=lambda module_name: modules_tx_count[module_name])
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs sorted: {modules_sorted}")
+
+        modules_eligible = [dex for dex in modules_sorted if modules_tx_count[dex] < max_tx and dex in use_dex]
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs with TX count less than {max_tx}: {modules_eligible}")
+
+        if len(modules_eligible) == 0:
+            raise Exception(f"No DEX with tx count less than {max_tx}")
+
+        return [self.swap_modules[module_name] for module_name in modules_eligible]
 
     async def swap(
             self,
@@ -66,19 +84,20 @@ class Multiswap(Account):
             path.append(USDC)
             path.append(USDC)
 
+        swap_modules = await self.choose_swap_modules(use_dex, dex_max_tx)
+
         start_swap = f"{path[0]}->{USDC if path[0] == ETH else ETH}"
         end_swap = f"{path[-1]}->{USDC if path[-1] == ETH else ETH}"
 
         logger.info(f"[{self.account_id}][{self.address}] Start MultiSwap | quantity swaps: {quantity_swap}, start with {start_swap}, end with {end_swap}")
 
         needToSleep = True
-        for _, token in enumerate(path):
+        for index, token in enumerate(path):
             if token == ETH:
                 decimal = 6
                 to_token = USDC
 
                 balance = await self.w3.eth.get_balance(self.address)
-
                 min_amount = float(self.w3.from_wei(int(balance / 100 * min_percent), "ether"))
                 max_amount = float(self.w3.from_wei(int(balance / 100 * max_percent), "ether"))
             else:
@@ -86,10 +105,9 @@ class Multiswap(Account):
                 to_token = ETH
 
                 balance = await self.get_balance(SCROLL_TOKENS[USDC])
-
-                min_amount = balance["balance"] if balance["balance"] <= 1 or _ + 1 == len(path) \
+                min_amount = balance["balance"] if balance["balance"] <= 1 or index + 1 == len(path) \
                     else balance["balance"] / 100 * min_percent
-                max_amount = balance["balance"] if balance["balance"] <= 1 or _ + 1 == len(path) \
+                max_amount = balance["balance"] if balance["balance"] <= 1 or index + 1 == len(path) \
                     else balance["balance"] / 100 * max_percent
 
                 # костыль на весь баланс usdc
@@ -99,9 +117,15 @@ class Multiswap(Account):
                     continue
                 min_amount = balance["balance"]
                 max_amount = min_amount
-                
 
-            swap_module = await self.get_swap_module(use_dex, dex_max_tx)
+            if index + 1 <= len(swap_modules):
+                swap_module = swap_modules[index]
+            else:
+                logger.info(
+                    f"[{self.account_id}][{self.address}] Start MultiSwap | DEXes ended, not enough to ")
+
+                swap_module = await self.get_swap_module(use_dex, dex_max_tx)
+
             await swap_module.swap(
                 token,
                 to_token,
@@ -114,7 +138,7 @@ class Multiswap(Account):
                 max_percent
             )
 
-            if _ + 1 != len(path):
+            if index + 1 != len(path):
                 await sleep(sleep_from, sleep_to)
         
         return needToSleep
