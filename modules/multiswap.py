@@ -42,13 +42,18 @@ class Multiswap(Account):
 
     async def choose_swap_modules(self, use_dex: list, max_tx: int = 1):
         modules_tx_count = await self.get_swap_modules_tx_count()
-        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs TX count: {modules_tx_count}")
+        modules_tx_count_inv = {}
+        for k, v in modules_tx_count.items():
+            modules_tx_count_inv[v] = modules_tx_count_inv.get(v, []) + [k]
+            random.shuffle(modules_tx_count_inv[v])
 
-        modules_sorted = sorted(modules_tx_count.keys(), key=lambda module_name: modules_tx_count[module_name])
-        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs sorted: {modules_sorted}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs TX count: {modules_tx_count_inv}")
 
-        modules_eligible = [dex for dex in modules_sorted if modules_tx_count[dex] < max_tx and dex in use_dex]
-        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs with TX count less than {max_tx}: {modules_eligible}")
+        kes_sorted = sorted(modules_tx_count_inv.keys(), key=lambda x: x)
+        keys_eligible = filter(lambda tx_count: tx_count < max_tx, kes_sorted)
+        modules_eligible = sum([modules_tx_count_inv[k] for k in keys_eligible], [])
+
+        logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs sorted and with TX count less than {max_tx}: {modules_eligible}")
 
         if len(modules_eligible) == 0:
             raise Exception(f"No DEX with tx count less than {max_tx}")
