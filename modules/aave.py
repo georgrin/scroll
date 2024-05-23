@@ -1,7 +1,7 @@
 from loguru import logger
 from config import AAVE_CONTRACT, AAVE_WETH_CONTRACT, AAVE_ABI
 from utils.gas_checker import check_gas
-from utils.helpers import retry, checkLastIteration
+from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from utils.sleeping import sleep
 from .account import Account
 
@@ -11,6 +11,12 @@ class Aave(Account):
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
         self.contract = self.get_contract(AAVE_CONTRACT, AAVE_ABI)
+
+    async def get_last_deposit(self):
+        return await get_action_tx_count(
+            self.account.address,
+            self.contract.address,
+            'scroll')
 
     async def check_last_iteration(self, module_cooldown):
         return await checkLastIteration(
@@ -43,13 +49,8 @@ class Aave(Account):
             max_percent: int,
             module_cooldown: int
     ):
-
-        last_iter = await checkLastIteration(
-            interval=module_cooldown,
-            account=self.account,
-            deposit_contract_address=self.contract.address,
-            chain='scroll',
-            log_prefix='Aave'
+        last_iter = await self.check_last_iteration(
+            module_cooldown,
         )
         if not last_iter:
             return False

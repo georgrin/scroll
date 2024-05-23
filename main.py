@@ -72,7 +72,8 @@ def get_module():
             Choice("38) Swap Kyberswap", swap_kyberswap),
             Choice("39) Swap Sushiswap", swap_sushiswap),
             Choice("40) Swap OpenOcean", swap_openocean),
-            Choice("41) Exit", "exit"),
+            Choice("41) Use Multilanding", multilanding),
+            Choice("42) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

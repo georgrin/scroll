@@ -29,6 +29,7 @@ from .deploy import Deployer
 from .swap_tokens import SwapTokens
 from .multiswap import Multiswap
 from .multibridge import Multibridge
+from .multilanding import Multilanding
 from .routes import Routes
 from .transfer import Transfer
 from .tx_checker import check_tx

@@ -744,9 +744,6 @@ async def swap_multiswap(account_id, key, recipient):
     ______________________________________________________
     If back_swap is True, then, if USDC remains, it will be swapped into ETH.
     """
-
-    SLEEP_FROM = 300  # Second
-    SLEEP_TO = 600  # Second
     
     use_dex = ["syncswap", "skydrome", "zebra", "xyswap", "ambient_finance", "kyberswap", "sushiswap", "openocean"]
     dex_max_tx = 3
@@ -754,8 +751,8 @@ async def swap_multiswap(account_id, key, recipient):
     min_swap = 1
     max_swap = 1
 
-    sleep_from = 10
-    sleep_to = 30
+    sleep_from = 300
+    sleep_to = 600
 
     slippage = 1
 
@@ -800,6 +797,29 @@ async def multibridge(account_id, key, recipient):
 
     multibridge = Multibridge(account_id=account_id, private_key=key, recipient=recipient)
     await multibridge.bridge(use_bridge, source_chain, destination_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, min_chain_balance)
+
+async def multilanding(account_id, key, recipient):
+    """
+    MultiLanding - Makes a deposit/withdrawal to/from random DEXs
+    """
+
+    use_dex = ["aave", "layerbank", "compoundfinance"]
+    min_amount = 0.005
+    max_amount = 0.006
+    decimal = 4
+
+    sleep_from = 300
+    sleep_to = 600
+
+    all_amount = False
+
+    min_percent = 5
+    max_percent = 10
+
+    deposit_cooldown = 8888888
+
+    multilanding = Multilanding(account_id=account_id, private_key=key, recipient=recipient)
+    await multilanding.deposit(use_dex, min_amount, max_amount, decimal, sleep_from, sleep_to, all_amount, min_percent, max_percent, deposit_cooldown)
 
 
 async def custom_routes(account_id, key, recipient):
