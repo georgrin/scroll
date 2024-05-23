@@ -23,7 +23,7 @@ class Multilanding(Account):
     async def get_landing_module(self, use_dex: list, module_cooldown):
         modules_last_iter = await self.get_last_iter(module_cooldown)
 
-        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs last iter: {modules_last_iter}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can run statuses: {modules_last_iter}")
 
         use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False]
         logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can run: {use_dex}")
