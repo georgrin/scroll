@@ -759,7 +759,7 @@ async def swap_multiswap(account_id, key, recipient):
     back_swap = True
 
     min_percent = 20
-    max_percent = 35
+    max_percent = 60
 
     multi = Multiswap(account_id, key, recipient)
     return await multi.swap(
