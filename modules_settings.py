@@ -751,8 +751,8 @@ async def swap_multiswap(account_id, key, recipient):
     min_swap = 1
     max_swap = 1
 
-    sleep_from = 300
-    sleep_to = 600
+    sleep_from = 20
+    sleep_to = 60
 
     slippage = 1
 
