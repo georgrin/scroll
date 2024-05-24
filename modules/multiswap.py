@@ -52,7 +52,6 @@ class Multiswap(Account):
         kes_sorted = sorted(modules_tx_count_inv.keys(), key=lambda x: x)
         keys_eligible = filter(lambda tx_count: tx_count < max_tx, kes_sorted)
         modules_eligible = sum([modules_tx_count_inv[k] for k in keys_eligible], [])
-        print(modules_eligible)
         logger.info(f"[{self.account_id}][{self.address}] MultiSwap DEXs sorted and with TX count less than {max_tx}: {modules_eligible}")
 
         if len(modules_eligible) == 0:
