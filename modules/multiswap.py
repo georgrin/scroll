@@ -88,6 +88,7 @@ class Multiswap(Account):
         if back_swap and path[-1] == ETH:
             path.append(USDC)
             path.append(USDC)
+            path.append(USDC)
 
         swap_modules = await self.choose_swap_modules(use_dex, dex_max_tx)
 
