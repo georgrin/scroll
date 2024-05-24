@@ -156,10 +156,11 @@ class Account:
                     await asyncio.sleep(0.3)
                 else:
                     logger.error(f"[{self.account_id}][{self.address}] {self.explorer}{hash} transaction failed!")
-                    return
+                    raise Exception(f"Transaction {hash} failed!")
+                    # return
             except TransactionNotFound:
                 if time.time() - start_time > max_wait_time:
-                    print(f'FAILED TX: {hash}')
+                    print(f'TX NOT FOUND: {hash}')
                     return
                 await asyncio.sleep(1)
 
