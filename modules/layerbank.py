@@ -21,6 +21,10 @@ class LayerBank(Account):
             log_prefix='LayerBank'
         )
 
+    async def can_withdraw(self):
+        amount = await self.get_deposit_amount()
+        return amount > 500000000000000  # 0,0005 ETH
+
     async def get_deposit_amount(self):
         weth_contract = self.get_contract(LAYERBANK_WETH_CONTRACT)
 

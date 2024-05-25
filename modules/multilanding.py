@@ -20,13 +20,31 @@ class Multilanding(Account):
     async def get_last_iter(self, module_cooldown):
         return {module_name: await self.landing_modules[module_name].check_last_iteration(module_cooldown) for module_name in self.landing_modules}
 
+    async def get_can_withdraw_status(self, module_cooldown):
+        return {module_name: await self.landing_modules[module_name].check_last_iteration(module_cooldown) for module_name in self.landing_modules}
+
     async def get_landing_module(self, use_dex: list, module_cooldown):
         modules_last_iter = await self.get_last_iter(module_cooldown)
 
-        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can run statuses: {modules_last_iter}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can deposit statuses: {modules_last_iter}")
 
         use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False]
-        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can run: {use_dex}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can deposit: {use_dex}")
+
+        if len(use_dex) == 0:
+            return None
+
+        landing_module = random.choice(use_dex)
+
+        return self.landing_modules[landing_module]
+
+    async def get_module_to_withdrawal(self, use_dex: list, module_cooldown):
+        modules_last_iter = await self.get_last_iter(module_cooldown)
+
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can withdraw statuses: {modules_last_iter}")
+
+        use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False and await self.landing_modules[dex].can_withdraw() is True]
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can withdraw: {use_dex}")
 
         if len(use_dex) == 0:
             return None
@@ -43,17 +61,29 @@ class Multilanding(Account):
             decimal: int,
             sleep_from: int,
             sleep_to: int,
+            make_withdraw: bool,
+            withdrawal_cooldown_min,
+            withdrawal_cooldown_max,
             all_amount: bool,
             min_percent: int,
             max_percent: int,
             module_cooldown: int,
     ):
+        needToSleep = False
+        if make_withdraw:
+            withdrawal_cooldown = random.randint(withdrawal_cooldown_min, withdrawal_cooldown_max)
+            withdrawal_module = await self.get_module_to_withdrawal(use_dex, withdrawal_cooldown)
+
+            if withdrawal_module:
+                needToSleep = True
+                await withdrawal_module.withdraw()
+                await sleep(sleep_from, sleep_to)
+
         landing_module = await self.get_landing_module(use_dex, module_cooldown)
 
         if not landing_module:
             logger.info(f"[{self.account_id}][{self.address}] No module to run in MultiLanding")
-
-            return False
+            return needToSleep
 
         logger.info(f"[{self.account_id}][{self.address}] Start MultiLanding | choose {landing_module.get_name()}")
 
@@ -65,5 +95,4 @@ class Multilanding(Account):
         )
 
         await sleep(sleep_from, sleep_to)
-        
         return needToSleep

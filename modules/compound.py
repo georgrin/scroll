@@ -15,6 +15,10 @@ class CompoundFinance(Account):
         self.contract_comet = self.get_contract(COMPOUND_FINANCE_COMET_CONTRACT, COMPOUND_FINANCE_COMET_ABI)
         self.contract = self.get_contract(COMPOUND_FINANCE_BULKER_CONTRACT, COMPOUND_FINANCE_BULKER_ABI)
 
+    async def can_withdraw(self):
+        amount = await self.get_deposit_amount()
+        return amount > 500000000000000  # 0,0005 ETH
+
     async def get_deposit_amount(self):
         amount = await self.contract_comet.functions.collateralBalanceOf(self.address, SCROLL_TOKENS["WETH"]).call()
 
@@ -123,7 +127,7 @@ class CompoundFinance(Account):
         amount = await self.get_deposit_amount()
         token = "ETH"
 
-        if amount > 0:
+        if amount > 500000000000000:
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from CompoundFinance | " +
                 f"{(amount / 10 ** 18)} {token}"

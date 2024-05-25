@@ -12,6 +12,10 @@ class Aave(Account):
 
         self.contract = self.get_contract(AAVE_CONTRACT, AAVE_ABI)
 
+    async def can_withdraw(self):
+        amount = await self.get_deposit_amount()
+        return amount > 500000000000000  # 0,0005 ETH
+
     async def get_last_deposit(self):
         return await get_action_tx_count(
             self.account.address,

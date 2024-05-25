@@ -811,15 +811,30 @@ async def multilanding(account_id, key, recipient):
     sleep_from = 300
     sleep_to = 600
 
-    all_amount = False
+    all_amount = True
 
-    min_percent = 5
-    max_percent = 10
+    min_percent = 10
+    max_percent = 15
 
     deposit_cooldown = 8888888
+    make_withdrawal = True
+    withdrawal_cooldown_min = 60 * 60 * 25 * 3
+    withdrawal_cooldown_max = 60 * 60 * 25 * 15
 
     multilanding = Multilanding(account_id=account_id, private_key=key, recipient=recipient)
-    await multilanding.deposit(use_dex, min_amount, max_amount, decimal, sleep_from, sleep_to, all_amount, min_percent, max_percent, deposit_cooldown)
+    await multilanding.deposit(use_dex,
+                               min_amount,
+                               max_amount,
+                               decimal,
+                               sleep_from,
+                               sleep_to,
+                               make_withdrawal,
+                               withdrawal_cooldown_min,
+                               withdrawal_cooldown_max,
+                               all_amount,
+                               min_percent,
+                               max_percent,
+                               deposit_cooldown)
 
 
 async def custom_routes(account_id, key, recipient):
