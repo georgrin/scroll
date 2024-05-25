@@ -41,10 +41,13 @@ class Multilanding(Account):
     async def get_module_to_withdrawal(self, use_dex: list, module_cooldown):
         modules_last_iter = await self.get_last_iter(module_cooldown)
 
-        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can withdraw statuses: {modules_last_iter}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs last tx less than {module_cooldown} sec ago: {modules_last_iter}")
+        modules_can_withdraw_statuses = {dex: await self.landing_modules[dex].can_withdraw() for dex in use_dex}
 
-        use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False and await self.landing_modules[dex].can_withdraw() is True]
-        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can withdraw: {use_dex}")
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can withdraw statuses: {modules_can_withdraw_statuses}")
+        use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False and modules_can_withdraw_statuses[dex] is True]
+
+        logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs to withdraw: {use_dex}")
 
         if len(use_dex) == 0:
             return None
