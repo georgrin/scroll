@@ -71,6 +71,7 @@ class Multiswap(Account):
             min_percent: int,
             max_percent: int,
             dex_max_tx: int,
+            first_swap_from_udsc_if_can: bool
     ):
         USDC = "USDC"
         ETH = "ETH"
@@ -79,7 +80,7 @@ class Multiswap(Account):
         usdc_balance = await self.get_balance(SCROLL_TOKENS[USDC])
         usdc_balance = usdc_balance["balance"]
 
-        first_swap_currency = USDC if usdc_balance > 1 else ETH
+        first_swap_currency = USDC if usdc_balance > 1 and first_swap_from_udsc_if_can else ETH
         second_swap_currency = ETH if first_swap_currency == USDC else USDC
 
         path = [first_swap_currency if _ % 2 == 0 else second_swap_currency for _ in range(quantity_swap)]

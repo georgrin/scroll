@@ -10,15 +10,18 @@ from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
 
+class KyberSwap(Account):
+    def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
+        super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
 
-class KyberSwapAPI:
-    def __init__(self):
+        self.swap_contract = self.get_contract(KYBERSWAP_CONTRACTS["router"], KYBERSWAP_ROUTER_ABI)
+        self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
         self.connector = None if PROXY is None or PROXY.strip() == "" else ProxyConnector.from_url(PROXY)
 
-    async def get_route(self, from_token: str, to_token: str, amount) -> dict:
-        url = "https://aggregator-api.kyberswap.com/scroll/api/v1/routes"
+    async def build_swap(self, from_token: str, to_token: str, amount: int, sender: str, recipient: str, slippage: int) -> dict:
+        route_url = "https://aggregator-api.kyberswap.com/scroll/api/v1/routes"
 
-        params = {
+        route_params = {
             "tokenIn": from_token,
             "tokenOut": to_token,
             "amountIn": amount,
@@ -26,56 +29,44 @@ class KyberSwapAPI:
         }
 
         async with aiohttp.ClientSession(connector=self.connector) as session:
-            response = await session.get(url=url, params=params)
+            route_response = await session.get(url=route_url, params=route_params)
 
-            if response.status == 200:
-                res_json = await response.json()
+            if route_response.status == 200:
+                route_res_json = await route_response.json()
 
-                if res_json["data"]:
-                    return res_json["data"]
+                if route_res_json["data"]:
+                    route = route_res_json["data"]
+                    build_url = "https://aggregator-api.kyberswap.com/scroll/api/v1/route/build"
+                    build_body = {
+                        "routeSummary": route["routeSummary"],
+                        "slippageTolerance": slippage,
+                        "sender": sender,
+                        "recipient": recipient,
+                    }
+
+                    build_response = await session.post(url=build_url, json=build_body)
+
+                    if build_response.status == 200:
+                        build_res_json = await build_response.json()
+
+                        if build_res_json["data"]:
+                            return build_res_json["data"]
+                        else:
+                            logger.error(f"Kyberswap did not return swap data: {build_res_json}")
+                            return None
+                    else:
+                        logger.error(f"Bad Kyberswap build swap request: {build_response}")
+                        return None
                 else:
-                    logger.error("Kyberswap did not return the best route")
-
+                    logger.error(f"Kyberswap did not return the best route: {route_res_json}")
                     return None
             else:
-                logger.error(f"Bad Kyberswap request: {response}")
-
+                logger.error(f"Bad Kyberswap get route request: {route_response}")
                 return None
 
-    async def build_swap(self, route: dict, sender: str, recipient: str, slippage: int) -> dict:
-        url = "https://aggregator-api.kyberswap.com/scroll/api/v1/route/build"
 
-        body = {
-            "routeSummary": route["routeSummary"],
-            "slippageTolerance": slippage,
-            "sender": sender,
-            "recipient": recipient,
-        }
 
-        async with aiohttp.ClientSession(connector=self.connector) as session:
-            response = await session.post(url=url, json=body)
 
-            if response.status == 200:
-                res_json = await response.json()
-
-                if res_json["data"]:
-                    return res_json["data"]
-                else:
-                    logger.error("Kyberswap did not return swap data")
-
-                    return None
-            else:
-                logger.error(f"Bad Kyberswap request: {response}")
-
-                return None
-
-class KyberSwap(Account):
-    def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
-        super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
-
-        self.swap_contract = self.get_contract(KYBERSWAP_CONTRACTS["router"], KYBERSWAP_ROUTER_ABI)
-        self.api = KyberSwapAPI()
-        self.native_token_address = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 
     async def get_action_tx_count(self):
         return await get_action_tx_count(
@@ -121,7 +112,6 @@ class KyberSwap(Account):
         )
         if amount < 10 ** -6:
             logger.info(f"Cannot swap {amount} {from_token}, amount too small")
-
             return False
 
         if from_token != "ETH":
@@ -131,12 +121,7 @@ class KyberSwap(Account):
         from_token = self.native_token_address if from_token == "ETH" else SCROLL_TOKENS[from_token]
         to_token = self.native_token_address if to_token == "ETH" else SCROLL_TOKENS[to_token]
 
-        route = await self.api.get_route(from_token, to_token, amount_wei)
-
-        if route is None:
-            return False
-
-        swap = await self.api.build_swap(route, self.address, self.address, slippage)
+        swap = await self.build_swap(from_token, to_token, amount_wei, self.address, self.address, slippage)
 
         if swap is None:
             return False

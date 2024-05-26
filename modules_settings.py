@@ -756,14 +756,18 @@ async def swap_multiswap(account_id, key, recipient):
 
     slippage = 1
 
-    back_swap = True
+    back_swap = False
 
-    min_percent = 20
-    max_percent = 60
+    min_percent = 60
+    max_percent = 70
+
+    # Поставить True, чтобы начать цепочку свапов с USDC->ETH, если есть баланс USDC
+    # При False цепочка всегда начинается с ETH->USDC
+    first_swap_from_udsc_if_can = False
 
     multi = Multiswap(account_id, key, recipient)
     return await multi.swap(
-        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent, dex_max_tx
+        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent, dex_max_tx, first_swap_from_udsc_if_can
     )
 
 
