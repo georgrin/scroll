@@ -774,10 +774,10 @@ async def swap_multiswap(account_id, key, recipient):
 
     slippage = 1
 
-    back_swap = False
+    back_swap = True
 
-    min_percent = 60
-    max_percent = 70
+    min_percent = 20
+    max_percent = 60
 
     # Поставить True, чтобы начать цепочку свапов с USDC->ETH, если есть баланс USDC
     # При False цепочка всегда начинается с ETH->USDC
