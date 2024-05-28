@@ -73,7 +73,8 @@ def get_module():
             Choice("39) Swap Sushiswap", swap_sushiswap),
             Choice("40) Swap OpenOcean", swap_openocean),
             Choice("41) Use Multilanding", multilanding),
-            Choice("42) Exit", "exit"),
+            Choice("42) Deposit Economy to Scroll", deposit_economy_scroll),
+            Choice("43) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

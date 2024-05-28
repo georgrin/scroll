@@ -15,6 +15,9 @@ with open("recipients.txt", "r") as file:
 with open('data/abi/bridge/deposit.json') as file:
     DEPOSIT_ABI = json.load(file)
 
+with open('data/abi/bridge/deposit_economy.json.json') as file:
+    DEPOSIT_ECONOMY_ABI = json.load(file)
+
 with open('data/abi/bridge/withdraw.json') as file:
     WITHDRAW_ABI = json.load(file)
 
@@ -112,6 +115,7 @@ ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 BRIDGE_CONTRACTS = {
     "deposit": "0x6774bcbd5cecef1336b5300fb5186a12ddd8b367",
+    "deposit_economy": "0x5Bcfd99c34cf7E06fc756f6f5aE7400504852bc4",
     "withdraw": "0x4C0926FF5252A435FD19e10ED15e5a249Ba19d79",
     "oracle": "0x0d7E906BD9cAFa154b048cFa766Cc1E54E39AF9B"
 }
@@ -191,4 +195,4 @@ L2TELEGRAPH_NFT_CONTRACT = "0xdc60fd9d2a4ccf97f292969580874de69e6c326e"
 
 NFT_ORIGINS_CONTRACT = "0x74670A3998d9d6622E32D0847fF5977c37E0eC91"
 
-PROXY = ""
+PROXY = "socks5://127.0.0.1:1080"

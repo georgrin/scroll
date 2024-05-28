@@ -7,6 +7,7 @@ from .account import Account
 from config import (
     BRIDGE_CONTRACTS,
     DEPOSIT_ABI,
+    DEPOSIT_ECONOMY_ABI,
     WITHDRAW_ABI,
     ORACLE_ABI,
     SCROLL_TOKENS,
@@ -54,6 +55,51 @@ class Scroll(Account):
             "0x",
             168000,
         ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
+    @check_gas
+    async def deposit_economy(
+            self,
+            min_amount: float,
+            max_amount: float,
+            decimal: int,
+            all_amount: bool,
+            min_percent: int,
+            max_percent: int
+    ):
+        amount_wei, amount, balance = await self.get_amount(
+            "ETH",
+            min_amount,
+            max_amount,
+            decimal,
+            all_amount,
+            min_percent,
+            max_percent
+        )
+
+        logger.info(f"[{self.account_id}][{self.address}] Bridge to Scroll | {amount} ETH")
+
+        # TODO: добавить проверку, что мы отправляем не меньше, чем 0.01 ETH
+
+        # You can only use "Economy" for deposit more than 0.01 ETH
+        if amount_wei < 10000000000000000:
+            raise ValueError(f"You can only use 'Economy' for deposit more than 0.01 ETH, try to send: {amount}")
+
+        contract = self.get_contract(BRIDGE_CONTRACTS["deposit_economy"], DEPOSIT_ECONOMY_ABI)
+        contract_oracle = self.get_contract(BRIDGE_CONTRACTS["oracle"], ORACLE_ABI)
+
+        # Тут скорее всего неправильно считается комса для экономного депозита
+        fee = await contract_oracle.functions.estimateCrossDomainMessageFee(168000).call()
+
+        tx_data = await self.get_tx_data(amount_wei + fee, False)
+
+        transaction = await contract.functions.depositETH().build_transaction(tx_data)
 
         signed_txn = await self.sign(transaction)
 

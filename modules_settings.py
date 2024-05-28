@@ -22,6 +22,24 @@ async def deposit_scroll(account_id, key, recipient):
     scroll = Scroll(account_id, key, "ethereum", recipient)
     await scroll.deposit(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
+async def deposit_economy_scroll(account_id, key, recipient):
+    """
+    Deposit Economy from official bridge
+    ______________________________________________________
+    all_amount - bridge from min_percent to max_percent
+    """
+
+    min_amount = 0.01
+    max_amount = 0.02
+    decimal = 4
+
+    all_amount = True
+
+    min_percent = 1
+    max_percent = 1
+
+    scroll = Scroll(account_id, key, "ethereum", recipient)
+    await scroll.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
 async def withdraw_scroll(account_id, key, recipient):
     """
@@ -763,7 +781,7 @@ async def swap_multiswap(account_id, key, recipient):
 
     # Поставить True, чтобы начать цепочку свапов с USDC->ETH, если есть баланс USDC
     # При False цепочка всегда начинается с ETH->USDC
-    first_swap_from_udsc_if_can = False
+    first_swap_from_udsc_if_can = True
 
     multi = Multiswap(account_id, key, recipient)
     return await multi.swap(
