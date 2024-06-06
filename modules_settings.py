@@ -959,7 +959,7 @@ async def create_omnisea(account_id, key, recipient):
 
 async def create_safe(account_id, key, recipient):
     gnosis_safe = GnosisSafe(account_id, key, recipient)
-    await gnosis_safe.create_safe(module_cooldown)
+    return await gnosis_safe.create_safe(module_cooldown)
 
 
 async def deploy_contract(account_id, key, recipient):
