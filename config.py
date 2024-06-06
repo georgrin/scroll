@@ -15,7 +15,7 @@ with open("recipients.txt", "r") as file:
 with open('data/abi/bridge/deposit.json') as file:
     DEPOSIT_ABI = json.load(file)
 
-with open('data/abi/bridge/deposit_economy.json.json') as file:
+with open('data/abi/bridge/deposit_economy.json') as file:
     DEPOSIT_ECONOMY_ABI = json.load(file)
 
 with open('data/abi/bridge/withdraw.json') as file:
