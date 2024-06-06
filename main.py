@@ -106,8 +106,11 @@ def get_wallets(use_recipients: bool = False):
 
     return wallets
 
-async def run_module(module, account_id, key, recipient: Union[str, None] = None):
+async def run_module(module, account_id, key, recipient: Union[str, None] = None, index: int = None):
     try:
+        if index is not None:
+            logger.info(f"Processing wallet #{index}")
+
         result = await module(account_id, key, recipient)
     except Exception as e:
         result = False
@@ -142,13 +145,13 @@ async def main(module):
 
     sem = asyncio.Semaphore(QUANTITY_THREADS)
 
-    async def _worker(module, account_id, key, recipient):
+    async def _worker(module, account_id, key, recipient, index):
         async with sem:
-            await run_module(module, account_id, key, recipient)
+            await run_module(module, account_id, key, recipient, index)
 
     tasks = []
-    for _, account in enumerate(wallets, start=1):
-        task = asyncio.create_task(_worker(module, account.get("id"), account.get("key"), account.get("recipient", None)))
+    for index, account in enumerate(wallets, start=1):
+        task = asyncio.create_task(_worker(module, account.get("id"), account.get("key"), account.get("recipient", None), index))
         tasks.append(task)
 
     await asyncio.gather(*tasks)
