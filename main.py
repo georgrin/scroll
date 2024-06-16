@@ -74,6 +74,7 @@ def get_module():
             Choice("40) Swap OpenOcean", swap_openocean),
             Choice("41) Use Multilanding", multilanding),
             Choice("42) Deposit Economy to Scroll", deposit_economy_scroll),
+            Choice("43) Swap Odos", swap_odos),
             Choice("43) Exit", "exit"),
         ],
         qmark="⚙️ ",

@@ -11,6 +11,7 @@ from .sushi_swap import SushiSwap
 from .zebra import Zebra
 from .syncswap import SyncSwap
 from .xyswap import XYSwap
+from .odosprotocol import Odos
 from .aave import Aave
 from .compound import CompoundFinance
 from .layerbank import LayerBank

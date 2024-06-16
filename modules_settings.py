@@ -475,6 +475,35 @@ async def swap_xyswap(account_id, key, recipient):
     )
 
 
+async def swap_odos(account_id, key, recipient):
+    """
+    Make swap on Odos
+    ______________________________________________________
+    from_token – Choose SOURCE token ETH, WETH, USDC | Select one
+    to_token – Choose DESTINATION token ETH, WETH, USDC | Select one
+    ______________________________________________________
+    all_amount - swap from min_percent to max_percent
+    """
+
+    from_token = "ETH"
+    to_token = "USDC"
+
+    min_amount = 0.001
+    max_amount = 0.002
+    decimal = 4
+    slippage = 2
+
+    all_amount = True
+
+    min_percent = 30
+    max_percent = 50
+
+    odos = Odos(account_id, key, recipient)
+    return await odos.swap(
+        from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
+    )
+
+
 async def deposit_layerbank(account_id, key, recipient):
     """
     Make deposit on LayerBank

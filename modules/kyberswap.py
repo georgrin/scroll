@@ -66,10 +66,6 @@ class KyberSwap(Account):
                 logger.error(f"Bad Kyberswap get route request: {route_response}")
                 return None
 
-
-
-
-
     async def get_action_tx_count(self):
         return await get_action_tx_count(
             self.account.address,

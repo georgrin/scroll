@@ -45,6 +45,10 @@ with open("data/abi/sushiswap/abi.json", "r") as file:
 with open("data/abi/kyberswap/abi.json", "r") as file:
     KYBERSWAP_ROUTER_ABI = json.load(file)
 
+with open("data/abi/odos/abi.json", "r") as file:
+    ODOS_ROUTER_ABI = json.load(file)
+
+
 with open("data/abi/ambient_finance/abi_cmd.json", "r") as file:
     AMBIENT_FINANCE_ROUTER_ABI = json.load(file)
 
@@ -147,6 +151,10 @@ OPENOCEAN_CONTRACTS = {
 
 KYBERSWAP_CONTRACTS = {
     "router": "0x6131B5fae19EA4f9D964eAc0408E4408b66337b5"
+}
+
+ODOS_SWAP_CONTRACTS = {
+    "router": "0xbFe03C9E20a9Fc0b37de01A172F207004935E0b1"
 }
 
 AMBIENT_FINANCE_CONTRACTS = {
