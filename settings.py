@@ -35,3 +35,5 @@ RETRY_COUNT = 3
 
 LAYERSWAP_API_KEY = ""
 SCROLL_API_KEY = ""
+
+PROXY = None # "socks5://127.0.0.1:1080"

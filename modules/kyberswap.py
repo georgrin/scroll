@@ -5,7 +5,9 @@ from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from loguru import logger
 from web3 import Web3
 
-from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS, PROXY
+from config import KYBERSWAP_ROUTER_ABI, KYBERSWAP_CONTRACTS, SCROLL_TOKENS
+from settings import PROXY
+
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
