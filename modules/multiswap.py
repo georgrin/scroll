@@ -20,6 +20,7 @@ class Multiswap(Account):
             "kyberswap": KyberSwap(self.account_id, self.private_key, self.recipient),
             "sushiswap": SushiSwap(self.account_id, self.private_key, self.recipient),
             "openocean": OpenOcean(self.account_id, self.private_key, self.recipient),
+            "odos": Odos(self.account_id, self.private_key, self.recipient),
         }
 
     async def get_swap_modules_tx_count(self):
