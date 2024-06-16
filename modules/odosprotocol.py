@@ -113,6 +113,10 @@ class Odos(Account):
             f"[{self.account_id}][{self.address}] Swap on Odos – {from_token} -> {to_token} | {amount} {from_token}"
         )
 
+        if from_token != "ETH":
+            logger.info(f"Check if {from_token} is allow to swap")
+            await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+
         from_token = ZERO_ADDRESS if from_token == "ETH" else SCROLL_TOKENS[from_token]
         to_token = ZERO_ADDRESS if to_token == "ETH" else SCROLL_TOKENS[to_token]
 
