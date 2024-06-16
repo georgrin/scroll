@@ -16,6 +16,11 @@ from settings import GAS_MULTIPLIER, MAX_PRIORITY_FEE, GAS_LIMIT_MULTIPLIER
 from utils.sleeping import sleep
 
 
+def round_down(value, decimals):
+    factor = 1 / (10 ** decimals)
+    return (value // factor) * factor
+
+
 class Account:
     def __init__(self, account_id: int, private_key: str, chain: str, recipient: str) -> None:
         self.account_id = account_id
@@ -96,12 +101,19 @@ class Account:
         if from_token == "ETH":
             balance = await self.w3.eth.get_balance(self.address)
             amount_wei = int(balance * percent) if all_amount else self.w3.to_wei(random_amount, "ether")
-            amount = self.w3.from_wei(int(balance * percent), "ether") if all_amount else random_amount
+            amount = round_down(self.w3.from_wei(int(balance * percent), "ether"), decimal) if all_amount else random_amount
+
+            if all_amount:
+                amount_wei = self.w3.to_wei(amount, "ether")
         else:
             balance = await self.get_balance(SCROLL_TOKENS[from_token])
             amount_wei = int(balance["balance_wei"] * percent) \
                 if all_amount else int(random_amount * 10 ** balance["decimal"])
-            amount = balance["balance"] * percent if all_amount else random_amount
+            amount =  round_down(balance["balance"] * percent, decimal) if all_amount else random_amount
+
+            if all_amount:
+                amount_wei = int(amount * 10 ** balance["decimal"])
+
             balance = balance["balance_wei"]
 
         return amount_wei, amount, balance
