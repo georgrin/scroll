@@ -1,6 +1,7 @@
 import asyncio
 import time
 import random
+import decimal
 from typing import Union, Type, Dict, Any
 
 from hexbytes import HexBytes
@@ -18,6 +19,7 @@ from utils.sleeping import sleep
 
 def round_down(value, decimals):
     factor = 1 / (10 ** decimals)
+    factor = decimal.Decimal(factor)
     return (value // factor) * factor
 
 
