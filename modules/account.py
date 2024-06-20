@@ -1,7 +1,8 @@
 import asyncio
 import time
 import random
-import decimal
+
+from decimal import ROUND_DOWN, Decimal
 from typing import Union, Type, Dict, Any
 
 from hexbytes import HexBytes
@@ -17,10 +18,12 @@ from settings import GAS_MULTIPLIER, MAX_PRIORITY_FEE, GAS_LIMIT_MULTIPLIER
 from utils.sleeping import sleep
 
 
-def round_down(value, decimals):
-    factor = 1 / (10 ** decimals)
-    factor = decimal.Decimal(factor)
-    return (value // factor) * factor
+def floor(value: Decimal, places=6) -> Decimal:
+    return value.quantize(Decimal(10) ** -places, rounding=ROUND_DOWN)
+
+
+def float_floor(value: Decimal, places=6):
+    return float(floor(value, places=places))
 
 
 class Account:
@@ -103,7 +106,7 @@ class Account:
         if from_token == "ETH":
             balance = await self.w3.eth.get_balance(self.address)
             amount_wei = int(balance * percent) if all_amount else self.w3.to_wei(random_amount, "ether")
-            amount = round_down(self.w3.from_wei(int(balance * percent), "ether"), decimal) if all_amount else random_amount
+            amount = float_floor(self.w3.from_wei(int(balance * percent), "ether"), decimal) if all_amount else random_amount
 
             if all_amount:
                 amount_wei = self.w3.to_wei(amount, "ether")
@@ -111,7 +114,7 @@ class Account:
             balance = await self.get_balance(SCROLL_TOKENS[from_token])
             amount_wei = int(balance["balance_wei"] * percent) \
                 if all_amount else int(random_amount * 10 ** balance["decimal"])
-            amount =  round_down(balance["balance"] * percent, decimal) if all_amount else random_amount
+            amount =  float_floor(balance["balance"] * percent, decimal) if all_amount else random_amount
 
             if all_amount:
                 amount_wei = int(amount * 10 ** balance["decimal"])
