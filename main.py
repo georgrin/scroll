@@ -16,17 +16,24 @@ from settings import (
     QUANTITY_THREADS,
     THREAD_SLEEP_FROM,
     THREAD_SLEEP_TO,
-    REMOVE_WALLET
+    REMOVE_WALLET,
+    MAX_TX_COUNT_FOR_WALLET
 )
 from modules_settings import *
 from utils.helpers import remove_wallet
 from utils.sleeping import sleep
 from eth_account import Account as EthereumAccount
 
+
+class MaxTxCountExceeded(Exception):
+    pass
+
+
 def signal_handler(sig, frame):
     print('Ctrl+C!')
-    asyncio.get_event_loop().stop() 
+    asyncio.get_event_loop().stop()
     sys.exit(0)
+
 
 def get_module():
     result = questionary.select(
@@ -86,6 +93,7 @@ def get_module():
         sys.exit()
     return result
 
+
 def get_wallets(use_recipients: bool = False):
     if use_recipients:
         account_with_recipients = dict(zip(ACCOUNTS, RECIPIENTS))
@@ -107,15 +115,26 @@ def get_wallets(use_recipients: bool = False):
 
     return wallets
 
+
 async def run_module(module, account_id, key, recipient: Union[str, None] = None, index: int = None):
     try:
         if index is not None:
             logger.info(f"Processing wallet #{index}")
+        if MAX_TX_COUNT_FOR_WALLET > 0:
+            acc = Account(account_id, key, "scroll", recipient)
+            tx_count = await acc.get_transaction_count()
+
+            if tx_count >= MAX_TX_COUNT_FOR_WALLET:
+                raise MaxTxCountExceeded(f"Skip wallet: tx count {tx_count} >= {MAX_TX_COUNT_FOR_WALLET}")
+            logger.info(f"Tx count is {tx_count}, can processing")
 
         result = await module(account_id, key, recipient)
     except Exception as e:
         result = False
-        logger.error(e)
+        if isinstance(e, MaxTxCountExceeded):
+            logger.info(e)
+        else:
+            logger.error(e)
 
     if REMOVE_WALLET:
         remove_wallet(key)
@@ -123,9 +142,10 @@ async def run_module(module, account_id, key, recipient: Union[str, None] = None
     if result is not False:
         await sleep(SLEEP_FROM, SLEEP_TO)
 
+
 async def main(module):
     signal.signal(signal.SIGINT, signal_handler)
-    
+
     if module in [make_transfer]:
         wallets = get_wallets(True)
     else:
@@ -152,10 +172,12 @@ async def main(module):
 
     tasks = []
     for index, account in enumerate(wallets, start=1):
-        task = asyncio.create_task(_worker(module, account.get("id"), account.get("key"), account.get("recipient", None), index))
+        task = asyncio.create_task(
+            _worker(module, account.get("id"), account.get("key"), account.get("recipient", None), index))
         tasks.append(task)
 
     await asyncio.gather(*tasks)
+
 
 if __name__ == '__main__':
     logger.add("logging.log")

@@ -48,6 +48,9 @@ class Account:
     def get_name(self):
         return type(self).__name__
 
+    async def get_transaction_count(self):
+        return await self.w3.eth.get_transaction_count(self.address)
+
     async def get_tx_data(self, value: int = 0, gas_price: bool = True):
         tx = {
             "chainId": await self.w3.eth.chain_id,

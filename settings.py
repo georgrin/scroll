@@ -7,6 +7,10 @@ EXPLORER_CACHE_S = 20
 # removing a wallet from the list after the job is done
 REMOVE_WALLET = False
 
+# пропускаем кошелёк, если у него кол-во транзакций больше (для отключения ставим 0)
+MAX_TX_COUNT_FOR_WALLET = 0
+
+
 SLEEP_FROM = 500  # Second
 SLEEP_TO = 1000  # Second
 
