@@ -2,6 +2,7 @@ import random
 import sys
 import os
 import signal
+from datetime import datetime
 from typing import Union
 
 import questionary
@@ -17,15 +18,18 @@ from settings import (
     THREAD_SLEEP_FROM,
     THREAD_SLEEP_TO,
     REMOVE_WALLET,
-    MAX_TX_COUNT_FOR_WALLET
+    MAX_TX_COUNT_FOR_WALLET, MIN_TIME_AFTER_LAST_TX_S
 )
 from modules_settings import *
-from utils.helpers import remove_wallet
+from utils.helpers import remove_wallet, get_last_tx
 from utils.sleeping import sleep
 from eth_account import Account as EthereumAccount
 
 
 class MaxTxCountExceeded(Exception):
+    pass
+
+class MinTimeAfterLastTxExceeded(Exception):
     pass
 
 
@@ -127,11 +131,24 @@ async def run_module(module, account_id, key, recipient: Union[str, None] = None
             if tx_count >= MAX_TX_COUNT_FOR_WALLET:
                 raise MaxTxCountExceeded(f"Skip wallet: tx count {tx_count} >= {MAX_TX_COUNT_FOR_WALLET}")
             logger.info(f"Tx count is {tx_count}, can processing")
+        if MIN_TIME_AFTER_LAST_TX_S > 0:
+            acc = Account(account_id, key, "scroll", recipient)
+
+            last_tx = await get_last_tx(acc.address, "scroll")
+            if last_tx:
+                current_datetime = datetime.now()
+                tx_time = datetime.fromtimestamp(int(last_tx["timeStamp"]))
+                time_passed = (current_datetime - tx_time).total_seconds()
+
+                if time_passed < MIN_TIME_AFTER_LAST_TX_S:
+                    raise MinTimeAfterLastTxExceeded(f"Last tx done less then {MIN_TIME_AFTER_LAST_TX_S} seconds ago ({time_passed}), skipping")
+                else:
+                    logger.info(f"Last tx done more then {MIN_TIME_AFTER_LAST_TX_S} seconds ago, can processing")
 
         result = await module(account_id, key, recipient)
     except Exception as e:
         result = False
-        if isinstance(e, MaxTxCountExceeded):
+        if isinstance(e, MaxTxCountExceeded) or isinstance(e, MinTimeAfterLastTxExceeded):
             logger.info(e)
         else:
             logger.error(e)

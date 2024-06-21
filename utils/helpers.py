@@ -18,7 +18,7 @@ def retry(func):
                 return result
             except Exception as e:
                 trace = traceback.format_exc()
-                logger.error(f"Error | {e}\n{trace}")                
+                logger.error(f"Error | {e}\n{trace}")
                 await sleep(10, 20)
                 retries += 1
 
@@ -33,6 +33,7 @@ def remove_wallet(private_key: str):
         for line in lines:
             if private_key not in line:
                 file.write(line)
+
 
 @AsyncCacheDecorator(ttl=EXPLORER_CACHE_S)
 async def get_account_transfer_tx_list(account_address: str, chain: str):
@@ -96,6 +97,7 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
             logger.error(f"Error get_account_transfer_tx_list: {e}")
             await sleep(7)
 
+
 async def get_last_action(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
     last = None
@@ -107,6 +109,7 @@ async def get_last_action(address: str, dst: str, chain: str):
             break
     return last
 
+
 async def get_action_tx_count(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
     action_tx_list = []
@@ -115,6 +118,12 @@ async def get_action_tx_count(address: str, dst: str, chain: str):
             action_tx_list.append(tx)
 
     return len(action_tx_list)
+
+
+async def get_last_tx(address: str, chain: str):
+    tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
+    return tx_list[0] if len(tx_list) > 1 else None
+
 
 async def get_last_action_tx(address: str, dst: str, chain: str):
     tx_list = await get_account_transfer_tx_list(account_address=address, chain=chain)
