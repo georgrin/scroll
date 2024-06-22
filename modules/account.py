@@ -23,7 +23,7 @@ def floor(value: Decimal, places=6) -> Decimal:
 
 
 def float_floor(value: Decimal, places=6):
-    return float(floor(value, places=places))
+    return float(floor(Decimal(value), places=places))
 
 
 class Account:
@@ -41,6 +41,7 @@ class Account:
             middlewares=[async_geth_poa_middleware],
             request_kwargs={'timeout': 60}
         )
+        self.w3.middleware_onion.add(async_simple_cache_middleware)
 
         self.account = EthereumAccount.from_key(private_key)
         self.address = self.account.address
@@ -117,7 +118,7 @@ class Account:
             balance = await self.get_balance(SCROLL_TOKENS[from_token])
             amount_wei = int(balance["balance_wei"] * percent) \
                 if all_amount else int(random_amount * 10 ** balance["decimal"])
-            amount =  float_floor(balance["balance"] * percent, decimal) if all_amount else random_amount
+            amount = float_floor(balance["balance"] * percent, decimal) if all_amount else random_amount
 
             if all_amount:
                 amount_wei = int(amount * 10 ** balance["decimal"])
