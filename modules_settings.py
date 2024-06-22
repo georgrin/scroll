@@ -3,6 +3,7 @@ from modules import *
 
 module_cooldown = 8888888
 
+
 async def deposit_scroll(account_id, key, recipient):
     """
     Deposit from official bridge
@@ -22,6 +23,7 @@ async def deposit_scroll(account_id, key, recipient):
     scroll = Scroll(account_id, key, "ethereum", recipient)
     await scroll.deposit(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
+
 async def deposit_economy_scroll(account_id, key, recipient):
     """
     Deposit Economy from official bridge
@@ -40,6 +42,7 @@ async def deposit_economy_scroll(account_id, key, recipient):
 
     scroll = Scroll(account_id, key, "ethereum", recipient)
     await scroll.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+
 
 async def withdraw_scroll(account_id, key, recipient):
     """
@@ -82,7 +85,8 @@ async def bridge_orbiter(account_id, key, recipient):
     max_percent = 10
 
     orbiter = Orbiter(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, module_cooldown)
+    return await orbiter.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+                                module_cooldown)
 
 
 async def bridge_layerswap(account_id, key, recipient):
@@ -115,6 +119,7 @@ async def bridge_layerswap(account_id, key, recipient):
         from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, module_cooldown
     )
 
+
 async def bridge_layerswap2(account_id, key, recipient):
     """
     Bridge from Layerswap
@@ -145,6 +150,7 @@ async def bridge_layerswap2(account_id, key, recipient):
         from_chain, to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, module_cooldown
     )
 
+
 async def bridge_nitro(account_id, key, recipient):
     """
     Bridge from nitro
@@ -166,7 +172,9 @@ async def bridge_nitro(account_id, key, recipient):
     max_percent = 10
 
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, module_cooldown)
+    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+                              module_cooldown)
+
 
 async def bridge_nitro1(account_id, key, recipient):
     """
@@ -189,7 +197,9 @@ async def bridge_nitro1(account_id, key, recipient):
     max_percent = 10
 
     nitro = Nitro(account_id=account_id, private_key=key, chain=from_chain, recipient=recipient)
-    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, module_cooldown)
+    return await nitro.bridge(to_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+                              module_cooldown)
+
 
 async def wrap_eth(account_id, key, recipient):
     """
@@ -261,6 +271,7 @@ async def swap_skydrome(account_id, key, recipient):
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
+
 async def swap_kyberswap(account_id, key, recipient):
     """
     Make swap on Kyberswap
@@ -290,6 +301,7 @@ async def swap_kyberswap(account_id, key, recipient):
     return await kyberswap.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
+
 
 async def swap_openocean(account_id, key, recipient):
     """
@@ -321,6 +333,7 @@ async def swap_openocean(account_id, key, recipient):
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
 
+
 async def swap_sushiswap(account_id, key, recipient):
     """
     Make swap on Sushiswap
@@ -350,6 +363,7 @@ async def swap_sushiswap(account_id, key, recipient):
     return await sushiswap.swap(
         from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
     )
+
 
 async def swap_ambient_finance(account_id, key, recipient):
     """
@@ -528,7 +542,8 @@ async def deposit_layerbank(account_id, key, recipient):
 
     layerbank = LayerBank(account_id, key, recipient)
     return await layerbank.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        module_cooldown
     )
 
 
@@ -556,8 +571,39 @@ async def deposit_aave(account_id, key, recipient):
 
     aave = Aave(account_id, key, recipient)
     return await aave.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        module_cooldown
     )
+
+
+async def deposit_rhomarkets(account_id, key, recipient):
+    """
+    Make deposit on Rhomarkets
+    ______________________________________________________
+    make_withdraw - True, if need withdraw after deposit
+
+    all_amount - deposit from min_percent to max_percent
+    """
+    min_amount = 0.0001
+    max_amount = 0.0002
+    decimal = 5
+
+    sleep_from = 5
+    sleep_to = 24
+
+    make_withdraw = False
+
+    all_amount = True
+
+    min_percent = 30
+    max_percent = 60
+
+    rhomarkets = Rhomarkets(account_id, key, recipient)
+    return await rhomarkets.deposit(
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        module_cooldown
+    )
+
 
 async def deposit_compound_finance(account_id, key, recipient):
     """
@@ -583,7 +629,8 @@ async def deposit_compound_finance(account_id, key, recipient):
 
     compound_finance = CompoundFinance(account_id, key, recipient)
     return await compound_finance.deposit(
-        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent, module_cooldown
+        min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
+        module_cooldown
     )
 
 
@@ -791,8 +838,16 @@ async def swap_multiswap(account_id, key, recipient):
     ______________________________________________________
     If back_swap is True, then, if USDC remains, it will be swapped into ETH.
     """
-    
-    use_dex = ["syncswap", "skydrome", "zebra", "xyswap", "ambient_finance", "kyberswap", "sushiswap", "openocean", "odos"]
+
+    use_dex = ["syncswap",
+               "skydrome",
+               "zebra",
+               "xyswap",
+               "ambient_finance",
+               "kyberswap",
+               "sushiswap",
+               "openocean",
+               "odos"]
     dex_max_tx = 2
 
     min_swap = 1
@@ -814,7 +869,8 @@ async def swap_multiswap(account_id, key, recipient):
 
     multi = Multiswap(account_id, key, recipient)
     return await multi.swap(
-        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent, dex_max_tx, first_swap_from_udsc_if_can
+        use_dex, sleep_from, sleep_to, min_swap, max_swap, slippage, back_swap, min_percent, max_percent, dex_max_tx,
+        first_swap_from_udsc_if_can
     )
 
 
@@ -847,7 +903,9 @@ async def multibridge(account_id, key, recipient):
     min_chain_balance = 0.006
 
     multibridge = Multibridge(account_id=account_id, private_key=key, recipient=recipient)
-    await multibridge.bridge(use_bridge, source_chain, destination_chain, min_amount, max_amount, decimal, all_amount, min_percent, max_percent, min_chain_balance)
+    await multibridge.bridge(use_bridge, source_chain, destination_chain, min_amount, max_amount, decimal, all_amount,
+                             min_percent, max_percent, min_chain_balance)
+
 
 async def multilanding(account_id, key, recipient):
     """
@@ -936,9 +994,9 @@ async def custom_routes(account_id, key, recipient):
     """
 
     use_modules = [
-        #create_omnisea,
-        #[create_omnisea, mint_zerius, None],
-        #(create_omnisea, 1, 3),
+        # create_omnisea,
+        # [create_omnisea, mint_zerius, None],
+        # (create_omnisea, 1, 3),
         # bridge_nitro,
         # bridge_layerswap,
         # bridge_layerswap2,
@@ -972,9 +1030,16 @@ async def withdraw_aave(account_id, key, recipient):
     aave = Aave(account_id, key, recipient)
     return await aave.withdraw()
 
+
+async def withdraw_rhomarkets(account_id, key, recipient):
+    rhomarkets = Rhomarkets(account_id, key, recipient)
+    return await rhomarkets.withdraw()
+
+
 async def withdraw_compound_finance(account_id, key, recipient):
     compound_finance = CompoundFinance(account_id, key, recipient)
     return await compound_finance.withdraw()
+
 
 async def send_mail(account_id, key, recipient):
     dmail = Dmail(account_id, key, recipient)

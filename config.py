@@ -61,6 +61,9 @@ with open("data/abi/zebra/abi.json", "r") as file:
 with open("data/abi/aave/abi.json", "r") as file:
     AAVE_ABI = json.load(file)
 
+with open("data/abi/rhomarkets/abi.json", "r") as file:
+    RHOMARKETS_ABI = json.load(file)
+
 with open("data/abi/compound_finance/abi_bulker.json", "r") as file:
     COMPOUND_FINANCE_BULKER_ABI = json.load(file)
 
@@ -179,6 +182,9 @@ XYSWAP_CONTRACT = {
 AAVE_CONTRACT = "0xff75a4b698e3ec95e608ac0f22a03b8368e05f5d"
 
 AAVE_WETH_CONTRACT = "0xf301805be1df81102c957f6d4ce29d2b8c056b2a"
+
+RHOMARKETS_CONTRACT = "0x639355f34Ca9935E0004e30bD77b9cE2ADA0E692"
+RHOMARKETS_WETH_CONTRACT = "0x639355f34Ca9935E0004e30bD77b9cE2ADA0E692"
 
 COMPOUND_FINANCE_COMET_CONTRACT = "0xB2f97c1Bd3bf02f5e74d13f02E3e26F93D77CE44"
 COMPOUND_FINANCE_BULKER_CONTRACT = "0x53c6d04e3ec7031105baea05b36cbc3c987c56fa"

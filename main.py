@@ -86,7 +86,9 @@ def get_module():
             Choice("41) Use Multilanding", multilanding),
             Choice("42) Deposit Economy to Scroll", deposit_economy_scroll),
             Choice("43) Swap Odos", swap_odos),
-            Choice("43) Exit", "exit"),
+            Choice("44) Deposit Rhomarkets", deposit_rhomarkets),
+            Choice("45) Withdraw Rhomarkets", withdraw_rhomarkets),
+            Choice("46) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

@@ -3,6 +3,7 @@ from .ambient_finance_swap import AmbientFinance
 from .scroll import Scroll
 from .orbiter import Orbiter
 from .nitro import Nitro
+from .rhomarkets import Rhomarkets
 from .layerswap import LayerSwap
 from .skydrome import Skydrome
 from .kyberswap import KyberSwap
