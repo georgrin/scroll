@@ -15,6 +15,7 @@ class Multilanding(Account):
             "layerbank": LayerBank(self.account_id, self.private_key, self.recipient),
             "aave": Aave(self.account_id, self.private_key, self.recipient),
             "compoundfinance": CompoundFinance(self.account_id, self.private_key, self.recipient),
+            "rhomarkets": Rhomarkets(self.account_id, self.private_key, self.recipient)
         }
 
     async def get_last_iter(self, module_cooldown):

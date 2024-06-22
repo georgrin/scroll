@@ -912,7 +912,7 @@ async def multilanding(account_id, key, recipient):
     MultiLanding - Makes a deposit/withdrawal to/from random DEXs
     """
 
-    use_dex = ["aave", "layerbank", "compoundfinance"]
+    use_dex = ["aave", "layerbank", "compoundfinance", "rhomarkets"]
     min_amount = 0.005
     max_amount = 0.006
     decimal = 4
