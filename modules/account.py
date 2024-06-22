@@ -11,7 +11,7 @@ from web3 import AsyncWeb3
 from eth_account import Account as EthereumAccount
 from web3.contract import Contract
 from web3.exceptions import TransactionNotFound
-from web3.middleware import async_simple_cache_middleware
+from web3.middleware import async_simple_cache_middleware, async_geth_poa_middleware
 
 from config import RPC, ERC20_ABI, SCROLL_TOKENS
 from settings import GAS_MULTIPLIER, MAX_PRIORITY_FEE, GAS_LIMIT_MULTIPLIER
@@ -38,7 +38,7 @@ class Account:
 
         self.w3 = AsyncWeb3(
             AsyncWeb3.AsyncHTTPProvider(random.choice(RPC[chain]["rpc"])),
-            middlewares=[async_simple_cache_middleware],
+            middlewares=[async_simple_cache_middleware, async_geth_poa_middleware],
             request_kwargs={'timeout': 60}
         )
 
