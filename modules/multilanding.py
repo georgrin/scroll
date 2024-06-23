@@ -24,12 +24,18 @@ class Multilanding(Account):
     async def get_can_withdraw_status(self, module_cooldown):
         return {module_name: await self.landing_modules[module_name].check_last_iteration(module_cooldown) for module_name in self.landing_modules}
 
-    async def get_landing_module(self, use_dex: list, module_cooldown):
+    async def get_landing_module(self, use_dex: list, module_cooldown: int, max_dex: int = 0):
         modules_last_iter = await self.get_last_iter(module_cooldown)
 
         logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs can deposit statuses: {modules_last_iter}")
 
         use_dex = [dex for dex in use_dex if modules_last_iter[dex] is not False]
+        already_deposited = [dex for dex in use_dex if modules_last_iter[dex] is False]
+
+        if len(already_deposited) > max_dex:
+            logger.info(f"[{self.account_id}][{self.address}] Cannot deposit, deposit limit exceeded: {already_deposited} > {max_dex}")
+            return None
+
         logger.info(f"[{self.account_id}][{self.address}] MultiLanding DEXs with can deposit: {use_dex}")
 
         if len(use_dex) == 0:
@@ -72,6 +78,7 @@ class Multilanding(Account):
             min_percent: int,
             max_percent: int,
             module_cooldown: int,
+            max_dex
     ):
         needToSleep = False
         if make_withdraw:
@@ -83,7 +90,7 @@ class Multilanding(Account):
                 await withdrawal_module.withdraw()
                 await sleep(sleep_from, sleep_to)
 
-        landing_module = await self.get_landing_module(use_dex, module_cooldown)
+        landing_module = await self.get_landing_module(use_dex, module_cooldown, max_dex)
 
         if not landing_module:
             logger.info(f"[{self.account_id}][{self.address}] No module to run in MultiLanding")

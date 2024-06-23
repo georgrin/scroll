@@ -912,7 +912,7 @@ async def multilanding(account_id, key, recipient):
     MultiLanding - Makes a deposit/withdrawal to/from random DEXs
     """
 
-    use_dex = ["aave", "layerbank", "compoundfinance", "rhomarkets"]
+    use_dex = ["aave", "layerbank", "compoundfinance"]
     min_amount = 0.005
     max_amount = 0.006
     decimal = 4
@@ -922,13 +922,15 @@ async def multilanding(account_id, key, recipient):
 
     all_amount = True
 
-    min_percent = 10
-    max_percent = 15
+    min_percent = 80
+    max_percent = 90
 
     deposit_cooldown = 8888888
-    make_withdrawal = True
+    make_withdrawal = False
     withdrawal_cooldown_min = 60 * 60 * 25 * 3
     withdrawal_cooldown_max = 60 * 60 * 25 * 15
+
+    max_dex = 1
 
     multilanding = Multilanding(account_id=account_id, private_key=key, recipient=recipient)
     await multilanding.deposit(use_dex,
@@ -943,7 +945,8 @@ async def multilanding(account_id, key, recipient):
                                all_amount,
                                min_percent,
                                max_percent,
-                               deposit_cooldown)
+                               deposit_cooldown,
+                               max_dex)
 
 
 async def custom_routes(account_id, key, recipient):

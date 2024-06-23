@@ -29,6 +29,7 @@ from eth_account import Account as EthereumAccount
 class MaxTxCountExceeded(Exception):
     pass
 
+
 class MinTimeAfterLastTxExceeded(Exception):
     pass
 
@@ -143,7 +144,8 @@ async def run_module(module, account_id, key, recipient: Union[str, None] = None
                 time_passed = (current_datetime - tx_time).total_seconds()
 
                 if time_passed < MIN_TIME_AFTER_LAST_TX_S:
-                    raise MinTimeAfterLastTxExceeded(f"Last tx done less then {MIN_TIME_AFTER_LAST_TX_S} seconds ago ({time_passed}), skipping")
+                    raise MinTimeAfterLastTxExceeded(
+                        f"Last tx done less then {MIN_TIME_AFTER_LAST_TX_S} seconds ago ({time_passed}), skipping")
                 else:
                     logger.info(f"Last tx done more then {MIN_TIME_AFTER_LAST_TX_S} seconds ago, can processing")
 
