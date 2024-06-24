@@ -89,7 +89,8 @@ def get_module():
             Choice("43) Swap Odos", swap_odos),
             Choice("44) Deposit Rhomarkets", deposit_rhomarkets),
             Choice("45) Withdraw Rhomarkets", withdraw_rhomarkets),
-            Choice("46) Exit", "exit"),
+            Choice("46) Deposit Kelp", deposit_kelp),
+            Choice("47) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

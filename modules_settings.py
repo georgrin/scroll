@@ -604,6 +604,29 @@ async def deposit_rhomarkets(account_id, key, recipient):
         module_cooldown
     )
 
+async def deposit_kelp(account_id, key, recipient):
+    """
+    Make deposit on Kelp
+    ______________________________________________________
+    make_withdraw - True, if need withdraw after deposit
+
+    all_amount - deposit from min_percent to max_percent
+    """
+    min_amount = 0.0001
+    max_amount = 0.0002
+    decimal = 5
+
+    all_amount = True
+
+    min_percent = 35
+    max_percent = 40
+
+    kelp = Kelp(account_id, key, recipient)
+    return await kelp.deposit(
+        min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
+        module_cooldown
+    )
+
 
 async def deposit_compound_finance(account_id, key, recipient):
     """
