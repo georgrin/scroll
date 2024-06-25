@@ -16,7 +16,7 @@ class AmbientFinance(Account):
 
         self.swap_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["router"], AMBIENT_FINANCE_ROUTER_ABI)
         self.croc_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["croc_query"], AMBIENT_FINANCE_CROC_ABI)
-        self.pool_ids = { "ETH/USDC": 420 }
+        self.pool_ids = {"ETH/USDC": 420}
         self.eth_address = "0x0000000000000000000000000000000000000000"
 
     async def get_action_tx_count(self):
@@ -54,8 +54,8 @@ class AmbientFinance(Account):
 
         callpath_code = 1
         cmd = encode(
-            ["address","address","uint256","bool","bool","uint128","uint16","uint128","uint128","uint8"],
-            [base,quote,pool_id,is_buy,in_base_amount,amount,tip,limit_price,min_out,settle_flags]
+            ["address", "address", "uint256", "bool", "bool", "uint128", "uint16", "uint128", "uint128", "uint8"],
+            [base, quote, pool_id, is_buy, in_base_amount, amount, tip, limit_price, min_out, settle_flags]
         )
 
         transaction = await self.swap_contract.functions.userCmd(
@@ -65,6 +65,16 @@ class AmbientFinance(Account):
 
         return transaction
 
+    async def get_curve_price(self,
+                              base: str,
+                              quote: str,
+                              pool_id: int):
+        return await self.croc_contract.functions.queryPrice(
+            Web3.to_checksum_address(base),
+            Web3.to_checksum_address(quote),
+            pool_id
+        ).call()
+
     async def get_price(
             self,
             base: str,
@@ -72,11 +82,7 @@ class AmbientFinance(Account):
             pool_id: int,
             is_buy: bool
     ):
-        price = int((await self.croc_contract.functions.queryPrice(
-            Web3.to_checksum_address(base),
-            Web3.to_checksum_address(quote),
-            pool_id
-        ).call() / (2 ** 64)) ** 2)
+        price = int((await self.get_curve_price(base, quote, pool_id) / (2 ** 64)) ** 2)
 
         return 1 / price if is_buy else price
 
@@ -123,7 +129,7 @@ class AmbientFinance(Account):
         price = await self.get_price(base, quote, pool_id, is_buy)
 
         min_amount_out_wei = int(float(price) * float(amount_wei))
-        min_amount_out_wei =  int(min_amount_out_wei * (1 - slippage / 100))
+        min_amount_out_wei = int(min_amount_out_wei * (1 - slippage / 100))
 
         logger.info(f"Get pool price: {price}, set min amount out wei")
 
