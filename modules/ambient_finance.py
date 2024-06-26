@@ -189,9 +189,9 @@ class AmbientFinance(Account):
         poolIdx = 420
         eth_wrs_curve_price = await self.get_curve_price(base, quote, poolIdx)
         qty = amount_wei
-        slippage = 0.005
-        limitLower = int(eth_wrs_curve_price * (1 - slippage))
-        limitHigher = int(eth_wrs_curve_price * (1 + slippage))
+        slippage = 1
+        limitLower = int(eth_wrs_curve_price * (1 - slippage / 100) ** 0.5)
+        limitHigher = int(eth_wrs_curve_price * (1 + slippage / 100) ** 0.5)
         settleFlags = 0
         lpConduit = self.eth_address
 
@@ -228,7 +228,7 @@ class AmbientFinance(Account):
         )
         callpath_code = 128
 
-        amount_eth_wei = int(amount_wei * (1 / price))
+        amount_eth_wei = int(amount_wei * price)
         amount_eth = amount_eth_wei / 10 ** 18
 
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount} wrsETH and {amount_eth} ETH")
