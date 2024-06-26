@@ -578,6 +578,9 @@ async def deposit_aave(account_id, key, recipient):
 
     all_amount - deposit from min_percent to max_percent
     """
+
+    module_cooldown = 77777
+    
     min_amount = 0.0001
     max_amount = 0.0002
     decimal = 5
@@ -589,8 +592,8 @@ async def deposit_aave(account_id, key, recipient):
 
     all_amount = True
 
-    min_percent = 30
-    max_percent = 60
+    min_percent = 85
+    max_percent = 90
 
     aave = Aave(account_id, key, recipient)
     return await aave.deposit(
@@ -1051,9 +1054,10 @@ async def custom_routes(account_id, key, recipient):
         # bridge_layerswap2,
         # bridge_nitro1,
         # bridge_orbiter,
-        withdraw_layerbank,
-        withdraw_aave,
-        deposit_layerbank,
+        # withdraw_layerbank,
+        # withdraw_aave,
+        # deposit_layerbank,
+        withdraw_compound_finance,
         deposit_aave
     ]
 
