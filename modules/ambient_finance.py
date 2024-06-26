@@ -200,7 +200,13 @@ class AmbientFinance(Account):
         askTickPrice = (limitHigher / 2 ** 64) ** 2
 
         bidTick = int(round(math.log(bidTickPrice, 1.0001)))
+        bidTick = int(bidTick / 4) * 4
+        # limitLower = int(((1.0001 ** bidTick) ** 0.5) * 2 ** 64)
+
         askTick = int(round(math.log(askTickPrice, 1.0001)))
+        # просто вроде как тики кратны 4, если судить по апи, поэтому вот так сделал
+        askTick = int(askTick / 4) * 4 + 4
+        # limitHigher = int(((1.0001 ** askTick) ** 0.5) * 2 ** 64)
 
         cmd = encode(
             ["uint8",
@@ -227,7 +233,6 @@ class AmbientFinance(Account):
              lpConduit]
         )
         callpath_code = 128
-
         amount_eth_wei = int(amount_wei * price)
         amount_eth = amount_eth_wei / 10 ** 18
 
