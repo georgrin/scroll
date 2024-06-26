@@ -1,13 +1,17 @@
-import time
+import math
 
 from loguru import logger
 from web3 import Web3
 from eth_abi import encode
-from config import AMBIENT_FINANCE_ROUTER_ABI, AMBIENT_FINANCE_CROC_ABI, AMBIENT_FINANCE_CONTRACTS, SCROLL_TOKENS
+from config import (AMBIENT_FINANCE_ROUTER_ABI,
+                    AMBIENT_FINANCE_CROC_ABI,
+                    AMBIENT_FINANCE_CONTRACTS,
+                    SCROLL_TOKENS,
+                    RSETH_ABI,
+                    RSETH_CONTRACT)
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
-from decimal import Decimal
 
 
 class AmbientFinance(Account):
@@ -16,8 +20,10 @@ class AmbientFinance(Account):
 
         self.swap_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["router"], AMBIENT_FINANCE_ROUTER_ABI)
         self.croc_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["croc_query"], AMBIENT_FINANCE_CROC_ABI)
+        self.wrs_eth_pool_contract = self.get_contract(RSETH_CONTRACT, RSETH_ABI)
         self.pool_ids = {"ETH/USDC": 420}
         self.eth_address = "0x0000000000000000000000000000000000000000"
+        self.wrseth_address = "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f"
 
     async def get_action_tx_count(self):
         return await get_action_tx_count(
@@ -151,6 +157,91 @@ class AmbientFinance(Account):
                                         limit_price)
 
         signed_txn = await self.sign(contract_txn)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    async def deposit(self,
+                      min_amount: float,
+                      max_amount: float,
+                      decimal: int,
+                      all_amount: bool,
+                      min_percent: int,
+                      max_percent: int):
+        amount_wei, amount, balance = await self.get_amount(
+            "WRSETH",
+            min_amount,
+            max_amount,
+            decimal,
+            all_amount,
+            min_percent,
+            max_percent
+        )
+
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount} wrsETH")
+
+        # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
+        # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
+
+        code = 12  # Fixed in quote tokens
+        base = self.eth_address
+        quote = self.wrseth_address
+        poolIdx = 420
+        eth_wrs_curve_price = await self.get_curve_price(base, quote, poolIdx)
+        qty = amount_wei
+        slippage = 0.005
+        limitLower = int(eth_wrs_curve_price * (1 - slippage))
+        limitHigher = int(eth_wrs_curve_price * (1 + slippage))
+        settleFlags = 0
+        lpConduit = self.eth_address
+
+        price = (eth_wrs_curve_price / 2 ** 64) ** 2
+        bidTickPrice = (limitLower / 2 ** 64) ** 2
+        askTickPrice = (limitHigher / 2 ** 64) ** 2
+
+        bidTick = int(round(math.log(bidTickPrice, 1.0001)))
+        askTick = int(round(math.log(askTickPrice, 1.0001)))
+
+        cmd = encode(
+            ["uint8",
+             "address",
+             "address",
+             "uint256",
+             "int24",
+             "int24",
+             "uint128",
+             "uint128",
+             "uint128",
+             "uint8",
+             "address"],
+            [code,
+             base,
+             quote,
+             poolIdx,
+             bidTick,
+             askTick,
+             qty,
+             limitLower,
+             limitHigher,
+             settleFlags,
+             lpConduit]
+        )
+        callpath_code = 128
+
+        amount_eth_wei = int(amount_wei * (1 / price))
+        amount_eth = amount_eth_wei / 10 ** 18
+
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount} wrsETH and {amount_eth} ETH")
+
+        tx_data = await self.get_tx_data(amount_eth_wei)
+
+        transaction = await self.swap_contract.functions.userCmd(
+            callpath_code,
+            cmd
+        ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())

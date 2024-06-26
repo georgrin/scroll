@@ -90,7 +90,8 @@ def get_module():
             Choice("44) Deposit Rhomarkets", deposit_rhomarkets),
             Choice("45) Withdraw Rhomarkets", withdraw_rhomarkets),
             Choice("46) Deposit Kelp", deposit_kelp),
-            Choice("47) Exit", "exit"),
+            Choice("47) Deposit ambient finance", deposit_ambient_finance),
+            Choice("48) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

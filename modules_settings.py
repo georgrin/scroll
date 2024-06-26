@@ -547,6 +547,29 @@ async def deposit_layerbank(account_id, key, recipient):
     )
 
 
+async def deposit_ambient_finance(account_id, key, recipient):
+    """
+    Make deposit on Ambient Finance
+    ______________________________________________________
+    make_withdraw - True, if need withdraw after deposit
+
+    all_amount - deposit from min_percent to max_percent
+    """
+    min_amount = 0.0001
+    max_amount = 0.0002
+    decimal = 5
+
+    all_amount = True
+
+    min_percent = 100
+    max_percent = 100
+
+    ambient_finance = AmbientFinance(account_id, key, recipient)
+    return await ambient_finance.deposit(
+        min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+    )
+
+
 async def deposit_aave(account_id, key, recipient):
     """
     Make deposit on Aave

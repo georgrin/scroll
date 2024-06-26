@@ -48,9 +48,11 @@ with open("data/abi/kyberswap/abi.json", "r") as file:
 with open("data/abi/odos/abi.json", "r") as file:
     ODOS_ROUTER_ABI = json.load(file)
 
-
 with open("data/abi/ambient_finance/abi_cmd.json", "r") as file:
     AMBIENT_FINANCE_ROUTER_ABI = json.load(file)
+
+with open("data/abi/rseth/abi.json", "r") as file:
+    RSETH_ABI = json.load(file)
 
 with open("data/abi/ambient_finance/abi_croc.json", "r") as file:
     AMBIENT_FINANCE_CROC_ABI = json.load(file)
@@ -135,7 +137,8 @@ ORBITER_CONTRACT = "0x80c67432656d59144ceff962e8faf8926599bcf8"
 SCROLL_TOKENS = {
     "ETH": "0x5300000000000000000000000000000000000004",
     "WETH": "0x5300000000000000000000000000000000000004",
-    "USDC": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4"
+    "USDC": "0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4",
+    "WRSETH": "0xa25b25548B4C98B0c7d3d27dcA5D5ca743d68b7F"
 }
 
 SYNCSWAP_CONTRACTS = {
@@ -214,3 +217,5 @@ L2TELEGRAPH_MESSAGE_CONTRACT = "0x9f63dbdf90837384872828d1ed6eb424a7f7f939"
 L2TELEGRAPH_NFT_CONTRACT = "0xdc60fd9d2a4ccf97f292969580874de69e6c326e"
 
 NFT_ORIGINS_CONTRACT = "0x74670A3998d9d6622E32D0847fF5977c37E0eC91"
+
+RSETH_CONTRACT = "0xc9BcFbB1Bf6dd20Ba365797c1Ac5d39FdBf095Da"
