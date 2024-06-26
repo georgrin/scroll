@@ -621,8 +621,8 @@ async def deposit_rhomarkets(account_id, key, recipient):
 
     all_amount = True
 
-    min_percent = 30
-    max_percent = 60
+    min_percent = 80
+    max_percent = 90
 
     rhomarkets = Rhomarkets(account_id, key, recipient)
     return await rhomarkets.deposit(
@@ -1058,7 +1058,7 @@ async def custom_routes(account_id, key, recipient):
         # withdraw_aave,
         # deposit_layerbank,
         withdraw_compound_finance,
-        deposit_aave
+        deposit_rhomarkets
     ]
 
     sleep_from = 10
