@@ -23,6 +23,13 @@ from config import (
 )
 
 
+def get_random_proxy():
+    if PROXIES is None or len(PROXIES) == 0:
+        return None
+    else:
+        return ProxyConnector.from_url(random.choice(PROXIES))
+
+
 class Scroll(Account):
     def __init__(self, account_id: int, private_key: str, chain: str, recipient) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain=chain, recipient=recipient)
@@ -278,16 +285,10 @@ class Scroll(Account):
 
                 raise Exception(f"Bad Scroll sign terms of use request: {response.status}")
 
-    def get_random_proxy(self):
-        if PROXIES is None or len(PROXIES) == 0:
-            return None
-        else:
-            return ProxyConnector.from_url(random.choice(PROXIES))
-
     @retry
     @check_gas
     async def sign_terms_of_use(self):
-        connector = self.get_random_proxy()
+        connector = get_random_proxy()
         signed = await self._check_signed_terms_of_use(connector)
 
         if signed:
