@@ -44,5 +44,5 @@ SCROLL_API_KEY = ""
 
 PROXY = None
 
-# Сюда надо записывать прокси в формате "socks5://127.0.0.1:1080"
-PROXIES = []
+# Пока используется только в Scroll signed terms of use
+USE_PROXIES = True

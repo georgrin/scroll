@@ -7,7 +7,7 @@ from loguru import logger
 from eth_account.messages import encode_defunct
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 
-from settings import PROXIES
+from settings import USE_PROXIES
 from utils.gas_checker import check_gas
 from utils.helpers import retry
 from .account import Account
@@ -19,12 +19,13 @@ from config import (
     WITHDRAW_ABI,
     ORACLE_ABI,
     SCROLL_TOKENS,
-    WETH_ABI
+    WETH_ABI,
+    PROXIES
 )
 
 
 def get_random_proxy():
-    if PROXIES is None or len(PROXIES) == 0:
+    if USE_PROXIES and (PROXIES is None or len(PROXIES) == 0):
         return None
     else:
         return random.choice(PROXIES)
@@ -238,7 +239,7 @@ class Scroll(Account):
             "address": self.address,
         }
 
-        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy)) as session:
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
             response = await session.get(url=url, params=params)
 
             if response.status == 200:
@@ -267,7 +268,7 @@ class Scroll(Account):
             "timestamp": int(datetime.now().timestamp() * 1000)
         }
 
-        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy)) as session:
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
             response = await session.post(url=url, json=body)
 
             if response.status == 200:

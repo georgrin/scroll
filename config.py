@@ -12,6 +12,9 @@ with open("accounts.txt", "r") as file:
 with open("recipients.txt", "r") as file:
     RECIPIENTS = [row.strip() for row in file]
 
+with open("proxies.txt", "r") as file:
+    PROXIES = [row.strip() for row in file]
+
 with open('data/abi/bridge/deposit.json') as file:
     DEPOSIT_ABI = json.load(file)
 
