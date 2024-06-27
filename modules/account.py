@@ -117,9 +117,10 @@ class Account:
             balance = await self.get_balance(SCROLL_TOKENS[from_token])
             amount_wei = int(balance["balance_wei"] * percent) \
                 if all_amount else int(random_amount * 10 ** balance["decimal"])
-            amount = float_floor(balance["balance"] * percent, decimal) if all_amount else random_amount
+            amount = balance["balance"] * percent if all_amount else random_amount
 
-            if all_amount:
+            if all_amount and 100 not in (min_percent, max_percent):
+                amount = float_floor(amount, decimal)
                 amount_wei = int(amount * 10 ** balance["decimal"])
 
             balance = balance["balance_wei"]

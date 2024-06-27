@@ -1,4 +1,9 @@
+from datetime import datetime
+
+import aiohttp
+
 from loguru import logger
+from eth_account.messages import encode_defunct
 
 from utils.gas_checker import check_gas
 from utils.helpers import retry
@@ -214,3 +219,67 @@ class Scroll(Account):
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
+
+    async def check_signed_terms_of_use(self) -> bool:
+        url = "https://venus.scroll.io/v1/signature/address"
+
+        params = {
+            "address": self.address,
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                status = await response.json()
+
+                if status["data"] and int(status["errcode"]) == 0:
+                    return True
+                else:
+                    return False
+            else:
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll request")
+
+                raise Exception(f"Bad Scroll request: {response.status}")
+
+    async def _sign_terms_of_use(self) -> bool:
+        url = "https://venus.scroll.io/v1/signature/sign"
+
+        message = "By signing this message, you acknowledge that you have read and understood the Scroll Sessions Terms of Use, Scroll Terms of Service and Privacy Policy, and agree to abide by all of the terms and conditions contained therein."
+
+        message = encode_defunct(text=message)
+        signed_message = self.w3.eth.account.sign_message(message, private_key=self.private_key)
+
+        body = {
+            "address": self.address,
+            "signature": signed_message.signature.hex(),
+            "timestamp": int(datetime.now().timestamp() * 1000)
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response = await session.post(url=url, json=body)
+
+            if response.status == 200:
+                status = await response.json()
+
+                if int(status["errcode"]) == 0:
+                    return True
+                else:
+                    return False
+            else:
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll sign terms of use request")
+
+                raise Exception(f"Bad Scroll sign terms of use request: {response.status}")
+
+    @retry
+    @check_gas
+    async def sign_terms_of_use(self):
+        signed = await self.check_signed_terms_of_use()
+
+        if signed:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use already signed")
+            return False
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use haven't signed yet")
+
+        return await self._sign_terms_of_use()

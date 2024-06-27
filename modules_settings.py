@@ -44,6 +44,11 @@ async def deposit_economy_scroll(account_id, key, recipient):
     await scroll.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
 
 
+async def scroll_sing_terms_of_use(account_id, key, recipient):
+    scroll = Scroll(account_id, key, "scroll", recipient)
+    return await scroll.sign_terms_of_use()
+
+
 async def withdraw_scroll(account_id, key, recipient):
     """
     Withdraw from official bridge
