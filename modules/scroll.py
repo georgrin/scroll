@@ -27,7 +27,7 @@ def get_random_proxy():
     if PROXIES is None or len(PROXIES) == 0:
         return None
     else:
-        return ProxyConnector.from_url(random.choice(PROXIES))
+        return random.choice(PROXIES)
 
 
 class Scroll(Account):
@@ -231,14 +231,14 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
-    async def _check_signed_terms_of_use(self, connector) -> bool:
+    async def _check_signed_terms_of_use(self, proxy) -> bool:
         url = "https://venus.scroll.io/v1/signature/address"
 
         params = {
             "address": self.address,
         }
 
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy)) as session:
             response = await session.get(url=url, params=params)
 
             if response.status == 200:
@@ -253,7 +253,7 @@ class Scroll(Account):
 
                 raise Exception(f"Bad Scroll request: {response.status}")
 
-    async def _sign_terms_of_use(self, connector) -> bool:
+    async def _sign_terms_of_use(self, proxy) -> bool:
         url = "https://venus.scroll.io/v1/signature/sign"
 
         message = "By signing this message, you acknowledge that you have read and understood the Scroll Sessions Terms of Use, Scroll Terms of Service and Privacy Policy, and agree to abide by all of the terms and conditions contained therein."
@@ -267,7 +267,7 @@ class Scroll(Account):
             "timestamp": int(datetime.now().timestamp() * 1000)
         }
 
-        async with aiohttp.ClientSession(connector=connector) as session:
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy)) as session:
             response = await session.post(url=url, json=body)
 
             if response.status == 200:
@@ -288,8 +288,11 @@ class Scroll(Account):
     @retry
     @check_gas
     async def sign_terms_of_use(self):
-        connector = get_random_proxy()
-        signed = await self._check_signed_terms_of_use(connector)
+        proxy = get_random_proxy()
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+
+        signed = await self._check_signed_terms_of_use(proxy)
 
         if signed:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use already signed")
@@ -297,4 +300,4 @@ class Scroll(Account):
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use haven't signed yet")
 
-        return await self._sign_terms_of_use(connector)
+        return await self._sign_terms_of_use(proxy)
