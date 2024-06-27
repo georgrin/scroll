@@ -1,10 +1,13 @@
+import random
 from datetime import datetime
 
 import aiohttp
 
 from loguru import logger
 from eth_account.messages import encode_defunct
+from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 
+from settings import PROXIES
 from utils.gas_checker import check_gas
 from utils.helpers import retry
 from .account import Account
@@ -23,6 +26,7 @@ from config import (
 class Scroll(Account):
     def __init__(self, account_id: int, private_key: str, chain: str, recipient) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain=chain, recipient=recipient)
+        self.connector = None
 
     @retry
     @check_gas
@@ -220,14 +224,14 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
-    async def check_signed_terms_of_use(self) -> bool:
+    async def _check_signed_terms_of_use(self, connector) -> bool:
         url = "https://venus.scroll.io/v1/signature/address"
 
         params = {
             "address": self.address,
         }
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=connector) as session:
             response = await session.get(url=url, params=params)
 
             if response.status == 200:
@@ -242,7 +246,7 @@ class Scroll(Account):
 
                 raise Exception(f"Bad Scroll request: {response.status}")
 
-    async def _sign_terms_of_use(self) -> bool:
+    async def _sign_terms_of_use(self, connector) -> bool:
         url = "https://venus.scroll.io/v1/signature/sign"
 
         message = "By signing this message, you acknowledge that you have read and understood the Scroll Sessions Terms of Use, Scroll Terms of Service and Privacy Policy, and agree to abide by all of the terms and conditions contained therein."
@@ -256,13 +260,16 @@ class Scroll(Account):
             "timestamp": int(datetime.now().timestamp() * 1000)
         }
 
-        async with aiohttp.ClientSession() as session:
+        async with aiohttp.ClientSession(connector=connector) as session:
             response = await session.post(url=url, json=body)
 
             if response.status == 200:
                 status = await response.json()
 
                 if int(status["errcode"]) == 0:
+                    logger.info(
+                        f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use successfully signed: {status}")
+
                     return True
                 else:
                     return False
@@ -271,10 +278,17 @@ class Scroll(Account):
 
                 raise Exception(f"Bad Scroll sign terms of use request: {response.status}")
 
+    def get_random_proxy(self):
+        if PROXIES is None or len(PROXIES) == 0:
+            return None
+        else:
+            return ProxyConnector.from_url(random.choice(PROXIES))
+
     @retry
     @check_gas
     async def sign_terms_of_use(self):
-        signed = await self.check_signed_terms_of_use()
+        connector = self.get_random_proxy()
+        signed = await self._check_signed_terms_of_use(connector)
 
         if signed:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use already signed")
@@ -282,4 +296,4 @@ class Scroll(Account):
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use haven't signed yet")
 
-        return await self._sign_terms_of_use()
+        return await self._sign_terms_of_use(connector)

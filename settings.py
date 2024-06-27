@@ -42,4 +42,7 @@ RETRY_COUNT = 3
 LAYERSWAP_API_KEY = ""
 SCROLL_API_KEY = ""
 
-PROXY = None # "socks5://127.0.0.1:1080"
+PROXY = None
+
+# Сюда надо записывать прокси в формате "socks5://127.0.0.1:1080"
+PROXIES = []
