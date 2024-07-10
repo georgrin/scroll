@@ -226,11 +226,11 @@ class AmbientFinance(Account):
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
 
-        code = 12  # Fixed in quote tokens
+        code = 11  # Fixed in base tokens
         base = self.eth_address
         quote = self.wrseth_address
         poolIdx = 420
-        slippage = 0.5
+        slippage = 1
 
         eth_wrs_curve_price = await self.get_curve_price(base, quote, poolIdx)
         price = sqrtp_to_price(eth_wrs_curve_price)
@@ -259,8 +259,8 @@ class AmbientFinance(Account):
         amount_wei_wrseth = calc_amount1(liq, limitLower, eth_wrs_curve_price)
 
         amount_eth = amount_wei_eth / 10 ** 18
-        amount_wrseth = amount_wei_wrseth / 10 ** 18
-        qty = amount_wei_wrseth
+        amount_wrseth = (amount_wei_wrseth / 10 ** 18)
+        qty = amount_wei_eth
 
         logger.info(f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
 
