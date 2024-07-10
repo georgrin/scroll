@@ -381,18 +381,6 @@ class AmbientFinance(Account):
                 )
                 callpath_code = 128
 
-                print(                    [code,
-                     base,
-                     quote,
-                     self.pool_id,
-                     position["bidTick"],
-                     position["askTick"],
-                     position["concLiq"],
-                     price_to_sqrtp(tick_to_price(position["bidTick"] - 4)),
-                     price_to_sqrtp(tick_to_price(position["askTick"] + 4)),
-                     settleFlags,
-                     lpConduit])
-
                 tx_data = await self.get_tx_data()
 
                 transaction = await self.swap_contract.functions.userCmd(
@@ -400,10 +388,6 @@ class AmbientFinance(Account):
                     cmd
                 ).build_transaction(tx_data)
 
-                gas = await self.w3.eth.estimate_gas(transaction)
-
-                transaction["gas"] = int(1.5 * gas)
-                print(transaction)
                 signed_txn = await self.sign(transaction)
                 txn_hash = await self.send_raw_transaction(signed_txn)
 
