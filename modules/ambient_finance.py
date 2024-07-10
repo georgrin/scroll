@@ -64,7 +64,7 @@ class AmbientFinance(Account):
         self.swap_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["router"], AMBIENT_FINANCE_ROUTER_ABI)
         self.croc_contract = self.get_contract(AMBIENT_FINANCE_CONTRACTS["croc_query"], AMBIENT_FINANCE_CROC_ABI)
         self.wrs_eth_pool_contract = self.get_contract(RSETH_CONTRACT, RSETH_ABI)
-        self.pool_ids = {"ETH/USDC": 420}
+        self.pool_id = 420
         self.eth_address = "0x0000000000000000000000000000000000000000"
         self.wrseth_address = "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f"
 
@@ -87,7 +87,6 @@ class AmbientFinance(Account):
             self,
             base: str,
             quote: str,
-            pool_id: int,
             amount: int,
             is_buy: bool,
             in_base_amount: bool,
@@ -104,7 +103,7 @@ class AmbientFinance(Account):
         callpath_code = 1
         cmd = encode(
             ["address", "address", "uint256", "bool", "bool", "uint128", "uint16", "uint128", "uint128", "uint8"],
-            [base, quote, pool_id, is_buy, in_base_amount, amount, tip, limit_price, min_out, settle_flags]
+            [base, quote, self.pool_id, is_buy, in_base_amount, amount, tip, limit_price, min_out, settle_flags]
         )
 
         transaction = await self.swap_contract.functions.userCmd(
@@ -116,22 +115,20 @@ class AmbientFinance(Account):
 
     async def get_curve_price(self,
                               base: str,
-                              quote: str,
-                              pool_id: int):
+                              quote: str):
         return await self.croc_contract.functions.queryPrice(
             Web3.to_checksum_address(base),
             Web3.to_checksum_address(quote),
-            pool_id
+            self.pool_id
         ).call()
 
     async def get_price(
             self,
             base: str,
             quote: str,
-            pool_id: int,
             is_buy: bool
     ):
-        price = int((await self.get_curve_price(base, quote, pool_id) / q64) ** 2)
+        price = int((await self.get_curve_price(base, quote) / q64) ** 2)
 
         return 1 / price if is_buy else price
 
@@ -172,10 +169,9 @@ class AmbientFinance(Account):
         is_base_amount = from_token == "ETH"  # TODO: fix it
         base = self.eth_address
         quote = SCROLL_TOKENS[to_token] if from_token == "ETH" else SCROLL_TOKENS[from_token]
-        pool_id = 420
 
         # return price
-        price = await self.get_price(base, quote, pool_id, is_buy)
+        price = await self.get_price(base, quote, is_buy)
 
         min_amount_out_wei = int(float(price) * float(amount_wei))
         min_amount_out_wei = int(min_amount_out_wei * (1 - slippage / 100))
@@ -192,7 +188,6 @@ class AmbientFinance(Account):
 
         contract_txn = await self._swap(base,
                                         quote,
-                                        pool_id,
                                         amount_wei,
                                         is_buy,
                                         is_base_amount,
@@ -223,16 +218,19 @@ class AmbientFinance(Account):
 
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount_wrseth} wrsETH")
 
+        if amount_wei_wrseth < 500000000000000:  # 0.0005 ETH
+            logger.info(f"[{self.account_id}][{self.address}] Cannot deposit, deposit amount less than min deposit, {amount_wrseth} < 0.0005")
+            return False
+
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
 
         code = 11  # Fixed in base tokens
         base = self.eth_address
         quote = self.wrseth_address
-        poolIdx = 420
         slippage = 1
 
-        eth_wrs_curve_price = await self.get_curve_price(base, quote, poolIdx)
+        eth_wrs_curve_price = await self.get_curve_price(base, quote)
         price = sqrtp_to_price(eth_wrs_curve_price)
 
         low_tick = price_to_tick(price * (1 - slippage / 100))
@@ -279,7 +277,7 @@ class AmbientFinance(Account):
             [code,
              base,
              quote,
-             poolIdx,
+             self.pool_id,
              low_tick,
              upper_tick,
              qty,
