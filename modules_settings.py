@@ -554,11 +554,10 @@ async def deposit_layerbank(account_id, key, recipient):
 
 async def deposit_ambient_finance(account_id, key, recipient):
     """
-    Make deposit on Ambient Finance
+    Make deposit on Ambient Finance to wrsETH/ETH pool
     ______________________________________________________
-    make_withdraw - True, if need withdraw after deposit
 
-    all_amount - deposit from min_percent to max_percent
+    all_amount - deposit from min_percent to max_percent of wrsETH
     """
     min_amount = 0.0001
     max_amount = 0.0002
@@ -573,6 +572,15 @@ async def deposit_ambient_finance(account_id, key, recipient):
     return await ambient_finance.deposit(
         min_amount, max_amount, decimal, all_amount, min_percent, max_percent
     )
+
+
+async def withdrawal_ambient_finance(account_id, key, recipient):
+    """
+    Make withdraw from Ambient Finance wrsETH/ETH pool
+    """
+
+    ambient_finance = AmbientFinance(account_id, key, recipient)
+    return await ambient_finance.withdrawal()
 
 
 async def deposit_aave(account_id, key, recipient):

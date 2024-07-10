@@ -90,9 +90,10 @@ def get_module():
             Choice("44) Deposit Rhomarkets", deposit_rhomarkets),
             Choice("45) Withdraw Rhomarkets", withdraw_rhomarkets),
             Choice("46) Deposit Kelp", deposit_kelp),
-            Choice("47) Deposit ambient finance", deposit_ambient_finance),
-            Choice("48) Scroll Sign Terms of Use", scroll_sing_terms_of_use),
-            Choice("49) Exit", "exit"),
+            Choice("47) Deposit Ambient Finance", deposit_ambient_finance),
+            Choice("48) Withdrawal Ambient Finance", withdrawal_ambient_finance),
+            Choice("49) Scroll Sign Terms of Use", scroll_sing_terms_of_use),
+            Choice("50) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "

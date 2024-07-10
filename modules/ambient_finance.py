@@ -1,4 +1,5 @@
 import math
+import aiohttp
 
 from loguru import logger
 from web3 import Web3
@@ -299,3 +300,93 @@ class AmbientFinance(Account):
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
+
+    async def get_liquidity_positions(self, base: str, quote: str):
+        url = "https://ambindexer.net/scroll-gcgo/user_pool_positions"
+        params = {
+            "user": self.address,
+            "base": base,
+            "quote": quote,
+            "poolIdx": self.pool_id,
+            "chainId": "0x82750",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                positions_data = await response.json()
+
+                if positions_data["data"]:
+                    return positions_data["data"]
+                else:
+                    logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response")
+
+                    return []
+            else:
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
+
+                return False
+
+    async def withdrawal(self):
+        code = 2  # Fixed in liquidity units
+        base = self.eth_address
+        quote = self.wrseth_address
+        settleFlags = 0
+        lpConduit = self.eth_address
+
+        positions = await self.get_liquidity_positions(base, quote)
+        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
+
+        count = 1
+
+        for position in active_positions:
+            try:
+                logger.info(
+                    f"[{self.account_id}][{self.address}][{self.chain}] start remove {count} position: {position['positionId']}, {position['concLiq']} liq")
+
+                cmd = encode(
+                    ["uint8",
+                     "address",
+                     "address",
+                     "uint256",
+                     "int24",
+                     "int24",
+                     "uint128",
+                     "uint128",
+                     "uint128",
+                     "uint8",
+                     "address"],
+                    [code,
+                     base,
+                     quote,
+                     self.pool_id,
+                     position["bidTick"],
+                     position["askTick"],
+                     position["concLiq"],
+                     price_to_sqrtp(tick_to_price(position["bidTick"] - 4)),
+                     price_to_sqrtp(tick_to_price(position["askTick"])),
+                     settleFlags,
+                     lpConduit]
+                )
+                callpath_code = 128
+
+                tx_data = await self.get_tx_data()
+
+                transaction = await self.swap_contract.functions.userCmd(
+                    callpath_code,
+                    cmd
+                ).build_transaction(tx_data)
+
+                signed_txn = await self.sign(transaction)
+                txn_hash = await self.send_raw_transaction(signed_txn)
+
+                await self.wait_until_tx_finished(txn_hash.hex())
+
+                count += 1
+            except Exception as ex:
+                logger.error(f"Failed to remove liquidity {count} position: {ex}")
+
+                raise
