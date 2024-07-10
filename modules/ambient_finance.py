@@ -292,27 +292,12 @@ class AmbientFinance(Account):
 
         tx_data = await self.get_tx_data(amount_wei_eth)
 
-        print(code,
-             base,
-             quote,
-             poolIdx,
-             low_tick,
-             upper_tick,
-             qty,
-             limitLower,
-             limitHigher,
-             settleFlags,
-             lpConduit)
-
         transaction = await self.swap_contract.functions.userCmd(
             callpath_code,
             cmd
         ).build_transaction(tx_data)
 
-        print(transaction)
-
         signed_txn = await self.sign(transaction)
-
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
