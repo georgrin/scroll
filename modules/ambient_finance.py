@@ -14,6 +14,49 @@ from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from .account import Account
 
 
+q64 = 2 ** 64
+
+
+def price_to_tick(p):
+    return math.floor(math.log(p, 1.0001))
+
+
+def tick_to_price(p):
+    return 1.0001 ** p
+
+
+def price_to_sqrtp(p):
+    return int(math.sqrt(p) * q64)
+
+
+def sqrtp_to_price(p):
+    return (p / q64) ** 2
+
+
+def liquidity0(amount, pa, pb):
+    if pa > pb:
+        pa, pb = pb, pa
+    return (amount * (pa * pb) / q64) / (pb - pa)
+
+
+def liquidity1(amount, pa, pb):
+    if pa > pb:
+        pa, pb = pb, pa
+    return amount * q64 / (pb - pa)
+
+
+def calc_amount0(liq, pa, pb):
+    if pa > pb:
+        pa, pb = pb, pa
+    return int(liq * q64 * (pb - pa) / pa / pb)
+
+
+def calc_amount1(liq, pa, pb):
+    if pa > pb:
+        pa, pb = pb, pa
+    return int(liq * (pb - pa) / q64)
+
+
 class AmbientFinance(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
@@ -88,7 +131,7 @@ class AmbientFinance(Account):
             pool_id: int,
             is_buy: bool
     ):
-        price = int((await self.get_curve_price(base, quote, pool_id) / (2 ** 64)) ** 2)
+        price = int((await self.get_curve_price(base, quote, pool_id) / q64) ** 2)
 
         return 1 / price if is_buy else price
 
@@ -168,7 +211,7 @@ class AmbientFinance(Account):
                       all_amount: bool,
                       min_percent: int,
                       max_percent: int):
-        amount_wei, amount, balance = await self.get_amount(
+        amount_wei_wrseth, amount_wrseth, balance = await self.get_amount(
             "WRSETH",
             min_amount,
             max_amount,
@@ -178,7 +221,7 @@ class AmbientFinance(Account):
             max_percent
         )
 
-        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount} wrsETH")
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount_wrseth} wrsETH")
 
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
@@ -187,26 +230,39 @@ class AmbientFinance(Account):
         base = self.eth_address
         quote = self.wrseth_address
         poolIdx = 420
+        slippage = 0.5
+
         eth_wrs_curve_price = await self.get_curve_price(base, quote, poolIdx)
-        qty = amount_wei
-        slippage = 1
-        limitLower = int(eth_wrs_curve_price * (1 - slippage / 100) ** 0.5)
-        limitHigher = int(eth_wrs_curve_price * (1 + slippage / 100) ** 0.5)
+        price = sqrtp_to_price(eth_wrs_curve_price)
+
+        low_tick = price_to_tick(price * (1 - slippage / 100))
+        low_tick = int(low_tick / 4) * 4
+
+        upper_tick = price_to_tick(price * (1 + slippage / 100))
+        upper_tick = int(upper_tick / 4) * 4 + 4
+
+        low_price = tick_to_price(low_tick)
+        upper_price = tick_to_price(upper_tick)
+
+        limitLower = price_to_sqrtp(low_price)
+        limitHigher = price_to_sqrtp(upper_price)
         settleFlags = 0
         lpConduit = self.eth_address
 
-        price = (eth_wrs_curve_price / 2 ** 64) ** 2
-        bidTickPrice = (limitLower / 2 ** 64) ** 2
-        askTickPrice = (limitHigher / 2 ** 64) ** 2
+        amount_wei_eth = int(amount_wei_wrseth * (1 / price))
 
-        bidTick = int(round(math.log(bidTickPrice, 1.0001)))
-        bidTick = int(bidTick / 4) * 4
-        # limitLower = int(((1.0001 ** bidTick) ** 0.5) * 2 ** 64)
+        liq_eth = liquidity0(amount_wei_eth, eth_wrs_curve_price, limitHigher)
+        liq_wrseth = liquidity1(amount_wei_wrseth, eth_wrs_curve_price, limitLower)
+        liq = int(min(liq_eth, liq_wrseth))
 
-        askTick = int(round(math.log(askTickPrice, 1.0001)))
-        # просто вроде как тики кратны 4, если судить по апи, поэтому вот так сделал
-        askTick = int(askTick / 4) * 4 + 4
-        # limitHigher = int(((1.0001 ** askTick) ** 0.5) * 2 ** 64)
+        amount_wei_eth = calc_amount0(liq, limitHigher, eth_wrs_curve_price)
+        amount_wei_wrseth = calc_amount1(liq, limitLower, eth_wrs_curve_price)
+
+        amount_eth = amount_wei_eth / 10 ** 18
+        amount_wrseth = amount_wei_wrseth / 10 ** 18
+        qty = amount_wei_wrseth
+
+        logger.info(f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
 
         cmd = encode(
             ["uint8",
@@ -224,8 +280,8 @@ class AmbientFinance(Account):
              base,
              quote,
              poolIdx,
-             bidTick,
-             askTick,
+             low_tick,
+             upper_tick,
              qty,
              limitLower,
              limitHigher,
@@ -233,17 +289,27 @@ class AmbientFinance(Account):
              lpConduit]
         )
         callpath_code = 128
-        amount_eth_wei = int(amount_wei * price)
-        amount_eth = amount_eth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount} wrsETH and {amount_eth} ETH")
+        tx_data = await self.get_tx_data(amount_wei_eth)
 
-        tx_data = await self.get_tx_data(amount_eth_wei)
+        print(code,
+             base,
+             quote,
+             poolIdx,
+             low_tick,
+             upper_tick,
+             qty,
+             limitLower,
+             limitHigher,
+             settleFlags,
+             lpConduit)
 
         transaction = await self.swap_contract.functions.userCmd(
             callpath_code,
             cmd
         ).build_transaction(tx_data)
+
+        print(transaction)
 
         signed_txn = await self.sign(transaction)
 
