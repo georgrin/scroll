@@ -16,6 +16,7 @@ from .account import Account
 
 
 q64 = 2 ** 64
+wrsETH = "WRSETH"
 
 
 def price_to_tick(p):
@@ -208,7 +209,7 @@ class AmbientFinance(Account):
                       min_percent: int,
                       max_percent: int):
         amount_wei_wrseth, amount_wrseth, balance = await self.get_amount(
-            "WRSETH",
+            wrsETH,
             min_amount,
             max_amount,
             decimal,
@@ -222,6 +223,13 @@ class AmbientFinance(Account):
         if amount_wei_wrseth < 500000000000000:  # 0.0005 ETH
             logger.info(f"[{self.account_id}][{self.address}] Cannot deposit, deposit amount less than min deposit, {amount_wrseth} < 0.0005")
             return False
+
+        logger.info(f"Check if {wrsETH} is allow to deposit")
+        allowed_amount = await self.check_allowance(SCROLL_TOKENS[wrsETH], self.swap_contract.address)
+        if allowed_amount < amount_wei_wrseth:
+            logger.info(f"Allowed {allowed_amount} {wrsETH} to deposit, create approve tx")
+            # делаем апрув для амаунта в 10 раз больше, чтобы не делать повторные транзакции при попытках с большим амаунтом
+            await self.approve(int(amount_wei_wrseth * 10), SCROLL_TOKENS[wrsETH], self.swap_contract.address)
 
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
@@ -366,12 +374,24 @@ class AmbientFinance(Account):
                      position["bidTick"],
                      position["askTick"],
                      position["concLiq"],
-                     price_to_sqrtp(tick_to_price(position["bidTick"] - 4)),
-                     price_to_sqrtp(tick_to_price(position["askTick"])),
+                     price_to_sqrtp(tick_to_price(position["bidTick"] + 4)),
+                     price_to_sqrtp(tick_to_price(position["askTick"] - 4)),
                      settleFlags,
                      lpConduit]
                 )
                 callpath_code = 128
+
+                print(                    [code,
+                     base,
+                     quote,
+                     self.pool_id,
+                     position["bidTick"],
+                     position["askTick"],
+                     position["concLiq"],
+                     price_to_sqrtp(tick_to_price(position["bidTick"] - 4)),
+                     price_to_sqrtp(tick_to_price(position["askTick"] + 4)),
+                     settleFlags,
+                     lpConduit])
 
                 tx_data = await self.get_tx_data()
 
@@ -380,6 +400,10 @@ class AmbientFinance(Account):
                     cmd
                 ).build_transaction(tx_data)
 
+                gas = await self.w3.eth.estimate_gas(transaction)
+
+                transaction["gas"] = int(1.5 * gas)
+                print(transaction)
                 signed_txn = await self.sign(transaction)
                 txn_hash = await self.send_raw_transaction(signed_txn)
 
