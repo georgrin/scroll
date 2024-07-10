@@ -207,7 +207,8 @@ class AmbientFinance(Account):
                       decimal: int,
                       all_amount: bool,
                       min_percent: int,
-                      max_percent: int):
+                      max_percent: int,
+                      range_width: float = 1):
         amount_wei_wrseth, amount_wrseth, balance = await self.get_amount(
             wrsETH,
             min_amount,
@@ -237,15 +238,14 @@ class AmbientFinance(Account):
         code = 11  # Fixed in base tokens
         base = self.eth_address
         quote = self.wrseth_address
-        slippage = 1
 
         eth_wrs_curve_price = await self.get_curve_price(base, quote)
         price = sqrtp_to_price(eth_wrs_curve_price)
 
-        low_tick = price_to_tick(price * (1 - slippage / 100))
+        low_tick = price_to_tick(price * (1 - range_width / 100))
         low_tick = int(low_tick / 4) * 4
 
-        upper_tick = price_to_tick(price * (1 + slippage / 100))
+        upper_tick = price_to_tick(price * (1 + range_width / 100))
         upper_tick = int(upper_tick / 4) * 4 + 4
 
         low_price = tick_to_price(low_tick)

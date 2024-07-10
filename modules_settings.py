@@ -568,9 +568,13 @@ async def deposit_ambient_finance(account_id, key, recipient):
     min_percent = 100
     max_percent = 100
 
+    # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
+    # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
+    range_width = 1  # 0.25, 0.5, 1, 5, 10
+
     ambient_finance = AmbientFinance(account_id, key, recipient)
     return await ambient_finance.deposit(
-        min_amount, max_amount, decimal, all_amount, min_percent, max_percent
+        min_amount, max_amount, decimal, all_amount, min_percent, max_percent, range_width
     )
 
 
