@@ -370,7 +370,7 @@ async def swap_sushiswap(account_id, key, recipient):
     )
 
 
-async def swap_inance(account_id, key, recipient):
+async def swap_ambient_finance(account_id, key, recipient):
     """
     Make swap on Ambient Finance
     ______________________________________________________
