@@ -27,6 +27,8 @@ class Scenarios(Account):
                                            ambient_min_percent: int,
                                            ambient_max_percent: int,
                                            ambient_range_width: float,
+                                           min_left_eth_balance: float,
+                                           max_left_eth_balance: float,
                                            min_eth_balance: float = 0.003):
         logger.info(f"[{self.account_id}][{self.address}] Start stake ETH and deposit {wrsETH}")
 
@@ -48,7 +50,12 @@ class Scenarios(Account):
 
             kelp = Kelp(self.account_id, self.private_key, self.recipient)
             kelp_result = await kelp.deposit(
-                kelp_min_amount, kelp_max_amount, decimal, kelp_all_amount, kelp_min_percent, kelp_max_percent,
+                kelp_min_amount,
+                kelp_max_amount,
+                decimal,
+                kelp_all_amount,
+                kelp_min_percent,
+                kelp_max_percent,
                 0
             )
 
@@ -58,7 +65,15 @@ class Scenarios(Account):
 
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
         deposit_result = await ambient_finance.deposit(
-            ambient_min_amount, ambient_max_amount, decimal, ambient_all_amount, ambient_min_percent, ambient_max_percent, ambient_range_width
+            ambient_min_amount,
+            ambient_max_amount,
+            decimal,
+            ambient_all_amount,
+            ambient_min_percent,
+            ambient_max_percent,
+            ambient_range_width,
+            min_left_eth_balance,
+            max_left_eth_balance,
         )
 
         if deposit_result is False:
