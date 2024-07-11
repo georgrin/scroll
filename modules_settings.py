@@ -552,6 +552,14 @@ async def deposit_layerbank(account_id, key, recipient):
     )
 
 
+async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
+    min_eth_balance = 0.003
+    scenario = Scenarios(account_id, key, recipient)
+    return await scenario.stake_eth_and_deposit_wrseth(
+        min_eth_balance
+    )
+
+
 async def deposit_ambient_finance(account_id, key, recipient):
     """
     Make deposit on Ambient Finance to wrsETH/ETH pool

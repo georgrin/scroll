@@ -5,6 +5,7 @@ from .orbiter import Orbiter
 from .nitro import Nitro
 from .rhomarkets import Rhomarkets
 from .kelp import Kelp
+from .scenarios import Scenarios
 from .layerswap import LayerSwap
 from .skydrome import Skydrome
 from .kyberswap import KyberSwap

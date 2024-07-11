@@ -219,7 +219,7 @@ class AmbientFinance(Account):
             max_percent
         )
 
-        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount_wrseth} wrsETH")
+        logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount_wrseth} {wrsETH}")
 
         if amount_wei_wrseth < 500000000000000:  # 0.0005 ETH
             logger.info(f"[{self.account_id}][{self.address}] Cannot deposit, deposit amount less than min deposit, {amount_wrseth} < 0.0005")
