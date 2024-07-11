@@ -1,4 +1,6 @@
 import math
+import random
+
 import aiohttp
 
 from loguru import logger
@@ -208,7 +210,9 @@ class AmbientFinance(Account):
                       all_amount: bool,
                       min_percent: int,
                       max_percent: int,
-                      range_width: float = 1):
+                      range_width: float = 1,
+                      min_left_eth_balance: float = 0,
+                      max_left_eth_balance: float = 0):
         amount_wei_wrseth, amount_wrseth, balance = await self.get_amount(
             wrsETH,
             min_amount,
@@ -267,6 +271,24 @@ class AmbientFinance(Account):
 
         amount_eth = amount_wei_eth / 10 ** 18
         amount_wrseth = (amount_wei_wrseth / 10 ** 18)
+
+        min_left_eth_balance = round(random.uniform(min_left_eth_balance, max_left_eth_balance), decimal) if min_left_eth_balance > 0 or max_left_eth_balance > 0 else 0
+
+        # мы проверяем что после депозита на аккаунте останется минимальный баланс из настроек
+        balance_eth = await self.w3.eth.get_balance(self.address)
+        if min_left_eth_balance > 0 and balance_eth - amount_wei_eth < self.w3.to_wei(min_left_eth_balance, "ether"):
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot deposit {amount_eth} ETH, " +
+                f"because left balance would be less than {min_left_eth_balance} ETH, " +
+                f"new deposit amount is {(amount_wei_eth - self.w3.to_wei(min_left_eth_balance, 'ether')) / 10 ** 18}"
+            )
+
+            # уменьшаем амаунт депозита, чтобы на балансе осталось мин баланс
+            amount_wei_eth -= self.w3.to_wei(min_left_eth_balance, "ether")
+            amount_wei_wrseth -= self.w3.to_wei(min_left_eth_balance, "ether")
+            amount_eth = amount_wei_eth / 10 ** 18
+            amount_wrseth = (amount_wei_wrseth / 10 ** 18)
+
         qty = amount_wei_eth
 
         logger.info(f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
