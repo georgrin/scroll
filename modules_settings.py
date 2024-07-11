@@ -554,11 +554,11 @@ async def deposit_layerbank(account_id, key, recipient):
 
 async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     # не запускаем сценарий для аккаунтов с балансом меньше
-    min_eth_balance = 0.004
+    min_eth_balance = 0.003
 
     # после запуска сценария на аккаунте должно остаться не меньше
-    min_left_eth_balance = 0.0025
-    max_left_eth_balance = 0.0035
+    min_left_eth_balance = 0.001
+    max_left_eth_balance = 0.0015
 
     decimal = 5
 
