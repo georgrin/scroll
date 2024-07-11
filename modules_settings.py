@@ -554,9 +554,40 @@ async def deposit_layerbank(account_id, key, recipient):
 
 async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     min_eth_balance = 0.003
+    decimal = 5
+
+    kelp_min_amount = 0.0001
+    kelp_max_amount = 0.0002
+    # all_amount - deposit from min_percent to max_percent of ETH
+    kelp_all_amount = True
+    kelp_min_percent = 38
+    kelp_max_percent = 43
+
+    ambient_min_amount = 0.0001
+    ambient_max_amount = 0.0002
+    # all_amount - deposit from min_percent to max_percent of wrsETH
+    ambient_all_amount = True
+    ambient_min_percent = 100
+    ambient_max_percent = 100
+    # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
+    # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
+    ambient_range_width = 1
+
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.stake_eth_and_deposit_wrseth(
-        min_eth_balance
+        decimal,
+        kelp_min_amount,
+        kelp_max_amount,
+        kelp_all_amount,
+        kelp_min_percent,
+        kelp_max_percent,
+        ambient_min_amount,
+        ambient_max_amount,
+        ambient_all_amount,
+        ambient_min_percent,
+        ambient_max_percent,
+        ambient_range_width,
+        min_eth_balance,
     )
 
 

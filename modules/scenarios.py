@@ -14,7 +14,20 @@ class Scenarios(Account):
     async def get_wrseth_balance(self) -> int:
         return (await self.get_balance(SCROLL_TOKENS[wrsETH]))["balance_wei"]
 
-    async def stake_eth_and_deposit_wrseth(self, min_eth_balance: float = 0.003, module_cooldown: int = 0):
+    async def stake_eth_and_deposit_wrseth(self,
+                                           decimal: int,
+                                           kelp_min_amount: float,
+                                           kelp_max_amount: float,
+                                           kelp_all_amount: bool,
+                                           kelp_min_percent: int,
+                                           kelp_max_percent: int,
+                                           ambient_min_amount: float,
+                                           ambient_max_amount: float,
+                                           ambient_all_amount: bool,
+                                           ambient_min_percent: int,
+                                           ambient_max_percent: int,
+                                           ambient_range_width: float,
+                                           min_eth_balance: float = 0.003):
         logger.info(f"[{self.account_id}][{self.address}] Start stake ETH and deposit {wrsETH}")
 
         balance_wrseth = await self.get_wrseth_balance()
@@ -22,13 +35,7 @@ class Scenarios(Account):
 
         if balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
             logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {self.w3.eth.balance_eth / 10 ** 18} < {min_eth_balance}")
-
             return False
-
-        min_amount = 0.0001
-        max_amount = 0.0002
-        decimal = 5
-        all_amount = True
 
         # если баланс wrsETH меньше 60% от баланса ETH
         if int(0.6 * balance_eth) > balance_wrseth:
@@ -36,29 +43,19 @@ class Scenarios(Account):
             Make deposit on Kelp
             """
 
-            min_percent = 35
-            max_percent = 40
-
             kelp = Kelp(self.account_id, self.private_key, self.recipient)
             kelp_result = await kelp.deposit(
-                min_amount, max_amount, decimal, all_amount, min_percent, max_percent,
-                module_cooldown
+                kelp_min_amount, kelp_max_amount, decimal, kelp_all_amount, kelp_min_percent, kelp_max_percent,
+                0
             )
 
             if kelp_result is False:
                 logger.error(f"Failed to stake wrsETH, result: {kelp_result}, skip deposit to pool")
                 return True
 
-        min_percent = 100
-        max_percent = 100
-
-        # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
-        # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
-        range_width = 1  # 0.25, 0.5, 1, 5, 10
-
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
         deposit_result = await ambient_finance.deposit(
-            min_amount, max_amount, decimal, all_amount, min_percent, max_percent, range_width
+            ambient_min_amount, ambient_max_amount, decimal, ambient_all_amount, ambient_min_percent, ambient_max_percent, ambient_range_width
         )
 
         if deposit_result is False:
