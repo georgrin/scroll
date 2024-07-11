@@ -33,8 +33,11 @@ class Scenarios(Account):
         balance_wrseth = await self.get_wrseth_balance()
         balance_eth = await self.w3.eth.get_balance(self.address)
 
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance: {balance_eth / 10 ** 18} ETH, {balance_wrseth / 10 ** 18} {wrsETH}")
+
         if balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
-            logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {self.w3.eth.balance_eth / 10 ** 18} < {min_eth_balance}")
+            logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
         # если баланс wrsETH меньше 60% от баланса ETH
