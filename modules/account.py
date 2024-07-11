@@ -65,7 +65,7 @@ class Account:
         return tx
 
     async def transaction_fee(self, tx_data: dict):
-        gas_price = await self.w3.eth.gas_price
+        gas_price = await self.w3.eth.gas_price * GAS_MULTIPLIER
         gas = await self.w3.eth.estimate_gas(tx_data)
 
         return int(gas * gas_price)
