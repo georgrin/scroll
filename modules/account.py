@@ -60,7 +60,9 @@ class Account:
         }
 
         if gas_price:
-            tx.update({"gasPrice": await self.w3.eth.gas_price})
+            gas_price = await self.w3.eth.gas_price
+            gas_price = int(gas_price * GAS_MULTIPLIER)
+            tx.update({"gasPrice": gas_price})
 
         return tx
 
