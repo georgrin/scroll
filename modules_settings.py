@@ -370,7 +370,7 @@ async def swap_sushiswap(account_id, key, recipient):
     )
 
 
-async def swap_ambient_finance(account_id, key, recipient):
+async def swap_inance(account_id, key, recipient):
     """
     Make swap on Ambient Finance
     ______________________________________________________
@@ -1121,8 +1121,9 @@ async def custom_routes(account_id, key, recipient):
         # withdraw_layerbank,
         # withdraw_aave,
         # deposit_layerbank,
-        withdraw_compound_finance,
-        deposit_rhomarkets
+        #withdraw_compound_finance,
+        withdraw_rhomarkets,
+        stake_kelp_and_deposit_ambient_finance
     ]
 
     sleep_from = 10
