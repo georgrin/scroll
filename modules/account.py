@@ -199,7 +199,9 @@ class Account:
                 }
             )
         else:
-            transaction.update({"gasPrice": int(transaction['gasPrice'] * GAS_MULTIPLIER)})
+            gasPrice = int(transaction['gasPrice'] * GAS_MULTIPLIER)
+            print(f"Gas price: {gasPrice}")
+            transaction.update({"gasPrice": gasPrice})
 
         gas = await self.w3.eth.estimate_gas(transaction)
         gas = int(gas * GAS_LIMIT_MULTIPLIER)
