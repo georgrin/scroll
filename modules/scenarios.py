@@ -29,8 +29,20 @@ class Scenarios(Account):
                                            ambient_range_width: float,
                                            min_left_eth_balance: float,
                                            max_left_eth_balance: float,
+                                           max_deposit_amount: float,
                                            min_eth_balance: float = 0.003):
         logger.info(f"[{self.account_id}][{self.address}] Start stake ETH and deposit {wrsETH}")
+        ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
+
+        current_deposit = await ambient_finance.get_total_deposit_amount()
+
+        logger.info(
+            f"[{self.account_id}][{self.address}] Current estimated ETH amount deposited to wrsETH/ETH pool: {current_deposit * 0.5}")
+
+        if current_deposit * 0.5 > max_deposit_amount:
+            logger.info(
+                f"[{self.account_id}][{self.address}] Current deposit is greater than min deposit amount: {current_deposit} > {max_deposit_amount}")
+            return False
 
         balance_wrseth = await self.get_wrseth_balance()
         balance_eth = await self.w3.eth.get_balance(self.address)
@@ -63,7 +75,6 @@ class Scenarios(Account):
                 logger.error(f"Failed to stake wrsETH, result: {kelp_result}, skip deposit to pool")
                 return True
 
-        ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
         deposit_result = await ambient_finance.deposit(
             ambient_min_amount,
             ambient_max_amount,

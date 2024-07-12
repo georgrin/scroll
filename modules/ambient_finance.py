@@ -358,6 +358,19 @@ class AmbientFinance(Account):
 
                 return False
 
+    async def get_total_deposit_amount(self) -> float:
+        base = self.eth_address
+        quote = self.wrseth_address
+
+        positions = await self.get_liquidity_positions(base, quote)
+        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
+
+        total = 0
+        for position in active_positions:
+            total += position["aprEst"]
+
+        return total
+
     async def withdrawal(self):
         code = 2  # Fixed in liquidity units
         base = self.eth_address
@@ -417,6 +430,6 @@ class AmbientFinance(Account):
 
                 count += 1
             except Exception as ex:
-                logger.error(f"Failed to remove liquidity {count} position: {ex}")
+                logger.error(f"Failed to remove liquidity {count} position {position['positionId']}: {ex}")
 
                 raise
