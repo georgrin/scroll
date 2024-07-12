@@ -556,6 +556,9 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     # не запускаем сценарий для аккаунтов с балансом меньше
     min_eth_balance = 0.003
 
+    # не запускаем сценарий для аккаунта, у которого депозит больше
+    max_deposit_amount = 0.005
+
     # после запуска сценария на аккаунте должно остаться не меньше
     min_left_eth_balance = 0.001
     max_left_eth_balance = 0.0015
@@ -595,6 +598,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
         ambient_range_width,
         min_left_eth_balance,
         max_left_eth_balance,
+        max_deposit_amount,
         min_eth_balance,
     )
 
