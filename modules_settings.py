@@ -382,15 +382,15 @@ async def swap_ambient_finance(account_id, key, recipient):
     all_amount - swap from min_percent to max_percent
     """
 
-    from_token = "ETH"
-    to_token = "USDC"
+    from_token = "WRSETH"
+    to_token = "ETH"
 
     min_amount = 0.0007
     max_amount = 0.001
     decimal = 6
     slippage = 2
 
-    all_amount = False
+    all_amount = True
 
     min_percent = 100
     max_percent = 100

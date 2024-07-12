@@ -14,6 +14,7 @@ from config import (AMBIENT_FINANCE_ROUTER_ABI,
                     RSETH_CONTRACT)
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration, get_action_tx_count
+from utils.sleeping import sleep
 from .account import Account
 
 
@@ -429,6 +430,7 @@ class AmbientFinance(Account):
                 await self.wait_until_tx_finished(txn_hash.hex())
 
                 count += 1
+                await sleep(15, 30)
             except Exception as ex:
                 logger.error(f"Failed to remove liquidity {count} position {position['positionId']}: {ex}")
 
