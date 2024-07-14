@@ -437,7 +437,7 @@ class Scroll(Account):
     @retry
     async def mint_canvas(self, min_left_eth_balance: float = 0.0014):
         canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
-        is_minted = await self.is_profile_minted(mint_fee, )
+        is_minted = await self.is_profile_minted()
 
         if is_minted:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted canvas")
@@ -463,7 +463,7 @@ class Scroll(Account):
         if min_left_eth_balance > 0 and balance_eth - mint_fee < self.w3.to_wei(min_left_eth_balance, "ether"):
             logger.info(
                 f"[{self.account_id}][{self.address}] Cannot mint Scroll canvas, " +
-                f"because left balance would be less than {min_left_eth_balance} ETH, mint cost is {mint_fee / 10 ** 18} ETH, balance {balance_eth/ 10 ** 18} ETH"
+                f"because left balance would be less than {min_left_eth_balance} ETH, mint cost is {mint_fee / 10 ** 18} ETH, balance {balance_eth / 10 ** 18} ETH"
             )
             return False
 
