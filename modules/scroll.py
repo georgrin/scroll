@@ -406,7 +406,7 @@ class Scroll(Account):
             f"[{self.account_id}][{self.address}][{self.chain}] Try to add account to file with accounts with referral code")
 
         with open("scroll_canvas_referral_accounts.txt", 'r+') as file:
-            wallets = [row.strip().lower() for row in file]
+            wallets = [row.strip().lower() for row in file if row.strip() != ""]
 
             if self.address.lower() not in wallets:
                 file.write(f"{self.address}\n")
