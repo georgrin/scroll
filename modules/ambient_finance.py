@@ -204,6 +204,8 @@ class AmbientFinance(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
+    @retry
+    @check_gas
     async def deposit(self,
                       min_amount: float,
                       max_amount: float,
@@ -372,6 +374,8 @@ class AmbientFinance(Account):
 
         return total
 
+    @retry
+    @check_gas
     async def withdrawal(self):
         code = 2  # Fixed in liquidity units
         base = self.eth_address
