@@ -6,10 +6,11 @@ import aiohttp
 from loguru import logger
 from eth_account.messages import encode_defunct
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
+from web3 import Web3
 
 from settings import USE_PROXIES
 from utils.gas_checker import check_gas
-from utils.helpers import retry
+from utils.helpers import retry, checkLastIteration
 from .account import Account
 
 from config import (
@@ -18,9 +19,11 @@ from config import (
     DEPOSIT_ECONOMY_ABI,
     WITHDRAW_ABI,
     ORACLE_ABI,
+    SCROLL_CANVAS_ABI,
+    SCROLL_CANVAS_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
-    PROXIES
+    PROXIES,
 )
 
 
@@ -287,7 +290,6 @@ class Scroll(Account):
                 raise Exception(f"Bad Scroll sign terms of use request: {response.status}")
 
     @retry
-    @check_gas
     async def sign_terms_of_use(self):
         proxy = get_random_proxy()
 
@@ -302,3 +304,87 @@ class Scroll(Account):
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use haven't signed yet")
 
         return await self._sign_terms_of_use(proxy)
+
+    async def is_profile_minted(self):
+        # return await canvas_contract.functions.isProfileMinted(self.address).call()
+
+        return not (await checkLastIteration(
+            interval=99999999999999999999999,
+            account=self.account,
+            deposit_contract_address=SCROLL_CANVAS_CONTRACT,
+            chain='scroll',
+            log_prefix='Scroll Canvas'
+        ))
+
+    async def create_random_names(self, proxy=None):
+        url = "https://plarium.com/services/api/nicknames/new/create"
+
+        body = {
+            "group": 2,
+            "gender": 2,
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.post(url=url, params=body)
+
+            if response.status == 200:
+                nicknames = await response.json()
+
+                if type(nicknames) is list:
+                    return nicknames
+                else:
+                    raise Exception(f"Random nicknames bad response: {response.status}:{nicknames}")
+            else:
+                raise Exception(f"Random nicknames request failed: {response.status}:{response}")
+
+    @retry
+    async def get_random_name(self, canvas_contract):
+        random_names = await self.create_random_names()
+
+        for name in random_names:
+            is_name_used = await canvas_contract.functions.isUsernameUsed(name).call()
+            if not is_name_used:
+                return name
+        raise Exception(f"All random nicknames are already used: {random_names}")
+
+    async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
+        url = f"https://canvas.scroll.cat/acc/{address}/code"
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url)
+
+            if response.status == 200:
+                data = await response.json()
+
+                if "code" in data:
+                    return data["code"]
+                else:
+                    raise Exception(f"Bad Scroll sign terms of use response: {response.status}:{data}")
+            else:
+                raise Exception(f"Failed to get  Scroll Canvas referral code: {response.status}")
+
+    async def mint_canvas(self):
+        canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
+        is_minted = await self.is_profile_minted()
+
+        if is_minted:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted canvas")
+            return False
+
+        name = await self.get_random_name(canvas_contract)
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with random name: {name}")
+
+        mint_fee = await canvas_contract.functions.MINT_FEE().call()
+
+        tx_data = await self.get_tx_data(mint_fee)
+
+        transaction = await canvas_contract.functions.mint(
+            name,
+            Web3.to_bytes(text="")
+        ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())

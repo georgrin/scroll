@@ -94,6 +94,7 @@ def get_module():
             Choice("48) Withdrawal Ambient Finance", withdrawal_ambient_finance),
             Choice("49) Scroll Sign Terms of Use", scroll_sing_terms_of_use),
             Choice("50) Stake ETH with Kelp and Deposit wrsETH/ETH to Ambient Finance", stake_kelp_and_deposit_ambient_finance),
+            Choice("51) Mint Scroll Canvas", scroll_mint_canvas),
             Choice("51) Exit", "exit"),
         ],
         qmark="⚙️ ",

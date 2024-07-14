@@ -126,6 +126,9 @@ with open("data/abi/nft-origins/abi.json", "r") as file:
 with open("data/abi/kelp/abi.json", "r") as file:
     KELP_ABI = json.load(file)
 
+with open("data/abi/scroll/canvas.json", "r") as file:
+    SCROLL_CANVAS_ABI = json.load(file)
+
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 BRIDGE_CONTRACTS = {
@@ -222,3 +225,5 @@ L2TELEGRAPH_NFT_CONTRACT = "0xdc60fd9d2a4ccf97f292969580874de69e6c326e"
 NFT_ORIGINS_CONTRACT = "0x74670A3998d9d6622E32D0847fF5977c37E0eC91"
 
 RSETH_CONTRACT = "0xc9BcFbB1Bf6dd20Ba365797c1Ac5d39FdBf095Da"
+
+SCROLL_CANVAS_CONTRACT = "0xB23AF8707c442f59BDfC368612Bd8DbCca8a7a5a"

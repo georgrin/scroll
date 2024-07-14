@@ -49,6 +49,11 @@ async def scroll_sing_terms_of_use(account_id, key, recipient):
     return await scroll.sign_terms_of_use()
 
 
+async def scroll_mint_canvas(account_id, key, recipient):
+    scroll = Scroll(account_id, key, "scroll", recipient)
+    return await scroll.mint_canvas()
+
+
 async def withdraw_scroll(account_id, key, recipient):
     """
     Withdraw from official bridge
@@ -648,7 +653,7 @@ async def deposit_aave(account_id, key, recipient):
     """
 
     module_cooldown = 77777
-    
+
     min_amount = 0.0001
     max_amount = 0.0002
     decimal = 5
@@ -697,6 +702,7 @@ async def deposit_rhomarkets(account_id, key, recipient):
         min_amount, max_amount, decimal, sleep_from, sleep_to, make_withdraw, all_amount, min_percent, max_percent,
         module_cooldown
     )
+
 
 async def deposit_kelp(account_id, key, recipient):
     """
@@ -1125,7 +1131,7 @@ async def custom_routes(account_id, key, recipient):
         # withdraw_layerbank,
         # withdraw_aave,
         # deposit_layerbank,
-        #withdraw_compound_finance,
+        # withdraw_compound_finance,
         withdraw_rhomarkets,
         stake_kelp_and_deposit_ambient_finance
     ]
