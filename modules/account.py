@@ -166,7 +166,7 @@ class Account:
 
             await sleep(5, 20)
 
-    async def wait_until_tx_finished(self, hash: str, max_wait_time=180) -> None:
+    async def wait_until_tx_finished(self, hash: str, max_wait_time=1200) -> None:
         start_time = time.time()
         while True:
             try:
