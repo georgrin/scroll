@@ -50,8 +50,10 @@ async def scroll_sing_terms_of_use(account_id, key, recipient):
 
 
 async def scroll_mint_canvas(account_id, key, recipient):
+    min_left_eth_balance = 0.0014
+
     scroll = Scroll(account_id, key, "scroll", recipient)
-    return await scroll.mint_canvas()
+    return await scroll.mint_canvas(min_left_eth_balance)
 
 
 async def withdraw_scroll(account_id, key, recipient):

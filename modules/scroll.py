@@ -421,7 +421,7 @@ class Scroll(Account):
                 logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
 
     @retry
-    async def mint_canvas(self):
+    async def mint_canvas(self, min_left_eth_balance: float = 0.0014):
         canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
         is_minted = await self.is_profile_minted()
 
@@ -442,7 +442,18 @@ class Scroll(Account):
         logger.info(
             f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with referral code: {referral_code} ({referral_code_wallet})")
 
-        tx_data = await self.get_tx_data(int(mint_fee * 0.5) if len(referral_code_sign) > 0 else mint_fee)
+        mint_fee = int(mint_fee * 0.5) if len(referral_code_sign) > 0 else mint_fee
+
+        # мы проверяем что после транзакции на аккаунте останется минимальный баланс из настроек
+        balance_eth = await self.w3.eth.get_balance(self.address)
+        if min_left_eth_balance > 0 and balance_eth - mint_fee < self.w3.to_wei(min_left_eth_balance, "ether"):
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot mint Scroll canvas, " +
+                f"because left balance would be less than {min_left_eth_balance} ETH, mint cost is {mint_fee / 10 ** 18} ETH, balance {balance_eth/ 10 ** 18} ETH"
+            )
+            return False
+
+        tx_data = await self.get_tx_data()
 
         transaction = await canvas_contract.functions.mint(
             name,
