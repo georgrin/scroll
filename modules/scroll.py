@@ -421,9 +421,23 @@ class Scroll(Account):
                 logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
 
     @retry
+    async def create_and_send_mint_tx(self, name, canvas_contract, mint_fee, referral_code_sign):
+        tx_data = await self.get_tx_data(mint_fee)
+
+        transaction = await canvas_contract.functions.mint(
+            name,
+            Web3.to_bytes(hexstr=referral_code_sign)
+        ).build_transaction(tx_data)
+
+        signed_txn = await self.sign(transaction)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
     async def mint_canvas(self, min_left_eth_balance: float = 0.0014):
         canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
-        is_minted = await self.is_profile_minted()
+        is_minted = await self.is_profile_minted(mint_fee, )
 
         if is_minted:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted canvas")
@@ -453,17 +467,7 @@ class Scroll(Account):
             )
             return False
 
-        tx_data = await self.get_tx_data()
-
-        transaction = await canvas_contract.functions.mint(
-            name,
-            Web3.to_bytes(hexstr=referral_code_sign)
-        ).build_transaction(tx_data)
-
-        signed_txn = await self.sign(transaction)
-        txn_hash = await self.send_raw_transaction(signed_txn)
-
-        await self.wait_until_tx_finished(txn_hash.hex())
+        await self.create_and_send_mint_tx(name, canvas_contract, mint_fee, referral_code_sign)
 
         await sleep(EXPLORER_CACHE_S)
 
