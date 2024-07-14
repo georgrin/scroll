@@ -1,5 +1,6 @@
 import random
 from datetime import datetime
+from onecache import AsyncCacheDecorator
 
 import aiohttp
 
@@ -8,7 +9,7 @@ from eth_account.messages import encode_defunct
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from web3 import Web3
 
-from settings import USE_PROXIES
+from settings import USE_PROXIES, EXPLORER_CACHE_S
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
@@ -350,7 +351,10 @@ class Scroll(Account):
         raise Exception(f"All random nicknames are already used: {random_names}")
 
     @retry
+    @AsyncCacheDecorator(ttl=1000)
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
+        if not proxy:
+            proxy = get_random_proxy()
         url = f"https://canvas.scroll.cat/acc/{address}/code"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
@@ -385,7 +389,10 @@ class Scroll(Account):
             return None, None
 
     @retry
+    @AsyncCacheDecorator(ttl=15)
     async def referral_code_sign(self, referral_code: str, proxy=None):
+        if not proxy:
+            proxy = get_random_proxy()
         url = f"https://canvas.scroll.cat/code/{referral_code}/sig/{self.address}"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
@@ -413,6 +420,7 @@ class Scroll(Account):
             else:
                 logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
 
+    @retry
     async def mint_canvas(self):
         canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
         is_minted = await self.is_profile_minted()
@@ -446,7 +454,7 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
-        await sleep(20)
+        await sleep(EXPLORER_CACHE_S)
 
         is_minted = await self.is_profile_minted()
 
