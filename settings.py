@@ -2,7 +2,7 @@
 RANDOM_WALLET = True  # True/False
 
 # EXPLORER CACHE
-EXPLORER_CACHE_S = 20
+EXPLORER_CACHE_S = 10
 
 # removing a wallet from the list after the job is done
 REMOVE_WALLET = False

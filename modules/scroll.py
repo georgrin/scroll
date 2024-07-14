@@ -11,6 +11,7 @@ from web3 import Web3
 from settings import USE_PROXIES
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
+from utils.sleeping import sleep
 from .account import Account
 
 from config import (
@@ -305,6 +306,7 @@ class Scroll(Account):
 
         return await self._sign_terms_of_use(proxy)
 
+    @retry
     async def is_profile_minted(self):
         # return await canvas_contract.functions.isProfileMinted(self.address).call()
 
@@ -443,6 +445,10 @@ class Scroll(Account):
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
+
+        await sleep(20)
+
+        is_minted = await self.is_profile_minted()
 
         if is_minted:
             await self.add_account_to_referral_file()
