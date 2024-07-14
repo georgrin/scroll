@@ -347,6 +347,7 @@ class Scroll(Account):
                 return name
         raise Exception(f"All random nicknames are already used: {random_names}")
 
+    @retry
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
         url = f"https://canvas.scroll.cat/acc/{address}/code"
 
@@ -359,9 +360,56 @@ class Scroll(Account):
                 if "code" in data:
                     return data["code"]
                 else:
-                    raise Exception(f"Bad Scroll sign terms of use response: {response.status}:{data}")
+                    raise Exception(f"Bad get Scroll canvas referral code response: {response.status}:{data}")
             else:
-                raise Exception(f"Failed to get  Scroll Canvas referral code: {response.status}")
+                raise Exception(f"Failed to get Scroll Canvas referral code: {response.status}")
+
+    async def get_random_referral_code(self):
+        with open("scroll_canvas_referral_accounts.txt") as file:
+            wallets = [row.strip().lower() for row in file]
+
+            while self.address.lower() in wallets:
+                wallets.remove(self.address.lower())
+
+            if len(wallets) > 0:
+                wallet = random.choice(wallets)
+
+                logger.info(f"Try to get {wallet} referral code")
+
+                return await self.get_wallet_canvas_referral_code(wallet)
+
+            logger.info(f"No accounts to referral")
+
+            return None
+
+    @retry
+    async def referral_code_sign(self, referral_code: str, proxy=None):
+        url = f"https://canvas.scroll.cat/code/{referral_code}/sig/{self.address}"
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url)
+
+            if response.status == 200:
+                data = await response.json()
+
+                if "signature" in data:
+                    return data["signature"]
+                else:
+                    raise Exception(f"Bad get Scroll referral code signature: {response.status}:{data}")
+            else:
+                raise Exception(f"Failed to get Scroll Canvas referral code signature: {response.status}")
+
+    async def add_account_to_referral_file(self):
+        logger.info(
+            f"[{self.account_id}][{self.address}][{self.chain}] Try to add account to file with accounts with referral code")
+
+        with open("scroll_canvas_referral_accounts.txt", 'r+') as file:
+            wallets = [row.strip().lower() for row in file]
+
+            if self.address.lower() not in wallets:
+                file.write(f"{self.address}\n")
+            else:
+                logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
 
     async def mint_canvas(self):
         canvas_contract = self.get_contract(SCROLL_CANVAS_CONTRACT, SCROLL_CANVAS_ABI)
@@ -369,6 +417,7 @@ class Scroll(Account):
 
         if is_minted:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted canvas")
+            await self.add_account_to_referral_file()
             return False
 
         name = await self.get_random_name(canvas_contract)
@@ -377,14 +426,23 @@ class Scroll(Account):
 
         mint_fee = await canvas_contract.functions.MINT_FEE().call()
 
-        tx_data = await self.get_tx_data(mint_fee)
+        referral_code = await self.get_random_referral_code()
+        referral_code_sign = await self.referral_code_sign(referral_code) if referral_code else ""
+
+        logger.info(
+            f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with referral code: {referral_code}")
+
+        tx_data = await self.get_tx_data(int(mint_fee * 0.5) if len(referral_code_sign) > 0 else mint_fee)
 
         transaction = await canvas_contract.functions.mint(
             name,
-            Web3.to_bytes(text="")
+            Web3.to_bytes(hexstr=referral_code_sign)
         ).build_transaction(tx_data)
 
         signed_txn = await self.sign(transaction)
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
+
+        if is_minted:
+            await self.add_account_to_referral_file()
