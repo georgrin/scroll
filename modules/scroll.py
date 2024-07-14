@@ -409,7 +409,7 @@ class Scroll(Account):
             wallets = [row.strip().lower() for row in file]
 
             if self.address.lower() not in wallets:
-                file.write(f"{self.address}\n")
+                file.write(f"\n{self.address}")
             else:
                 logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
 
