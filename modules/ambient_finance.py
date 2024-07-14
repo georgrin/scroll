@@ -351,9 +351,9 @@ class AmbientFinance(Account):
                 if positions_data["data"]:
                     return positions_data["data"]
                 else:
-                    logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response")
+                    logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response: {positions_data}")
 
-                    return []
+                    raise Exception(f"Ambient finance positions wrong response: {positions_data}")
             else:
                 logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
 
