@@ -378,11 +378,11 @@ class Scroll(Account):
 
                 logger.info(f"Try to get {wallet} referral code")
 
-                return await self.get_wallet_canvas_referral_code(wallet)
+                return await self.get_wallet_canvas_referral_code(wallet), wallet
 
             logger.info(f"No accounts to referral")
 
-            return None
+            return None, None
 
     @retry
     async def referral_code_sign(self, referral_code: str, proxy=None):
@@ -428,11 +428,11 @@ class Scroll(Account):
 
         mint_fee = await canvas_contract.functions.MINT_FEE().call()
 
-        referral_code = await self.get_random_referral_code()
+        referral_code, referral_code_wallet = await self.get_random_referral_code()
         referral_code_sign = await self.referral_code_sign(referral_code) if referral_code else ""
 
         logger.info(
-            f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with referral code: {referral_code}")
+            f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with referral code: {referral_code} ({referral_code_wallet})")
 
         tx_data = await self.get_tx_data(int(mint_fee * 0.5) if len(referral_code_sign) > 0 else mint_fee)
 
