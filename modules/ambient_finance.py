@@ -350,7 +350,7 @@ class AmbientFinance(Account):
             if response.status == 200:
                 positions_data = await response.json()
 
-                if positions_data["data"]:
+                if "data" in positions_data and type(positions_data["data"]) is list:
                     return positions_data["data"]
                 else:
                     logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response: {positions_data}")
