@@ -344,7 +344,7 @@ class Scroll(Account):
         url = "https://www.spinxo.com/services/NameService.asmx/GetNames"
         payload = '{"snr":{"category":0,"UserName":"","Hobbies":"","ThingsILike":"","Numbers":"","WhatAreYouLike":"","Words":"","Stub":"nicknames","LanguageCode":"en","NamesLanguageID":"45","Rhyming":false,"OneWord":false,"UseExactWords":false,"ScreenNameStyleString":"Any","GenderAny":false,"GenderMale":false,"GenderFemale":false}}'
         headers = {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json; charset=UTF-8"
         }
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
