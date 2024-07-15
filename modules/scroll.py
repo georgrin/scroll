@@ -368,7 +368,7 @@ class Scroll(Account):
         }
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
-            response = await session.post(url=url, params=body, headers=headers)
+            response = await session.post(url=url, params=payload, headers=headers)
 
             if response.status == 200:
                 response_data = await response.json()
