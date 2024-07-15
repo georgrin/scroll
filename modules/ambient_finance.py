@@ -100,7 +100,7 @@ class AmbientFinance(Account):
             settle_flags: int = 0,
             tip: int = 0
     ):
-        tx_data = await self.get_tx_data(amount if base == self.eth_address and is_buy is True else 0)
+        tx_data = await self.get_tx_data(amount if base == self.eth_address and is_buy is True else 0, gas_price = False)
 
         # ('0x0000000000000000000000000000000000000000', '0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4', 420, True, True,
         #  700000000000000, 0, 21267430153580247136652501917186561137, 2059128, 0)
@@ -237,7 +237,7 @@ class AmbientFinance(Account):
         if allowed_amount < amount_wei_wrseth:
             logger.info(f"Allowed {allowed_amount} {wrsETH} to deposit, create approve tx")
             # делаем апрув для амаунта в 10 раз больше, чтобы не делать повторные транзакции при попытках с большим амаунтом
-            await self.approve(int(amount_wei_wrseth * 10), SCROLL_TOKENS[wrsETH], self.swap_contract.address)
+            await self.approve(int(amount_wei_wrseth * 10), SCROLL_TOKENS[wrsETH], self.swap_contract.address, gas_price = False)
 
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
@@ -322,7 +322,7 @@ class AmbientFinance(Account):
         )
         callpath_code = 128
 
-        tx_data = await self.get_tx_data(amount_wei_eth)
+        tx_data = await self.get_tx_data(amount_wei_eth, gas_price = False)
 
         transaction = await self.swap_contract.functions.userCmd(
             callpath_code,
@@ -420,7 +420,7 @@ class AmbientFinance(Account):
                 )
                 callpath_code = 128
 
-                tx_data = await self.get_tx_data()
+                tx_data = await self.get_tx_data(gas_price = False)
 
                 transaction = await self.swap_contract.functions.userCmd(
                     callpath_code,

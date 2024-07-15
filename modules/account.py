@@ -60,8 +60,11 @@ class Account:
         }
 
         if gas_price:
-            gas_price = await self.w3.eth.gas_price
-            gas_price = int(gas_price * GAS_MULTIPLIER)
+            fee_history = await self.w3.eth.fee_history(1, 'latest', [10])
+            base_fee = int(fee_history['baseFeePerGas'][-1] * GAS_MULTIPLIER)
+            priority_fee = await self.w3.eth.max_priority_fee
+            max_fee = base_fee + priority_fee           
+            gas_price = max_fee 
             tx.update({"gasPrice": gas_price})
 
         return tx
@@ -138,7 +141,7 @@ class Account:
 
         return amount_approved
 
-    async def approve(self, amount: float, token_address: str, contract_address: str) -> None:
+    async def approve(self, amount: float, token_address: str, contract_address: str, gas_price: bool = True) -> None:
         token_address = self.w3.to_checksum_address(token_address)
         contract_address = self.w3.to_checksum_address(contract_address)
 
@@ -151,7 +154,7 @@ class Account:
 
             approve_amount = 2 ** 128 if amount > allowance_amount else 0
 
-            tx_data = await self.get_tx_data()
+            tx_data = await self.get_tx_data(gas_price = gas_price)
 
             transaction = await contract.functions.approve(
                 contract_address,
@@ -189,22 +192,27 @@ class Account:
 
     async def sign(self, transaction) -> Any:
         if transaction.get("gasPrice", None) is None:
-            max_priority_fee_per_gas = self.w3.to_wei(MAX_PRIORITY_FEE["ethereum"], "gwei")
-            max_fee_per_gas = await self.w3.eth.gas_price
-            print(max_fee_per_gas)
-            max_fee_per_gas = int(max_fee_per_gas * GAS_MULTIPLIER)
-            print(max_fee_per_gas)
+            fee_history = await self.w3.eth.fee_history(1, 'latest', [10])
+            base_fee = int(fee_history['baseFeePerGas'][-1] * GAS_MULTIPLIER)
+            priority_fee = await self.w3.eth.max_priority_fee
+            max_fee = base_fee + priority_fee 
+
+            max_priority_fee_per_gas = priority_fee
+            max_fee_per_gas = max_fee
+
+
             transaction.update(
                 {
                     "maxPriorityFeePerGas": max_priority_fee_per_gas,
                     "maxFeePerGas": max_fee_per_gas,
                 }
             )
+        """
         else:
             gasPrice = int(transaction['gasPrice'] * GAS_MULTIPLIER)
             print(f"Gas price: {gasPrice}")
             transaction.update({"gasPrice": gasPrice})
-
+        """
         gas = await self.w3.eth.estimate_gas(transaction)
         gas = int(gas * GAS_LIMIT_MULTIPLIER)
 

@@ -68,7 +68,7 @@ class Kelp(Account):
 
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on Kelp | {amount} ETH")
 
-        tx_data = await self.get_tx_data(amount_wei)
+        tx_data = await self.get_tx_data(amount_wei, gas_price = False)
 
         transaction = await self.contract.functions.deposit(
             "0xd05723c7b17b4e4c722ca4fb95e64ffc54a70131c75e2b2548a456c51ed7cdaf").build_transaction(tx_data)
