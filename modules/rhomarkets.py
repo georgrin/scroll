@@ -96,6 +96,8 @@ class Rhomarkets(Account):
                 f"{self.w3.from_wei(amount, 'ether')} ETH" + f"{amount} wei"
             )
 
+            print(tx_data)
+            
             tx_data = await self.get_tx_data()
 
             transaction = await self.contract.functions.redeemUnderlying(
