@@ -340,9 +340,53 @@ class Scroll(Account):
             else:
                 raise Exception(f"Random nicknames request failed: {response.status}:{response}")
 
+    async def create_random_names_spinxo(self, proxy=None):
+        url = "https://www.spinxo.com/services/NameService.asmx/GetNames"
+        payload = {
+            "snr": {
+                "category": 0,
+                "UserName": "",
+                "Hobbies": "",
+                "ThingsILike": "",
+                "Numbers": "",
+                "WhatAreYouLike": "",
+                "Words": "",
+                "Stub": "nicknames",
+                "LanguageCode": "en",
+                "NamesLanguageID": 45,
+                "Rhyming": False,
+                "OneWord": False,
+                "UseExactWords": False,
+                "ScreenNameStyleString": "Any",
+                "GenderAny": False,
+                "GenderMale": False,
+                "GenderFemale": False
+            }
+        }
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.post(url=url, params=body, headers=headers)
+
+            if response.status == 200:
+                response_data = await response.json()
+                if "d" in response_data and "Names" in response_data["d"]:
+                    nicknames = response_data["d"]["Names"]
+                    if type(nicknames) is list:
+                        return nicknames
+                    else:
+                        raise Exception(f"Unexpected format for 'Names': {nicknames}")
+                else:
+                    raise Exception(f"Missing 'd' or 'Names' in response: {response_data}")
+            else:
+                raise Exception(f"Random nicknames request failed: {response.status}:{response}")
+
+
     @retry
     async def get_random_name(self, canvas_contract):
-        random_names = await self.create_random_names()
+        random_names = await self.create_random_names_spinxo()
 
         for name in random_names:
             is_name_used = await canvas_contract.functions.isUsernameUsed(name).call()
