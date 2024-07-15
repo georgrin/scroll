@@ -342,27 +342,7 @@ class Scroll(Account):
 
     async def create_random_names_spinxo(self, proxy=None):
         url = "https://www.spinxo.com/services/NameService.asmx/GetNames"
-        payload = {
-            "snr": {
-                "category": 0,
-                "UserName": "",
-                "Hobbies": "",
-                "ThingsILike": "",
-                "Numbers": "",
-                "WhatAreYouLike": "",
-                "Words": "",
-                "Stub": "nicknames",
-                "LanguageCode": "en",
-                "NamesLanguageID": 45,
-                "Rhyming": False,
-                "OneWord": False,
-                "UseExactWords": False,
-                "ScreenNameStyleString": "Any",
-                "GenderAny": False,
-                "GenderMale": False,
-                "GenderFemale": False
-            }
-        }
+        payload = '{"snr":{"category":0,"UserName":"","Hobbies":"","ThingsILike":"","Numbers":"","WhatAreYouLike":"","Words":"","Stub":"nicknames","LanguageCode":"en","NamesLanguageID":"45","Rhyming":false,"OneWord":false,"UseExactWords":false,"ScreenNameStyleString":"Any","GenderAny":false,"GenderMale":false,"GenderFemale":false}}'
         headers = {
             "Content-Type": "application/json"
         }
