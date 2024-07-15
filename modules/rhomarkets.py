@@ -93,7 +93,7 @@ class Rhomarkets(Account):
         if amount > 500000000000000:  # 0,0005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] Make withdraw from Rhomarkets | " +
-                f"{self.w3.from_wei(amount, 'ether')} ETH" + f"{amount} wei"
+                f"{self.w3.from_wei(amount, 'ether')} ETH" + " " + f"{amount} wei"
             )
 
             tx_data = await self.get_tx_data()
