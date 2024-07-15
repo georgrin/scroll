@@ -102,7 +102,7 @@ class Rhomarkets(Account):
                 amount,
             ).build_transaction(tx_data)
 
-            transaction(tx_data)
+            print transaction
             
             signed_txn = await self.sign(transaction)
 
