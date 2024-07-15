@@ -358,8 +358,7 @@ class AmbientFinance(Account):
                     raise Exception(f"Ambient finance positions wrong response: {positions_data}")
             else:
                 logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
-
-                return False
+                raise Exception(f"Bad Ambient finance request to get positions")
 
     async def get_total_deposit_amount(self) -> float:
         base = self.eth_address
