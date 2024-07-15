@@ -428,7 +428,7 @@ class Scroll(Account):
 
     @retry
     async def create_and_send_mint_tx(self, name, canvas_contract, mint_fee, referral_code_sign):
-        tx_data = await self.get_tx_data(mint_fee)
+        tx_data = await self.get_tx_data(mint_fee, False)
 
         transaction = await canvas_contract.functions.mint(
             name,
