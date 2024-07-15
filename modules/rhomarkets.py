@@ -102,8 +102,6 @@ class Rhomarkets(Account):
                 amount,
             ).build_transaction(tx_data)
 
-            print transaction
-            
             signed_txn = await self.sign(transaction)
 
             txn_hash = await self.send_raw_transaction(signed_txn)
