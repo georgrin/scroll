@@ -200,7 +200,6 @@ class Account:
             max_priority_fee_per_gas = priority_fee
             max_fee_per_gas = max_fee
 
-
             transaction.update(
                 {
                     "maxPriorityFeePerGas": max_priority_fee_per_gas,
