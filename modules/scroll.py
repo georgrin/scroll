@@ -475,7 +475,8 @@ class Scroll(Account):
 
         await self.create_and_send_mint_tx(name, canvas_contract, mint_fee, referral_code_sign)
 
-        await sleep(EXPLORER_CACHE_S)
+        # await sleep(EXPLORER_CACHE_S)
+        await sleep(30)
 
         is_minted = await self.is_profile_minted()
 
