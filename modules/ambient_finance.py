@@ -346,7 +346,7 @@ class AmbientFinance(Account):
 
         async with aiohttp.ClientSession() as session:
             response = await session.get(url=url, params=params)
-
+            print(response)
             if response.status == 200:
                 positions_data = await response.json()
 
