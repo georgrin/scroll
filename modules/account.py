@@ -25,7 +25,7 @@ def floor(value: Decimal, places=6) -> Decimal:
 def float_floor(value: Decimal, places=6):
     return float(floor(Decimal(value), places=places))
 
-
+ 
 class Account:
     def __init__(self, account_id: int, private_key: str, chain: str, recipient: str) -> None:
         self.account_id = account_id
