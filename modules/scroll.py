@@ -355,6 +355,9 @@ class Scroll(Account):
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
         if not proxy:
             proxy = get_random_proxy()
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        
         url = f"https://canvas.scroll.cat/acc/{address}/code"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
@@ -393,6 +396,9 @@ class Scroll(Account):
     async def referral_code_sign(self, referral_code: str, proxy=None):
         if not proxy:
             proxy = get_random_proxy()
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        
         url = f"https://canvas.scroll.cat/code/{referral_code}/sig/{self.address}"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
