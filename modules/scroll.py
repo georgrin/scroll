@@ -24,6 +24,7 @@ from config import (
     SCROLL_CANVAS_ABI,
     SCROLL_CANVAS_CONTRACT,
     SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
+    SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI,
     SCROLL_CANVAS_BADGES_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
@@ -323,15 +324,10 @@ class Scroll(Account):
         ))
 
     @retry
-    async def is_badge_minted(self, badge_address):
-        return not (await checkLastIteration(
-            interval=-1,
-            account=self.account,
-            deposit_contract_address=badge_address,
-            chain='scroll',
-            log_prefix='Scroll Canvas Badge',
-            log=False
-        ))
+    async def is_badge_minted(self, badge_address, badge_abi):
+        badge_contract = self.get_contract(badge_address, badge_abi)
+        print('hello')
+        return await badge_contract.functions.hasBadge(self.address).call()
 
     async def create_random_names(self, proxy=None):
         url = "https://plarium.com/services/api/nicknames/new/create"
@@ -564,11 +560,12 @@ class Scroll(Account):
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
             return False
 
-        # Надо найти другой способ проверки, потому что может быть несколько значков в будущем
-        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_BADGES_CONTRACT)
+        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT, SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI)
         if is_minted_badge:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ethereum Year Badge")
             return False
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ethereum Year Badge")
 
         # мы проверяем что на аккаунте есть минимальный баланс нативки
         balance_eth = await self.w3.eth.get_balance(self.address)

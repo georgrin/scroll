@@ -132,6 +132,9 @@ with open("data/abi/scroll/canvas.json", "r") as file:
 with open("data/abi/scroll/canvas_badges.json", "r") as file:
     SCROLL_CANVAS_BADGES_CONTRACT_ABI = json.load(file)
 
+with open("data/abi/scroll/scroll_canvas_ethereum_year_badge.json", "r") as file:
+    SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI = json.load(file)
+
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
 BRIDGE_CONTRACTS = {
