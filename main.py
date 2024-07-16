@@ -96,6 +96,7 @@ def get_module():
             Choice("50) Stake ETH with Kelp and Deposit wrsETH/ETH to Ambient Finance", stake_kelp_and_deposit_ambient_finance),
             Choice("51) Mint Scroll Canvas", scroll_mint_canvas),
             Choice("52) Mint Scroll Ethereum Year Badge", scroll_mint_ethereum_year_badge),
+            Choice("52) Reposit liquidity Ambient Finance",  reposit_ambient_finance),
             Choice("53) Exit", "exit"),
         ],
         qmark="⚙️ ",

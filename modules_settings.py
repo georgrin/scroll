@@ -643,6 +643,17 @@ async def deposit_ambient_finance(account_id, key, recipient):
     )
 
 
+async def reposit_ambient_finance(account_id, key, recipient):
+    # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
+    # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
+    range_width = 1  # 0.25, 0.5, 1, 5, 10
+
+    ambient_finance = AmbientFinance(account_id, key, recipient)
+    return await ambient_finance.reposit_outrage_deposits(
+        range_width
+    )
+
+
 async def withdrawal_ambient_finance(account_id, key, recipient):
     """
     Make withdraw from Ambient Finance wrsETH/ETH pool

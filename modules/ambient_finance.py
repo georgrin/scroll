@@ -17,7 +17,6 @@ from utils.helpers import retry, checkLastIteration, get_action_tx_count
 from utils.sleeping import sleep
 from .account import Account
 
-
 q64 = 2 ** 64
 wrsETH = "WRSETH"
 
@@ -100,7 +99,7 @@ class AmbientFinance(Account):
             settle_flags: int = 0,
             tip: int = 0
     ):
-        tx_data = await self.get_tx_data(amount if base == self.eth_address and is_buy is True else 0, gas_price = False)
+        tx_data = await self.get_tx_data(amount if base == self.eth_address and is_buy is True else 0, gas_price=False)
 
         # ('0x0000000000000000000000000000000000000000', '0x06efdbff2a14a7c8e15944d1f4a48f9f95f663a4', 420, True, True,
         #  700000000000000, 0, 21267430153580247136652501917186561137, 2059128, 0)
@@ -229,7 +228,8 @@ class AmbientFinance(Account):
         logger.info(f"[{self.account_id}][{self.address}] Make deposit on Ambient Finance | {amount_wrseth} {wrsETH}")
 
         if amount_wei_wrseth < 500000000000000:  # 0.0005 ETH
-            logger.info(f"[{self.account_id}][{self.address}] Cannot deposit, deposit amount less than min deposit, {amount_wrseth} < 0.0005")
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot deposit, deposit amount less than min deposit, {amount_wrseth} < 0.0005")
             return False
 
         logger.info(f"Check if {wrsETH} is allow to deposit")
@@ -237,7 +237,8 @@ class AmbientFinance(Account):
         if allowed_amount < amount_wei_wrseth:
             logger.info(f"Allowed {allowed_amount} {wrsETH} to deposit, create approve tx")
             # делаем апрув для амаунта в 10 раз больше, чтобы не делать повторные транзакции при попытках с большим амаунтом
-            await self.approve(int(amount_wei_wrseth * 10), SCROLL_TOKENS[wrsETH], self.swap_contract.address, gas_price = False)
+            await self.approve(int(amount_wei_wrseth * 10), SCROLL_TOKENS[wrsETH], self.swap_contract.address,
+                               gas_price=False)
 
         # (12, '0x0000000000000000000000000000000000000000', '0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f', 420, 4,
         # 208, 5896785964741205, 18453258108933701632, 18554781007215525888, 0, '0x0000000000000000000000000000000000000000')
@@ -275,7 +276,8 @@ class AmbientFinance(Account):
         amount_eth = amount_wei_eth / 10 ** 18
         amount_wrseth = (amount_wei_wrseth / 10 ** 18)
 
-        min_left_eth_balance = round(random.uniform(min_left_eth_balance, max_left_eth_balance), decimal) if min_left_eth_balance > 0 or max_left_eth_balance > 0 else 0
+        min_left_eth_balance = round(random.uniform(min_left_eth_balance, max_left_eth_balance),
+                                     decimal) if min_left_eth_balance > 0 or max_left_eth_balance > 0 else 0
 
         # мы проверяем что после депозита на аккаунте останется минимальный баланс из настроек
         balance_eth = await self.w3.eth.get_balance(self.address)
@@ -294,7 +296,8 @@ class AmbientFinance(Account):
 
         qty = amount_wei_eth
 
-        logger.info(f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
+        logger.info(
+            f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
 
         cmd = encode(
             ["uint8",
@@ -322,7 +325,7 @@ class AmbientFinance(Account):
         )
         callpath_code = 128
 
-        tx_data = await self.get_tx_data(amount_wei_eth, gas_price = False)
+        tx_data = await self.get_tx_data(amount_wei_eth, gas_price=False)
 
         transaction = await self.swap_contract.functions.userCmd(
             callpath_code,
@@ -346,18 +349,19 @@ class AmbientFinance(Account):
 
         async with aiohttp.ClientSession() as session:
             response = await session.get(url=url, params=params)
-            print(response)
             if response.status == 200:
                 positions_data = await response.json()
 
                 if "data" in positions_data and type(positions_data["data"]) is list:
                     return positions_data["data"]
                 else:
-                    logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response: {positions_data}")
+                    logger.error(
+                        f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response: {positions_data}")
 
                     raise Exception(f"Ambient finance positions wrong response: {positions_data}")
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
+                logger.error(
+                    f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
                 raise Exception(f"Bad Ambient finance request to get positions")
 
     async def get_total_deposit_amount(self) -> float:
@@ -385,7 +389,8 @@ class AmbientFinance(Account):
         positions = await self.get_liquidity_positions(base, quote)
         active_positions = [p for p in positions if int(p["concLiq"]) > 0]
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
+        logger.info(
+            f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
 
         count = 1
 
@@ -420,7 +425,7 @@ class AmbientFinance(Account):
                 )
                 callpath_code = 128
 
-                tx_data = await self.get_tx_data(gas_price = False)
+                tx_data = await self.get_tx_data(gas_price=False)
 
                 transaction = await self.swap_contract.functions.userCmd(
                     callpath_code,
@@ -438,3 +443,181 @@ class AmbientFinance(Account):
                 logger.error(f"Failed to remove liquidity {count} position {position['positionId']}: {ex}")
 
                 raise
+
+    async def is_position_out_of_range(self, base, quote, position) -> float:
+        eth_wrs_curve_price = await self.get_curve_price(base, quote)
+        current_price = sqrtp_to_price(eth_wrs_curve_price)
+
+        current_tick = price_to_tick(current_price)
+
+        return current_tick >= int(position["askTick"])
+
+    @retry
+    @check_gas
+    async def reposit_outrage_deposits(self,
+                                       new_range_width: float = 0.5):
+        base = self.eth_address
+        quote = self.wrseth_address
+
+        positions = await self.get_liquidity_positions(base, quote)
+        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
+
+        logger.info(
+            f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
+
+        count = 0
+
+        # TODO: сначала надо проверить что работает
+        return False
+
+        for position in active_positions:
+            try:
+                is_out_range = await self.is_position_out_of_range(base, quote, position)
+
+                if not is_out_range:
+                    continue
+                logger.info(
+                    f"[{self.account_id}][{self.address}][{self.chain}] start reposit {count} position: {position['positionId']}, {position['concLiq']} liq")
+
+                eth_wrs_curve_price = await self.get_curve_price(base, quote)
+                price = sqrtp_to_price(eth_wrs_curve_price)
+
+                low_tick = price_to_tick(price * (1 - new_range_width / 100))
+                low_tick = int(low_tick / 4) * 4
+
+                upper_tick = price_to_tick(price * (1 + new_range_width / 100))
+                upper_tick = int(upper_tick / 4) * 4 + 4
+
+                low_price = tick_to_price(low_tick)
+                upper_price = tick_to_price(upper_tick)
+
+                limitLower = price_to_sqrtp(low_price)
+                limitHigher = price_to_sqrtp(upper_price)
+
+                cmd = encode(
+                    ["uint8",
+                     "address",
+                     "address",
+                     "uint256",
+                     "int24",
+                     "int24",
+                     "uint128",
+                     "uint128",
+                     "uint128",
+                     "uint8",
+                     "address",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "address",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256"],
+                    [1,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     2,   # Не знаю что это но вроде значение везде одинаковое
+                     self.pool_id,
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     position["bidTick"],
+                     position["askTick"],
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     position["concLiq"],  # TODO: проверить что это так
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     4,   # Не знаю что это но вроде значение везде одинаковое
+                     5162,  # TODO: Хер пойми что это и как это выбирать, значение разные
+                     limitHigher,  # TODO: проверить
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     self.pool_id,
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     108,   # скорее всего новые тики
+                     212,   # скорее всего новые тики
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     1,   # Не знаю что это но вроде значение везде одинаковое
+                     5,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     base,
+                     quote,
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0,   # Не знаю что это но вроде значение везде одинаковое
+                     0   # Не знаю что это но вроде значение везде одинаковое
+                     ]
+                )
+                callpath_code = 130
+
+                tx_data = await self.get_tx_data(gas_price=False)
+
+                transaction = await self.swap_contract.functions.userCmd(
+                    callpath_code,
+                    cmd
+                ).build_transaction(tx_data)
+
+                signed_txn = await self.sign(transaction)
+                txn_hash = await self.send_raw_transaction(signed_txn)
+
+                await self.wait_until_tx_finished(txn_hash.hex())
+
+                await sleep(20, 40)
+                count += 1
+            except Exception as ex:
+                logger.error(f"Failed to reposit liquidity {count} position {position['positionId']}: {ex}")
+
+                raise
+
+        return count > 0
