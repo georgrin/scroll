@@ -23,6 +23,7 @@ from config import (
     ORACLE_ABI,
     SCROLL_CANVAS_ABI,
     SCROLL_CANVAS_CONTRACT,
+    SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
     PROXIES,
@@ -381,7 +382,7 @@ class Scroll(Account):
             proxy = get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
-        
+
         url = f"https://canvas.scroll.cat/acc/{address}/code"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
@@ -422,7 +423,7 @@ class Scroll(Account):
             proxy = get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
-        
+
         url = f"https://canvas.scroll.cat/code/{referral_code}/sig/{self.address}"
 
         async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
@@ -506,3 +507,67 @@ class Scroll(Account):
 
         if is_minted:
             await self.add_account_to_referral_file()
+
+    @retry
+    @AsyncCacheDecorator(ttl=15)
+    async def get_mint_badge_tx_data(self, badge_address: str, proxy=None):
+        if not proxy:
+            proxy = get_random_proxy()
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+
+        url = "https://canvas.scroll.cat/badge/claim"
+        params = {
+            "badge": badge_address,
+            "recipient": self.address
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                data = await response.json()
+
+                # {
+                #     "code": 1,
+                #     "message": "success",
+                #     "tx" : {
+                #         "to": "0x39fb5e85c7713657c2d9e869e974ff1e0b06f20c",
+                #         "data": "0x3c0427150000000000000000000000000000000000000000000000000000000000000020d57de4f41c3d3cc855eadef68f98c0d4edd22d57161d96b7c06d2f4336cc3b4900000000000000000000000000000000000000000000000000000000000000e0000000000000000000000000000000000000000000000000000000000000001babbbec56de19e2d02db1119f3a8413b3c822c52ce5b0cbf4461a01184d02347d66bd701ab0ce3c526fc194dfd4572a8d111268cc0b6f2bdcba1d7591b6623a1a00000000000000000000000069c352b8a1d62eed22ee3cd81ee91f00dcd90f9600000000000000000000000000000000000000000000000000000000669594a9000000000000000000000000762b6ed8df8aba7ea400f3a84189eb8525384ef600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000c0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000800000000000000000000000003dacad961e5e2de850f5e027c70b56b5afa5dfed0000000000000000000000000000000000000000000000000000000000000040000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000007e8"
+                #     }
+                # }
+
+                if "message" in data and data["message"] == "success" and "tx" in data:
+                    return data["tx"]
+                else:
+                    raise Exception(f"Bad get Scroll mint badge sign signature: {response.status}:{data}")
+            else:
+                raise Exception(f"Failed to get Scroll mint badge sign signature: {response.status}")
+
+    @retry
+    async def mint_ethereum_year_badge(self, min_eth_balance: float = 0.0005):
+        is_minted = await self.is_profile_minted()
+        if not is_minted:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            return False
+
+        # мы проверяем что на аккаунте есть минимальный баланс нативки
+        balance_eth = await self.w3.eth.get_balance(self.address)
+        if min_eth_balance > 0 and balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot mint Scroll Ethereum Year Badge, " +
+                f"due to small ETH balance {balance_eth / 10 ** 18} ETH, min balance should be {min_eth_balance} ETH"
+            )
+            return False
+
+        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT)
+
+        tx_data = await self.get_tx_data(0, False)
+
+        tx_data["to"] = self.w3.to_checksum_address(mint_ethereum_year_badge_tx_data["to"])
+        tx_data["data"] = mint_ethereum_year_badge_tx_data["data"]
+
+        signed_txn = await self.sign(tx_data)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
