@@ -6,7 +6,6 @@ from utils.sleeping import sleep
 from datetime import datetime
 import requests
 import json
-import aiohttp
 
 
 def retry(func):
@@ -136,19 +135,22 @@ async def get_last_action_tx(address: str, dst: str, chain: str):
     return last
 
 
-async def checkLastIteration(interval: int, account, deposit_contract_address: str, chain: str, log_prefix: str):
+async def checkLastIteration(interval: int, account, deposit_contract_address: str, chain: str, log_prefix: str, log: bool = True):
     current_datetime = datetime.now()
     last_tx = await get_last_action_tx(address=account.address, dst=deposit_contract_address, chain=chain)
     if last_tx:
         tx_time = datetime.fromtimestamp(int(last_tx["timeStamp"]))
         time_passed = current_datetime - tx_time
 
-        if time_passed.total_seconds() < interval:
-            logger.info(f"{log_prefix} already done less then {interval} seconds ago, skipping")
+        if time_passed.total_seconds() < interval or interval < 0:
+            if log:
+                logger.info(f"{log_prefix} already done less then {interval} seconds ago, skipping")
             return False
         else:
-            logger.info(f"{log_prefix} done more then {interval} seconds ago, working")
+            if log:
+                logger.info(f"{log_prefix} done more then {interval} seconds ago, working")
             return True
     else:
-        logger.info(f"{log_prefix} previous TX not found, working")
+        if log:
+            logger.info(f"{log_prefix} previous TX not found, working")
         return True

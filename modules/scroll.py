@@ -9,7 +9,7 @@ from eth_account.messages import encode_defunct
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from web3 import Web3
 
-from settings import USE_PROXIES, EXPLORER_CACHE_S
+from settings import USE_PROXIES
 from utils.gas_checker import check_gas
 from utils.helpers import retry, checkLastIteration
 from utils.sleeping import sleep
@@ -24,6 +24,7 @@ from config import (
     SCROLL_CANVAS_ABI,
     SCROLL_CANVAS_CONTRACT,
     SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
+    SCROLL_CANVAS_BADGES_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
     PROXIES,
@@ -313,11 +314,23 @@ class Scroll(Account):
         # return await canvas_contract.functions.isProfileMinted(self.address).call()
 
         return not (await checkLastIteration(
-            interval=99999999999999999999999,
+            interval=-1,
             account=self.account,
             deposit_contract_address=SCROLL_CANVAS_CONTRACT,
             chain='scroll',
-            log_prefix='Scroll Canvas'
+            log_prefix='Scroll Canvas',
+            log=False
+        ))
+
+    @retry
+    async def is_badge_minted(self, badge_address):
+        return not (await checkLastIteration(
+            interval=-1,
+            account=self.account,
+            deposit_contract_address=badge_address,
+            chain='scroll',
+            log_prefix='Scroll Canvas Badge',
+            log=False
         ))
 
     async def create_random_names(self, proxy=None):
@@ -549,6 +562,12 @@ class Scroll(Account):
         is_minted = await self.is_profile_minted()
         if not is_minted:
             logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            return False
+
+        # Надо найти другой способ проверки, потому что может быть несколько значков в будущем
+        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_BADGES_CONTRACT)
+        if is_minted_badge:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ethereum Year Badge")
             return False
 
         # мы проверяем что на аккаунте есть минимальный баланс нативки
