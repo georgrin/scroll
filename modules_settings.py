@@ -637,9 +637,20 @@ async def deposit_ambient_finance(account_id, key, recipient):
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
     range_width = 1  # 0.25, 0.5, 1, 5, 10
 
+    min_left_eth_balance: float = 0.0045
+    max_left_eth_balance: float = 0.0055
+
     ambient_finance = AmbientFinance(account_id, key, recipient)
     return await ambient_finance.deposit(
-        min_amount, max_amount, decimal, all_amount, min_percent, max_percent, range_width
+        min_amount,
+        max_amount,
+        decimal,
+        all_amount,
+        min_percent,
+        max_percent,
+        range_width,
+        min_left_eth_balance,
+        max_left_eth_balance
     )
 
 
