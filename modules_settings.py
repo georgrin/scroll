@@ -574,8 +574,8 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     max_deposit_amount = 0.005
 
     # после запуска сценария на аккаунте должно остаться не меньше
-    min_left_eth_balance = 0.001
-    max_left_eth_balance = 0.0015
+    min_left_eth_balance = 0.0045
+    max_left_eth_balance = 0.0055
 
     decimal = 5
 
@@ -586,8 +586,8 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     kelp_min_percent = 38
     kelp_max_percent = 43
 
-    ambient_min_amount = 0.00045
-    ambient_max_amount = 0.00055
+    ambient_min_amount = 0.0001
+    ambient_max_amount = 0.0002
     # all_amount - deposit from min_percent to max_percent of wrsETH
     ambient_all_amount = True
     ambient_min_percent = 100
