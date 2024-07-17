@@ -455,7 +455,7 @@ class AmbientFinance(Account):
     @retry
     @check_gas
     async def reposit_outrage_deposits(self,
-                                       new_range_width: float = 0.5):
+                                       new_range_width: float = 1):
         base = self.eth_address
         quote = self.wrseth_address
 
@@ -467,9 +467,6 @@ class AmbientFinance(Account):
 
         count = 0
 
-        # TODO: сначала надо проверить что работает
-        return False
-
         for position in active_positions:
             try:
                 is_out_range = await self.is_position_out_of_range(base, quote, position)
@@ -477,7 +474,7 @@ class AmbientFinance(Account):
                 if not is_out_range:
                     continue
                 logger.info(
-                    f"[{self.account_id}][{self.address}][{self.chain}] start reposit {count} position: {position['positionId']}, {position['concLiq']} liq")
+                    f"[{self.account_id}][{self.address}][{self.chain}] start reposit {count + 1}/{len(active_positions)} position: {position['positionId']}, {position['concLiq']} liq")
 
                 eth_wrs_curve_price = await self.get_curve_price(base, quote)
                 price = sqrtp_to_price(eth_wrs_curve_price)
@@ -496,8 +493,8 @@ class AmbientFinance(Account):
 
                 cmd = encode(
                     ["uint8",
-                     "address",
-                     "address",
+                     "uint256",
+                     "uint256",
                      "uint256",
                      "int24",
                      "int24",
@@ -505,41 +502,41 @@ class AmbientFinance(Account):
                      "uint128",
                      "uint128",
                      "uint8",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
+                     "uint256",
                      "address",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
-                     "uint256",
                      "address",
                      "uint256",
                      "uint256",
@@ -563,12 +560,12 @@ class AmbientFinance(Account):
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      0,   # Не знаю что это но вроде значение везде одинаковое
-                     position["concLiq"],  # TODO: проверить что это так
+                     position["concLiq"],  # текущий амаунт позиции
                      1,   # Не знаю что это но вроде значение везде одинаковое
                      1,   # Не знаю что это но вроде значение везде одинаковое
                      4,   # Не знаю что это но вроде значение везде одинаковое
                      5162,  # TODO: Хер пойми что это и как это выбирать, значение разные
-                     limitHigher,  # TODO: проверить
+                     limitHigher,  # макс цена
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      1,   # Не знаю что это но вроде значение везде одинаковое
                      0,   # Не знаю что это но вроде значение везде одинаковое
@@ -577,8 +574,8 @@ class AmbientFinance(Account):
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      1,   # Не знаю что это но вроде значение везде одинаковое
-                     108,   # скорее всего новые тики
-                     212,   # скорее всего новые тики
+                     low_tick,   # новые тики
+                     upper_tick,   # новые тики
                      0,   # Не знаю что это но вроде значение везде одинаковое
                      1,   # Не знаю что это но вроде значение везде одинаковое
                      5,   # Не знаю что это но вроде значение везде одинаковое
