@@ -61,11 +61,10 @@ class Scenarios(Account):
             """
             Make deposit on Kelp
             """
-
             wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
 
             kelp_min_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_min_percent - wrseth_current_percent > 5 else kelp_min_percent
-            kelp_max_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_max_percent- wrseth_current_percent > 5 else kelp_max_percent
+            kelp_max_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_max_percent - wrseth_current_percent > 5 else kelp_max_percent
 
             logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit from {kelp_min_percent}% to {kelp_max_percent}%")
 
