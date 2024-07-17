@@ -41,7 +41,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] Current estimated ETH amount deposited to wrsETH/ETH pool: {current_deposit * 0.5}")
 
-        if current_deposit * 0.5 > max_deposit_amount:
+        if current_deposit > max_deposit_amount:
             logger.info(
                 f"[{self.account_id}][{self.address}] Current deposit is greater than min deposit amount: {current_deposit} > {max_deposit_amount}")
             return False
@@ -63,10 +63,15 @@ class Scenarios(Account):
             """
             wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
 
-            kelp_min_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_min_percent - wrseth_current_percent > 5 else kelp_min_percent
-            kelp_max_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_max_percent - wrseth_current_percent > 5 else kelp_max_percent
+            new_kelp_min_percent = kelp_min_percent - wrseth_current_percent if wrseth_current_percent > 5 else kelp_min_percent
+            new_kelp_max_percent = kelp_max_percent - wrseth_current_percent if wrseth_current_percent > 5 else kelp_max_percent
+            old_kelp_min_percent = kelp_min_percent
+            old_kelp_max_percent = kelp_max_percent
 
-            logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit from {kelp_min_percent}% to {kelp_max_percent}%")
+            kelp_min_percent = new_kelp_min_percent if new_kelp_min_percent > 5 else 5
+            kelp_max_percent = new_kelp_max_percent if new_kelp_max_percent > 6 else 6
+
+            logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
 
             kelp = Kelp(self.account_id, self.private_key, self.recipient)
             kelp_result = await kelp.deposit(
