@@ -285,14 +285,23 @@ class AmbientFinance(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] Cannot deposit {amount_eth} ETH, " +
                 f"because left balance would be less than {min_left_eth_balance} ETH, " +
-                f"new deposit amount is {(amount_wei_eth - self.w3.to_wei(min_left_eth_balance, 'ether')) / 10 ** 18}"
+                f"new deposit amount is {(balance_eth - self.w3.to_wei(min_left_eth_balance, 'ether')) / 10 ** 18}"
             )
 
             # уменьшаем амаунт депозита, чтобы на балансе осталось мин баланс
-            amount_wei_eth -= self.w3.to_wei(min_left_eth_balance, "ether")
-            amount_wei_wrseth -= self.w3.to_wei(min_left_eth_balance, "ether")
+            amount_wei_eth = balance_eth - self.w3.to_wei(min_left_eth_balance, "ether")
+
+            amount_wei_wrseth = int(amount_wei_eth * price)
+
+            liq_eth = liquidity0(amount_wei_eth, eth_wrs_curve_price, limitHigher)
+            liq_wrseth = liquidity1(amount_wei_wrseth, eth_wrs_curve_price, limitLower)
+            liq = int(min(liq_eth, liq_wrseth))
+
+            amount_wei_eth = calc_amount0(liq, limitHigher, eth_wrs_curve_price)
+            amount_wei_wrseth = calc_amount1(liq, limitLower, eth_wrs_curve_price)
+
             amount_eth = amount_wei_eth / 10 ** 18
-            amount_wrseth = (amount_wei_wrseth / 10 ** 18)
+            amount_wrseth = amount_wei_wrseth / 10 ** 18
 
         qty = amount_wei_eth
 
