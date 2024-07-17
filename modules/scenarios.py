@@ -1,3 +1,5 @@
+import math
+
 from loguru import logger
 
 from config import SCROLL_TOKENS
@@ -54,11 +56,18 @@ class Scenarios(Account):
             logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
-        # если баланс wrsETH меньше 40% от баланса ETH
-        if int(0.4 * balance_eth) > balance_wrseth:
+        # если баланс wrsETH меньше kelp_min_percent от баланса ETH делаем депозит
+        if int((kelp_min_percent / 100) * balance_eth) > balance_wrseth:
             """
             Make deposit on Kelp
             """
+
+            wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
+
+            kelp_min_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_min_percent - wrseth_current_percent > 5 else kelp_min_percent
+            kelp_max_percent -= wrseth_current_percent if wrseth_current_percent > 5 and kelp_max_percent- wrseth_current_percent > 5 else kelp_max_percent
+
+            logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit from {kelp_min_percent}% to {kelp_max_percent}%")
 
             kelp = Kelp(self.account_id, self.private_key, self.recipient)
             kelp_result = await kelp.deposit(
