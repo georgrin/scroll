@@ -56,37 +56,46 @@ class Scenarios(Account):
             logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
+        wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
+
         # если баланс wrsETH меньше kelp_min_percent от баланса ETH делаем депозит
-        if int((kelp_min_percent / 100) * balance_eth) > balance_wrseth:
+        if kelp_min_percent > wrseth_current_percent:
             """
             Make deposit on Kelp
             """
-            wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
 
             new_kelp_min_percent = kelp_min_percent - wrseth_current_percent if wrseth_current_percent > 5 else kelp_min_percent
             new_kelp_max_percent = kelp_max_percent - wrseth_current_percent if wrseth_current_percent > 5 else kelp_max_percent
             old_kelp_min_percent = kelp_min_percent
             old_kelp_max_percent = kelp_max_percent
 
-            kelp_min_percent = new_kelp_min_percent if new_kelp_min_percent > 5 else 5
-            kelp_max_percent = new_kelp_max_percent if new_kelp_max_percent > 6 else 6
+            # если нам не хватает менее 5%, то считаем, что депозит не нужно делать
+            if new_kelp_min_percent > 5:
+                kelp_min_percent = new_kelp_min_percent
+                kelp_max_percent = new_kelp_max_percent
 
-            logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
+                logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
 
-            kelp = Kelp(self.account_id, self.private_key, self.recipient)
-            kelp_result = await kelp.deposit(
-                kelp_min_amount,
-                kelp_max_amount,
-                decimal,
-                kelp_all_amount,
-                kelp_min_percent,
-                kelp_max_percent,
-                0
-            )
+                kelp = Kelp(self.account_id, self.private_key, self.recipient)
+                kelp_result = await kelp.deposit(
+                    kelp_min_amount,
+                    kelp_max_amount,
+                    decimal,
+                    kelp_all_amount,
+                    kelp_min_percent,
+                    kelp_max_percent,
+                    0
+                )
 
-            if kelp_result is False:
-                logger.error(f"Failed to stake wrsETH, result: {kelp_result}, skip deposit to pool")
-                return True
+                if kelp_result is False:
+                    logger.error(f"Failed to stake wrsETH, result: {kelp_result}, skip deposit to pool")
+                    return True
+            else:
+                logger.info(
+                    f"Current wrsETH balance: {wrseth_current_percent}%, need to additionally deposit {new_kelp_min_percent}%, it less than 5%, skipping deposit")
+        else:
+            logger.info(
+                f"Current wrsETH balance: {wrseth_current_percent}%, Kelp deposit settings: {kelp_min_percent}-{kelp_max_percent}%, enough wrsETH")
 
         deposit_result = await ambient_finance.deposit(
             ambient_min_amount,
