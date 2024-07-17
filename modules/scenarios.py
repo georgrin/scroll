@@ -32,6 +32,7 @@ class Scenarios(Account):
                                            min_left_eth_balance: float,
                                            max_left_eth_balance: float,
                                            max_deposit_amount: float,
+                                           kelp_module_cooldown: int,
                                            min_eth_balance: float = 0.003):
         logger.info(f"[{self.account_id}][{self.address}] Start stake ETH and deposit {wrsETH}")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
@@ -84,7 +85,7 @@ class Scenarios(Account):
                     kelp_all_amount,
                     kelp_min_percent,
                     kelp_max_percent,
-                    0
+                    module_cooldown=kelp_module_cooldown
                 )
 
                 if kelp_result is False:

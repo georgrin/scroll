@@ -586,6 +586,8 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     kelp_min_percent = 38
     kelp_max_percent = 43
 
+    kelp_module_cooldown = 60 * 24
+
     ambient_min_amount = 0.0001
     ambient_max_amount = 0.0002
     # all_amount - deposit from min_percent to max_percent of wrsETH
@@ -613,6 +615,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
         min_left_eth_balance,
         max_left_eth_balance,
         max_deposit_amount,
+        kelp_module_cooldown,
         min_eth_balance,
     )
 
