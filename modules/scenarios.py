@@ -54,8 +54,8 @@ class Scenarios(Account):
             logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
-        # если баланс wrsETH меньше 60% от баланса ETH
-        if int(0.6 * balance_eth) > balance_wrseth:
+        # если баланс wrsETH меньше 40% от баланса ETH
+        if int(0.4 * balance_eth) > balance_wrseth:
             """
             Make deposit on Kelp
             """
