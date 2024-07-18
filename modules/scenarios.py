@@ -297,7 +297,7 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
 
-            await self._buy_wrseth(need_to_buy_wrseth_wei / 10 ** 18)
+            await self._buy_wrseth(need_to_buy_wrseth)
             await sleep(30, 60)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to buy wrsETH to make deposit")
@@ -309,7 +309,7 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
 
-            await self._buy_wrseth(need_to_buy_wrseth_wei / 10 ** 18)
+            await self._buy_wrseth(need_to_sell_wrseth)
             await sleep(30, 60)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to sell wrsETH to make deposit")
