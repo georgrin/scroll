@@ -55,7 +55,8 @@ class Scenarios(Account):
             f"[{self.account_id}][{self.address}] balance: {balance_eth / 10 ** 18} ETH, {balance_wrseth / 10 ** 18} {wrsETH}")
 
         if balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
-            logger.info(f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
         wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
@@ -76,14 +77,17 @@ class Scenarios(Account):
                 kelp_min_percent = new_kelp_min_percent
                 kelp_max_percent = new_kelp_max_percent
 
-                logger.info(f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
+                logger.info(
+                    f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
 
                 kelp = Kelp(self.account_id, self.private_key, self.recipient)
                 kelp_result = await kelp.deposit(
-                    kelp_min_amount,
-                    kelp_max_amount,
+                    kelp_min_amount if old_kelp_min_percent == new_kelp_min_percent else (
+                        balance_wrseth + balance_eth) * new_kelp_min_percent / 100,
+                    kelp_max_amount if old_kelp_min_percent == new_kelp_min_percent else (
+                        balance_wrseth + balance_eth) * new_kelp_max_percent / 100,
                     decimal,
-                    kelp_all_amount,
+                    kelp_all_amount if old_kelp_min_percent == new_kelp_min_percent else False,
                     kelp_min_percent,
                     kelp_max_percent,
                     module_cooldown=kelp_module_cooldown
@@ -115,7 +119,6 @@ class Scenarios(Account):
             logger.error(f"Failed to deposit to wrsETH/ETH pool, result: {deposit_result}")
         return True
 
-
     async def _sell_wrseth(self):
         from_token = "WRSETH"
         to_token = "ETH"
@@ -139,7 +142,8 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] balance after sell wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance after sell wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
     async def _buy_wrseth(self, amount):
         from_token = "ETH"
@@ -164,7 +168,8 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] balance after buy wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance after buy wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
     async def sell_redundant_wrseth_and_reposit_ambient(self,
                                                         decimal: int,
@@ -189,25 +194,30 @@ class Scenarios(Account):
             logger.info(f"[{self.account_id}][{self.address}] No active positions, skipping")
             return
 
-        logger.info(f"[{self.account_id}][{self.address}] account have {balance_wrseth / 10 ** 18} wrsETH and {total_deposit_amount} total deposit amount")
+        logger.info(
+            f"[{self.account_id}][{self.address}] account have {balance_wrseth / 10 ** 18} wrsETH and {total_deposit_amount} total deposit amount")
 
         balance_eth = await self.w3.eth.get_balance(self.address)
 
-        logger.info(f"[{self.account_id}][{self.address}] balance: {balance_eth / 10 ** 18} ETH, {balance_wrseth / 10 ** 18} {wrsETH}")
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance: {balance_eth / 10 ** 18} ETH, {balance_wrseth / 10 ** 18} {wrsETH}")
 
         deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / balance_eth, 4)
-        deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (self.w3.to_wei(total_deposit_amount, "ether") + balance_eth) * 100)
+        deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
+                    self.w3.to_wei(total_deposit_amount, "ether") + balance_eth) * 100)
 
         # ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
 
-        logger.info(f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to ETH balance")
+        logger.info(
+            f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to ETH balance")
 
         if deposit_current_percent > min_deposit_percent * 0.95:
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, that is enough")
             return False
 
-        logger.info(f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
+        logger.info(
+            f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
 
         new_deposit = total_deposit_amount * (min_deposit_percent / deposit_current_percent)
         # считаем сколько нужно добавить в позицию, чтобы депозит был нужного объёма
@@ -223,7 +233,8 @@ class Scenarios(Account):
         if balance_eth_after_deposit < min_left_eth_balance_wei:
             need_deposit_wei = need_deposit_wei - min_left_eth_balance_wei
             need_deposit = need_deposit_wei / 10 ** 18
-            logger.info(f"[{self.account_id}][{self.address}] cannot deposit {new_deposit} ETH because after deposit ETH balance would be less than {min_left_eth_balance}, new deposit amount {need_deposit} ETH")
+            logger.info(
+                f"[{self.account_id}][{self.address}] cannot deposit {new_deposit} ETH because after deposit ETH balance would be less than {min_left_eth_balance}, new deposit amount {need_deposit} ETH")
 
             # Если текущий депозит совсем немного меньше чем нужно, то депозит не делаем
             if need_deposit_wei < 500000000000000:  # 0.0005 ETH
@@ -260,10 +271,11 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] balance after withdrawal: {balance_wrseth} wrsETH, {balance_eth} ETH")
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance after withdrawal: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei
-        should_be_wrseth_wei = total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent)
+        should_be_wrseth_wei = total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100
 
         # TODO: проверяем что после покупки останется минимальный баланс
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
@@ -300,9 +312,8 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
+        logger.info(
+            f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
         if balance_wrseth_wei > 200000000000000:
             await self._sell_wrseth()
-
-
