@@ -208,7 +208,7 @@ class Scenarios(Account):
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
                     self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
-        # ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
+        # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
 
         logger.info(
             f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to total ETH and wrsETH balances")
@@ -221,7 +221,7 @@ class Scenarios(Account):
             if balance_wrseth_wei > 200000000000000:
                 logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                 return await self._sell_wrseth()
-            return False
+            return True
 
         logger.info(
             f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
@@ -250,8 +250,10 @@ class Scenarios(Account):
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
                 if balance_wrseth > 200000000000000:  # 0.0002 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
-                    return await self._sell_wrseth()
-                return False
+                    await self._sell_wrseth()
+                    await sleep(30, 60)
+
+                return True
 
         i = 0
         while True:
@@ -272,7 +274,7 @@ class Scenarios(Account):
                 raise Exception("Failed to withdraw all positions")
             else:
                 logger.error(f"[{self.account_id}][{self.address}] Failed to withdraw all positions, try again")
-            await sleep(30, 60)
+            await sleep(40, 80)
 
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18
@@ -294,6 +296,7 @@ class Scenarios(Account):
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
 
             await self._buy_wrseth(need_to_buy_wrseth_wei / 10 ** 18)
+            await sleep(30, 60)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to buy wrsETH to make deposit")
 
@@ -314,6 +317,8 @@ class Scenarios(Account):
         if deposit_result is False:
             logger.error(f"Failed to deposit to wrsETH/ETH pool, result: {deposit_result}")
             return False
+
+        await sleep(30, 60)
 
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18

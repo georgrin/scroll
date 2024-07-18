@@ -1,5 +1,6 @@
 import math
 import random
+from typing import List
 
 import aiohttp
 
@@ -279,7 +280,6 @@ class AmbientFinance(Account):
         min_left_eth_balance = round(random.uniform(min_left_eth_balance, max_left_eth_balance),
                                      decimal) if min_left_eth_balance > 0 or max_left_eth_balance > 0 else 0
 
-
         # мы проверяем что после депозита на аккаунте останется минимальный баланс из настроек
         balance_eth = await self.w3.eth.get_balance(self.address)
         if self.w3.to_wei(min_left_eth_balance, "ether") >= balance_eth:
@@ -375,6 +375,15 @@ class AmbientFinance(Account):
                 positions_data = await response.json()
 
                 if "data" in positions_data and type(positions_data["data"]) is list:
+                    # [{"blockNum": 7562420,
+                    #   "txHash": "0x2048c78f0a3a16ba32f9efb78ddcdfd7f3616aa45db0d59863464a848c6bf555",
+                    #   "txTime": 1721328090, "user": "0x623b3e76f7d0fff4eaeecc6a9bda55887377fbde", "chainId": "0x82750",
+                    #   "base": "0x0000000000000000000000000000000000000000",
+                    #   "quote": "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f", "poolIdx": 420,
+                    #   "baseFlow": 3178487101439531, "quoteFlow": 3000000000000000, "entityType": "liqchange",
+                    #   "changeType": "mint", "positionType": "concentrated", "bidTick": 124, "askTick": 228,
+                    #   "isBuy": false, "inBaseQty": false,
+                    #   "txId": "tx_a4b4f8dedf625f8185d595edec867214ade173118c1f804aea95cb82d94d953e"},...]
                     return positions_data["data"]
                 else:
                     logger.error(
@@ -386,6 +395,33 @@ class AmbientFinance(Account):
                     f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get positions")
                 raise Exception(f"Bad Ambient finance request to get positions")
 
+    async def get_user_txs(self, base: str, quote: str) -> List[dict]:
+        url = "https://ambindexer.net/scroll-gcgo/user_pool_txs"
+        params = {
+            "user": self.address,
+            "base": base,
+            "quote": quote,
+            "poolIdx": self.pool_id,
+            "chainId": "0x82750",
+        }
+
+        async with aiohttp.ClientSession() as session:
+            response = await session.get(url=url, params=params)
+            if response.status == 200:
+                txs_data = await response.json()
+
+                if "data" in txs_data and type(txs_data["data"]) is list:
+                    return txs_data["data"]
+                else:
+                    logger.error(
+                        f"[{self.account_id}][{self.address}][{self.chain}] get Ambient finance user TXs list wrong response: {txs_data}")
+
+                    raise Exception(f"get Ambient finance user TXs list wrong response: {txs_data}")
+            else:
+                logger.error(
+                    f"[{self.account_id}][{self.address}][{self.chain}] Bad Ambient finance request to get user's TXs")
+                raise Exception(f"Bad Ambient finance request to get user's TXs")
+
     async def get_total_deposit_amount(self) -> float:
         base = self.eth_address
         quote = self.wrseth_address
@@ -393,10 +429,35 @@ class AmbientFinance(Account):
         positions = await self.get_liquidity_positions(base, quote)
         active_positions = [p for p in positions if int(p["concLiq"]) > 0]
 
+        user_tx_list = await self.get_user_txs(base, quote)
+
+        # TODO: наверное репозицию тоже надо проверять
+        # по списку последних транзацкий можно понять, что есть активная позиция, которая возможно не обновилась в апи
+        for tx in user_tx_list:
+            if tx["changeType"] == "mint":
+                already_in_list = next((p for p in active_positions if p["lastMintTx"] == tx["txHash"]), None)
+
+                if not already_in_list:
+                    active_positions.append({"bidTick": 124, "askTick": 228})
+                    logger.info(f"Add active position from TX list, because Ambient Finance API didn't return it: {tx}")
+            else:
+                break
+
         total = 0
         for position in active_positions:
-            total += int(position["concLiq"])
+            liq, baseQty, quoteQty = await self.croc_contract.functions.queryRangeTokens(
+                self.address,
+                Web3.to_checksum_address(base),
+                Web3.to_checksum_address(quote),
+                self.pool_id,
+                position["bidTick"],
+                position["askTick"]
+            ).call()
+            if liq == 0:
+                continue
+            total += int(position["concLiq"] if "concLiq" in position else (baseQty + quoteQty) * 100)
 
+        # мы делим на 100, потому что в апихе значение concLiq больше в 100 ра чем реальной ликвидности
         return total / 10 ** 18 / 100
 
     @retry
