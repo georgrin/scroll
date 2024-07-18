@@ -228,7 +228,7 @@ class Scenarios(Account):
 
         new_deposit = total_deposit_amount * (min_deposit_percent / deposit_current_percent)
         # считаем сколько нужно добавить в позицию, чтобы депозит был нужного объёма
-        need_deposit = new_deposit - total_deposit_amount - balance_wrseth_wei
+        need_deposit = new_deposit - total_deposit_amount - balance_wrseth
         need_deposit_wei = int(self.w3.to_wei(need_deposit, "ether")) if need_deposit > 0 else 0
 
         if need_deposit_wei > 0:
