@@ -43,7 +43,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] Current estimated ETH amount deposited to wrsETH/ETH pool: {current_deposit * 0.5}")
 
-        if current_deposit > max_deposit_amount:
+        if current_deposit * 0.5 > max_deposit_amount:
             logger.info(
                 f"[{self.account_id}][{self.address}] Current deposit is greater than max deposit amount: {current_deposit} > {max_deposit_amount}")
             return False
@@ -197,14 +197,14 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth / 10 ** 18} wrsETH and {total_deposit_amount} total deposit amount")
 
-        balance_eth = await self.w3.eth.get_balance(self.address)
-
+        balance_eth_wei = await self.w3.eth.get_balance(self.address)
+        balance_eth = balance_eth_wei / 10 ** 18
         logger.info(
-            f"[{self.account_id}][{self.address}] balance: {balance_eth / 10 ** 18} ETH, {balance_wrseth / 10 ** 18} {wrsETH}")
+            f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_eth} {wrsETH}")
 
-        deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / balance_eth, 4)
+        deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / balance_eth_wei, 4)
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                    self.w3.to_wei(total_deposit_amount, "ether") + balance_eth) * 100)
+                    self.w3.to_wei(total_deposit_amount, "ether") + balance_eth_wei) * 100)
 
         # ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
 
