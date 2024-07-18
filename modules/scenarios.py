@@ -203,21 +203,23 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_wrseth} {wrsETH}")
 
-        deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / balance_eth_wei, 4)
+        total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
+        deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / total_wrseth_eth_balance_wei, 4)
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                    self.w3.to_wei(total_deposit_amount, "ether") + balance_eth_wei) * 100)
+                    self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
         # ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
 
         logger.info(
-            f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to ETH balance")
+            f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to total ETH and wrsETH balances")
 
         if deposit_current_percent > min_deposit_percent * 0.95:
             logger.info(
-                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, that is enough")
+                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
             # Если текущий баланс wrsETH достаточно не маленький, то продаём его
             if balance_wrseth_wei > 200000000000000:
+                logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                 return await self._sell_wrseth()
             return False
 
@@ -246,7 +248,8 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] new deposit amount {need_deposit} ETH is too small")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > 200000000000000:
+                if balance_wrseth > 200000000000000:  # 0.0002 ETH
+                    logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     return await self._sell_wrseth()
                 return False
 
@@ -286,7 +289,7 @@ class Scenarios(Account):
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
         need_to_buy_wrseth = need_to_buy_wrseth_wei / 10 ** 18
 
-        if need_to_buy_wrseth_wei > 500000000000000:
+        if need_to_buy_wrseth_wei > 400000000000000:   # 0.0004 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
 
@@ -320,5 +323,6 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-        if balance_wrseth_wei > 200000000000000:
+        if balance_wrseth_wei > 200000000000000:  # 0.0002 ETH
+            logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
             await self._sell_wrseth()
