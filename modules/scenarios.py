@@ -188,19 +188,20 @@ class Scenarios(Account):
 
         min_left_eth_balance_wei = int(self.w3.to_wei(min_left_eth_balance, "ether"))
         total_deposit_amount = await ambient_finance.get_total_deposit_amount()
-        balance_wrseth = await self.get_wrseth_balance()
+        balance_wrseth_wei = await self.get_wrseth_balance()
+        balance_wrseth = balance_wrseth_wei / 10 ** 18
 
         if total_deposit_amount == 0:
             logger.info(f"[{self.account_id}][{self.address}] No active positions, skipping")
             return
 
         logger.info(
-            f"[{self.account_id}][{self.address}] account have {balance_wrseth / 10 ** 18} wrsETH and {total_deposit_amount} total deposit amount")
+            f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH and {total_deposit_amount} total deposit amount")
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
         logger.info(
-            f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_eth} {wrsETH}")
+            f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_wrseth} {wrsETH}")
 
         deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / balance_eth_wei, 4)
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
@@ -214,6 +215,10 @@ class Scenarios(Account):
         if deposit_current_percent > min_deposit_percent * 0.95:
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, that is enough")
+
+            # Если текущий баланс wrsETH достаточно не маленький, то продаём его
+            if balance_wrseth_wei > 200000000000000:
+                return await self._sell_wrseth()
             return False
 
         logger.info(
@@ -227,7 +232,7 @@ class Scenarios(Account):
         logger.info(f"[{self.account_id}][{self.address}] need add {need_deposit} ETH to current deposit")
 
         # считаем новый баланс после депозита
-        balance_eth_after_deposit = balance_eth - need_deposit_wei
+        balance_eth_after_deposit = balance_eth_wei - need_deposit_wei
 
         # если после депозита осталоось баланса меньше чем минимум необходимо
         if balance_eth_after_deposit < min_left_eth_balance_wei:
