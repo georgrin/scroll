@@ -44,7 +44,7 @@ class Scenarios(Account):
 
         if current_deposit > max_deposit_amount:
             logger.info(
-                f"[{self.account_id}][{self.address}] Current deposit is greater than min deposit amount: {current_deposit} > {max_deposit_amount}")
+                f"[{self.account_id}][{self.address}] Current deposit is greater than max deposit amount: {current_deposit} > {max_deposit_amount}")
             return False
 
         balance_wrseth = await self.get_wrseth_balance()
