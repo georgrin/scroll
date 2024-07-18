@@ -119,16 +119,16 @@ class Scenarios(Account):
             logger.error(f"Failed to deposit to wrsETH/ETH pool, result: {deposit_result}")
         return True
 
-    async def _sell_wrseth(self):
+    async def _sell_wrseth(self, amount: float = None):
         from_token = "WRSETH"
         to_token = "ETH"
 
-        min_amount = 0.0007
-        max_amount = 0.001
+        min_amount = amount if amount else 0.0007
+        max_amount = amount if amount else 0.001
         decimal = 6
         slippage = 2
 
-        all_amount = True
+        all_amount = amount is None
 
         min_percent = 100
         max_percent = 100
@@ -309,7 +309,7 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
 
-            await self._buy_wrseth(need_to_sell_wrseth)
+            await self._sell_wrseth(need_to_sell_wrseth)
             await sleep(30, 60)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to sell wrsETH to make deposit")
