@@ -395,7 +395,7 @@ class AmbientFinance(Account):
 
         total = 0
         for position in active_positions:
-            total += position["aprEst"]
+            total += position["aprEst"] * 0.5
 
         return total
 
