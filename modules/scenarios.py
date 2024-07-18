@@ -59,7 +59,7 @@ class Scenarios(Account):
                 f"[{self.account_id}][{self.address}] Cannot stake ETH and deposit {wrsETH} due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
             return False
 
-        wrseth_current_percent = int(balance_wrseth / balance_eth * 100)
+        wrseth_current_percent = int(balance_wrseth / (balance_eth + balance_wrseth) * 100)
 
         # если баланс wrsETH меньше kelp_min_percent от баланса ETH делаем депозит
         if kelp_min_percent > wrseth_current_percent:
@@ -83,9 +83,9 @@ class Scenarios(Account):
                 kelp = Kelp(self.account_id, self.private_key, self.recipient)
                 kelp_result = await kelp.deposit(
                     kelp_min_amount if old_kelp_min_percent == new_kelp_min_percent else (
-                        balance_wrseth + balance_eth) * new_kelp_min_percent / 100,
+                        balance_wrseth + balance_eth) * new_kelp_min_percent / 100 / 10 ** 18,
                     kelp_max_amount if old_kelp_min_percent == new_kelp_min_percent else (
-                        balance_wrseth + balance_eth) * new_kelp_max_percent / 100,
+                        balance_wrseth + balance_eth) * new_kelp_max_percent / 100 / 10 ** 18,
                     decimal,
                     kelp_all_amount if old_kelp_min_percent == new_kelp_min_percent else False,
                     kelp_min_percent,
