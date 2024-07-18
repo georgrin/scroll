@@ -395,9 +395,9 @@ class AmbientFinance(Account):
 
         total = 0
         for position in active_positions:
-            total += int(position["concLiq"] * 0.5)
+            total += int(position["concLiq"])
 
-        return total / 10 ** 18
+        return total / 10 ** 18 / 100
 
     @retry
     @check_gas
