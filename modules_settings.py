@@ -584,7 +584,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     # all_amount - deposit from min_percent to max_percent of ETH
     kelp_all_amount = True
     kelp_min_percent = 38
-    kelp_max_percent = 43
+    kelp_max_percent = 41
 
     kelp_module_cooldown = 60 * 24
 
@@ -618,6 +618,41 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
         kelp_module_cooldown,
         min_eth_balance,
     )
+
+
+async def sell_redundant_wrseth_and_reposit_ambient(account_id, key, recipient):
+    min_left_eth_balance = 0.0015
+    max_left_eth_balance = 0.002
+
+    decimal = 5
+
+    ambient_min_amount = 0.0001
+    ambient_max_amount = 0.0002
+    # all_amount - deposit from min_percent to max_percent of wrsETH
+    ambient_all_amount = True
+    ambient_min_percent = 100
+    ambient_max_percent = 100
+    # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
+    # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
+    ambient_range_width = 1
+
+    # сколько процентов депозит должен составлять от баланса ETH
+    min_deposit_percent = 75
+    max_deposit_percent = 80
+
+    scenario = Scenarios(account_id, key, recipient)
+    return await scenario.sell_redundant_wrseth_and_reposit_ambient(
+        decimal,
+        ambient_min_amount,
+        ambient_max_amount,
+        ambient_all_amount,
+        ambient_min_percent,
+        ambient_max_percent,
+        ambient_range_width,
+        min_left_eth_balance,
+        max_left_eth_balance,
+        min_deposit_percent,
+        max_deposit_percent)
 
 
 async def deposit_ambient_finance(account_id, key, recipient):

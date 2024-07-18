@@ -148,7 +148,7 @@ class AmbientFinance(Account):
             slippage: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
     ):
         amount_wei, amount, balance = await self.get_amount(
             from_token,
@@ -157,7 +157,7 @@ class AmbientFinance(Account):
             decimal,
             all_amount,
             min_percent,
-            max_percent
+            max_percent,
         )
 
         logger.info(
