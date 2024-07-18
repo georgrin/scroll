@@ -281,23 +281,24 @@ class AmbientFinance(Account):
                                      decimal) if min_left_eth_balance > 0 or max_left_eth_balance > 0 else 0
 
         # мы проверяем что после депозита на аккаунте останется минимальный баланс из настроек
-        balance_eth = await self.w3.eth.get_balance(self.address)
-        if self.w3.to_wei(min_left_eth_balance, "ether") >= balance_eth:
+        balance_eth_wei = await self.w3.eth.get_balance(self.address)
+        balance_eth = balance_eth_wei / 10 ** 18
+        if self.w3.to_wei(min_left_eth_balance, "ether") >= balance_eth_wei:
             logger.info(
                 f"[{self.account_id}][{self.address}] Cannot deposit {amount_eth} ETH, " +
-                f"because current balance: {balance_eth / 10 ** 18} ETH less than min left balance setting: {min_left_eth_balance} ETH"
+                f"because current balance: {balance_eth} ETH less than min left balance setting: {min_left_eth_balance} ETH"
             )
 
             return
-        if min_left_eth_balance > 0 and balance_eth - amount_wei_eth < self.w3.to_wei(min_left_eth_balance, "ether"):
+        if min_left_eth_balance > 0 and balance_eth_wei - amount_wei_eth < self.w3.to_wei(min_left_eth_balance, "ether"):
             logger.info(
                 f"[{self.account_id}][{self.address}] Cannot deposit {amount_eth} ETH, " +
                 f"because left balance would be less than {min_left_eth_balance} ETH, " +
-                f"new deposit amount is {(balance_eth - self.w3.to_wei(min_left_eth_balance, 'ether')) / 10 ** 18}"
+                f"new deposit amount is {(balance_eth_wei - self.w3.to_wei(min_left_eth_balance, 'ether')) / 10 ** 18}"
             )
 
             # уменьшаем амаунт депозита, чтобы на балансе осталось мин баланс
-            amount_wei_eth = balance_eth - self.w3.to_wei(min_left_eth_balance, "ether")
+            amount_wei_eth = balance_eth_wei - self.w3.to_wei(min_left_eth_balance, "ether")
 
             amount_wei_wrseth = int(amount_wei_eth * price)
 

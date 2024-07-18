@@ -228,14 +228,16 @@ class Scenarios(Account):
 
         new_deposit = total_deposit_amount * (min_deposit_percent / deposit_current_percent)
         # считаем сколько нужно добавить в позицию, чтобы депозит был нужного объёма
-        need_deposit = new_deposit - total_deposit_amount
+        need_deposit = new_deposit - total_deposit_amount - balance_wrseth_wei
         need_deposit_wei = int(self.w3.to_wei(need_deposit, "ether"))
 
-        logger.info(f"[{self.account_id}][{self.address}] need add {need_deposit} ETH to current deposit")
+        if need_deposit_wei > 0:
+            logger.info(f"[{self.account_id}][{self.address}] will spend {need_deposit} ETH to increase current deposit")
+        else:
+            logger.info(f"[{self.account_id}][{self.address}] no need to spend ETH balance to increase current deposit")
 
         # считаем новый баланс после депозита
         balance_eth_after_deposit = balance_eth_wei - need_deposit_wei
-
         # если после депозита осталоось баланса меньше чем минимум необходимо
         if balance_eth_after_deposit < min_left_eth_balance_wei:
             need_deposit_wei = need_deposit_wei - min_left_eth_balance_wei
@@ -285,7 +287,7 @@ class Scenarios(Account):
             f"[{self.account_id}][{self.address}] balance after withdrawal: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei
-        should_be_wrseth_wei = total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100
+        should_be_wrseth_wei = int(0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
 
         # TODO: проверяем что после покупки останется минимальный баланс
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
@@ -299,6 +301,18 @@ class Scenarios(Account):
             await sleep(30, 60)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to buy wrsETH to make deposit")
+
+        need_to_sell_wrseth_wei = balance_wrseth_wei - should_be_wrseth_wei
+        need_to_sell_wrseth = need_to_sell_wrseth_wei / 10 ** 18
+
+        if need_to_sell_wrseth_wei > 400000000000000:   # 0.0004 ETH
+            logger.info(
+                f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
+
+            await self._buy_wrseth(need_to_buy_wrseth_wei / 10 ** 18)
+            await sleep(30, 60)
+        else:
+            logger.info(f"[{self.account_id}][{self.address}] no need to sell wrsETH to make deposit")
 
         logger.info(f"Start new deposit to wrsETH/ETH pool")
 
