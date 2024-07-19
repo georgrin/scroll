@@ -427,25 +427,22 @@ class AmbientFinance(Account):
         base = self.eth_address
         quote = self.wrseth_address
 
-        positions = await self.get_liquidity_positions(base, quote)
-        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
-
-        user_tx_list = await self.get_user_txs(base, quote)
-
-        # TODO: наверное репозицию тоже надо проверять
-        # по списку последних транзацкий можно понять, что есть активная позиция, которая возможно не обновилась в апи
-        for tx in user_tx_list:
-            if tx["changeType"] == "mint":
-                already_in_list = next((p for p in active_positions if p["lastMintTx"] == tx["txHash"]), None)
-
-                if not already_in_list:
-                    active_positions.append(tx)
-                    logger.info(f"Add active position from TX list, because Ambient Finance API didn't return it: {tx}")
-            else:
-                break
+        active_positions = await self.get_active_positions(base, quote)
 
         total = 0
         for position in active_positions:
+            total += int(position["concLiq"])
+
+        # мы делим на 100, потому что в апихе значение concLiq больше в 100 раз чем реальной ликвидности
+        return total / 10 ** 18 / 100
+
+    async def get_active_positions(self, base: str, quote: str) -> List[dict]:
+        positions = await self.get_liquidity_positions(base, quote)
+        active_positions_from_api = [p for p in positions if int(p["concLiq"]) > 0]
+        active_positions = []
+
+        for position in active_positions_from_api:
+            # проверяем что позиция на самом деле активна через контракт
             liq, baseQty, quoteQty = await self.croc_contract.functions.queryRangeTokens(
                 self.address,
                 Web3.to_checksum_address(base),
@@ -455,24 +452,16 @@ class AmbientFinance(Account):
                 position["askTick"]
             ).call()
             if liq == 0:
-                continue
-            total += int(position["concLiq"] if "concLiq" in position else (baseQty + quoteQty) * 100)
+                logger.info(
+                    f"[{self.account_id}][{self.address}][{self.chain}] Ambient Finance API return inactive position as active, skip it: {position}")
+            else:
+                if int(position["concLiq"]) != liq:
+                    logger.error(f"Something wrong with data in Ambient API: {position['concLiq']} concLiq no equal to {liq} liq from contract")
+                position["concLiq"] = liq
+                active_positions.append(position)
 
-        # мы делим на 100, потому что в апихе значение concLiq больше в 100 ра чем реальной ликвидности
-        return total / 10 ** 18 / 100
-
-    @retry
-    @check_gas
-    async def withdrawal(self):
-        code = 2  # Fixed in liquidity units
-        base = self.eth_address
-        quote = self.wrseth_address
-        settleFlags = 0
-        lpConduit = self.eth_address
-
-        positions = await self.get_liquidity_positions(base, quote)
-        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
         user_tx_list = await self.get_user_txs(base, quote)
+
         # TODO: наверное репозицию тоже надо проверять
         # по списку последних транзацкий можно понять, что есть активная позиция, которая возможно не обновилась в апи
         for tx in user_tx_list:
@@ -480,6 +469,7 @@ class AmbientFinance(Account):
                 already_in_list = next((p for p in active_positions if p["lastMintTx"] == tx["txHash"]), None)
 
                 if not already_in_list:
+                    # получаем через контракт данные позиции, которой нет в АПИ
                     liq, baseQty, quoteQty = await self.croc_contract.functions.queryRangeTokens(
                         self.address,
                         Web3.to_checksum_address(base),
@@ -490,12 +480,24 @@ class AmbientFinance(Account):
                     ).call()
                     tx["concLiq"] = liq
                     active_positions.append(tx)
-                    logger.info(f"Add active position from TX list, because Ambient Finance API didn't return it: {tx}")
             else:
                 break
 
+        return active_positions
+
+    @retry
+    @check_gas
+    async def withdrawal(self):
+        code = 2  # Fixed in liquidity units
+        base = self.eth_address
+        quote = self.wrseth_address
+        settleFlags = 0
+        lpConduit = self.eth_address
+
+        active_positions = await self.get_active_positions(base, quote)
+
         logger.info(
-            f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
+            f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool")
 
         count = 1
         for position in active_positions:
@@ -558,19 +560,17 @@ class AmbientFinance(Account):
 
     @retry
     @check_gas
-    async def reposit_outrage_deposits(self,
-                                       new_range_width: float = 1):
+    async def reposit_outrage_deposits(
+            self,
+            new_range_width: float = 1,
+    ):
         base = self.eth_address
         quote = self.wrseth_address
 
-        positions = await self.get_liquidity_positions(base, quote)
-        active_positions = [p for p in positions if int(p["concLiq"]) > 0]
-
-        logger.info(
-            f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
+        active_positions = await self.get_active_positions(base, quote)
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool")
 
         count = 0
-
         for position in active_positions:
             try:
                 is_out_range = await self.is_position_out_of_range(base, quote, position)
