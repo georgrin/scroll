@@ -439,7 +439,7 @@ class AmbientFinance(Account):
                 already_in_list = next((p for p in active_positions if p["lastMintTx"] == tx["txHash"]), None)
 
                 if not already_in_list:
-                    active_positions.append({"bidTick": 124, "askTick": 228})
+                    active_positions.append(tx)
                     logger.info(f"Add active position from TX list, because Ambient Finance API didn't return it: {tx}")
             else:
                 break
