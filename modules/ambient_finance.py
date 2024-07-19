@@ -457,7 +457,8 @@ class AmbientFinance(Account):
             else:
                 if int(position["concLiq"]) != liq:
                     logger.error(f"Something wrong with data in Ambient API: {position['concLiq']} concLiq no equal to {liq} liq from contract")
-                position["concLiq"] = liq
+                    # используем значение депозита из контракта! там точно правильное
+                    position["concLiq"] = liq
                 active_positions.append(position)
 
         user_tx_list = await self.get_user_txs(base, quote)
@@ -484,6 +485,19 @@ class AmbientFinance(Account):
                 break
 
         return active_positions
+
+    async def get_outrange_positions(self, base: str, quote: str) -> List[dict]:
+        active_positions = await self.get_active_positions(base, quote)
+        out_range_positions = []
+
+        for position in active_positions:
+            is_out_range = await self.is_position_out_of_range(base, quote, position)
+
+            if is_out_range:
+                out_range_positions.append(position)
+                pos_id = position["positionId"] if "positionId" in position else "no_id_found"
+                logger.info(f"[{self.account_id}][{self.address}][{self.chain}] position is out of range, id: {pos_id}, liq: {position['concLiq']}")
+        return out_range_positions
 
     @retry
     @check_gas
@@ -577,8 +591,10 @@ class AmbientFinance(Account):
 
                 if not is_out_range:
                     continue
+                pos_id = position["positionId"] if "positionId" in position else "no_id_found"
+
                 logger.info(
-                    f"[{self.account_id}][{self.address}][{self.chain}] start reposit {count + 1}/{len(active_positions)} position: {position['positionId']}, {position['concLiq']} liq")
+                    f"[{self.account_id}][{self.address}][{self.chain}] start reposit {count + 1}/{len(active_positions)} position: {pos_id}, {position['concLiq']} liq")
 
                 eth_wrs_curve_price = await self.get_curve_price(base, quote)
                 price = sqrtp_to_price(eth_wrs_curve_price)

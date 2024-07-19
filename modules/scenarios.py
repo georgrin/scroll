@@ -214,11 +214,19 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
-            # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-            if balance_wrseth_wei > 200000000000000:
-                logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
-                return await self._sell_wrseth()
-            return True
+            out_range_positions = await ambient_finance.get_outrange_positions(ambient_finance.eth_address, SCROLL_TOKENS["WRSETH"])
+            if len(out_range_positions) != 0:
+                logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
+
+                # Если текущий баланс wrsETH достаточно не маленький, то продаём его
+                if balance_wrseth_wei > 200000000000000:
+                    logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
+                    return await self._sell_wrseth()
+                logger.info(f"[{self.account_id}][{self.address}] redundant {balance_wrseth} wrsETH is too small to sell, skipping")
+
+                return True
+            else:
+                logger.info(f"[{self.account_id}][{self.address}] there are {len(out_range_positions)} out range positions, need to withdrawal and make new deposit")
 
         logger.info(
             f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - 10}%")
