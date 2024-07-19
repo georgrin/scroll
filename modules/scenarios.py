@@ -200,10 +200,10 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
 
-        if balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
-            logger.info(
-                f"[{self.account_id}][{self.address}] Cannot run script due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
-            return False
+        # if balance_eth_wei < self.w3.to_wei(min_eth_balance, "ether"):
+        #     logger.info(
+        #         f"[{self.account_id}][{self.address}] Cannot run script due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
+        #     return False
 
         total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
