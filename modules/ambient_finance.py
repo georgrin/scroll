@@ -472,12 +472,32 @@ class AmbientFinance(Account):
 
         positions = await self.get_liquidity_positions(base, quote)
         active_positions = [p for p in positions if int(p["concLiq"]) > 0]
+        user_tx_list = await self.get_user_txs(base, quote)
+        # TODO: наверное репозицию тоже надо проверять
+        # по списку последних транзацкий можно понять, что есть активная позиция, которая возможно не обновилась в апи
+        for tx in user_tx_list:
+            if tx["changeType"] == "mint":
+                already_in_list = next((p for p in active_positions if p["lastMintTx"] == tx["txHash"]), None)
+
+                if not already_in_list:
+                    liq, baseQty, quoteQty = await self.croc_contract.functions.queryRangeTokens(
+                        self.address,
+                        Web3.to_checksum_address(base),
+                        Web3.to_checksum_address(quote),
+                        self.pool_id,
+                        tx["bidTick"],
+                        tx["askTick"]
+                    ).call()
+                    tx["concLiq"] = liq
+                    active_positions.append(tx)
+                    logger.info(f"Add active position from TX list, because Ambient Finance API didn't return it: {tx}")
+            else:
+                break
 
         logger.info(
             f"[{self.account_id}][{self.address}][{self.chain}] have {len(active_positions)} active position at ETH/wrsETH pool (total {len(positions)})")
 
         count = 1
-
         for position in active_positions:
             try:
                 logger.info(
