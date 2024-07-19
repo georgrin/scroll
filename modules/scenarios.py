@@ -220,7 +220,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth_wei > 500000000000000:
+                if balance_wrseth > 5000000000000000:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     return True
@@ -274,7 +274,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] new deposit amount {need_deposit} ETH is too small")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > 500000000000000:  # 0.0005 ETH
+                if balance_wrseth > 5000000000000000:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     await sleep(30, 60)
@@ -370,7 +370,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-        if balance_wrseth_wei > 500000000000000:  # 0.0005 ETH
+        if balance_wrseth > 5000000000000000:  # 0.005 ETH  # 0.0005 ETH
             logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
             await self._sell_wrseth()
 
