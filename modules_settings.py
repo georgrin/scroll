@@ -637,8 +637,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     ambient_range_width = 0.5
 
     # сколько процентов депозит должен составлять от баланса ETH
-    min_deposit_percent = 75
-    max_deposit_percent = 80
+    min_deposit_percent = 89
+    max_deposit_percent = 91
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.adjust_ambient_wrseth_eth_position(
