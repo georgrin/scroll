@@ -80,14 +80,17 @@ class Scenarios(Account):
                 logger.info(
                     f"Current wrsETH balance: {wrseth_current_percent}%, need to deposit range: {kelp_min_percent}-{kelp_max_percent}% (was {old_kelp_min_percent}-{old_kelp_max_percent}%)")
 
+                if old_kelp_min_percent != new_kelp_min_percent:
+                    kelp_min_amount = (balance_wrseth + balance_eth) * new_kelp_min_percent / 100 / 10 ** 18
+                    kelp_max_amount = (balance_wrseth + balance_eth) * new_kelp_max_percent / 100 / 10 ** 18
+                    logger.info(f"Need to deposit {kelp_min_amount}-{kelp_max_amount} ETH to get additionally wsrETH")
+
                 kelp = Kelp(self.account_id, self.private_key, self.recipient)
                 kelp_result = await kelp.deposit(
-                    kelp_min_amount if old_kelp_min_percent == new_kelp_min_percent else (
-                        balance_wrseth + balance_eth) * new_kelp_min_percent / 100 / 10 ** 18,
-                    kelp_max_amount if old_kelp_min_percent == new_kelp_min_percent else (
-                        balance_wrseth + balance_eth) * new_kelp_max_percent / 100 / 10 ** 18,
+                    kelp_min_amount,
+                    kelp_max_amount,
                     decimal,
-                    kelp_all_amount if old_kelp_min_percent == new_kelp_min_percent else False,
+                    old_kelp_min_percent == new_kelp_min_percent,
                     kelp_min_percent,
                     kelp_max_percent,
                     module_cooldown=kelp_module_cooldown
