@@ -204,14 +204,10 @@ class Scenarios(Account):
             f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_wrseth} {wrsETH}")
 
         total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
-        deposit_current_proportion = round(self.w3.to_wei(total_deposit_amount, "ether") / total_wrseth_eth_balance_wei, 4)
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
                     self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
-
-        logger.info(
-            f"[{self.account_id}][{self.address}] current deposit proportion {deposit_current_proportion} to total ETH and wrsETH balances")
 
         if deposit_current_percent > min_deposit_percent * 0.95:
             logger.info(
