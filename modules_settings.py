@@ -596,7 +596,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     ambient_max_percent = 100
     # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
-    ambient_range_width = 1
+    ambient_range_width = 0.5
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.stake_eth_and_deposit_wrseth(
@@ -634,7 +634,7 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     ambient_max_percent = 100
     # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
-    ambient_range_width = 1
+    ambient_range_width = 0.5
 
     # сколько процентов депозит должен составлять от баланса ETH
     min_deposit_percent = 75
