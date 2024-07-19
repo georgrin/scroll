@@ -220,12 +220,13 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth_wei > 200000000000000:
+                if balance_wrseth_wei > 500000000000000:
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
-                    return await self._sell_wrseth()
+                    await self._sell_wrseth()
+                    return True
                 logger.info(f"[{self.account_id}][{self.address}] redundant {balance_wrseth} wrsETH is too small to sell, skipping")
 
-                return True
+                return False
             else:
                 logger.info(f"[{self.account_id}][{self.address}] there are {len(out_range_positions)} out range positions, need to withdrawal and make new deposit")
 
@@ -273,7 +274,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] new deposit amount {need_deposit} ETH is too small")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > 200000000000000:  # 0.0002 ETH
+                if balance_wrseth > 500000000000000:  # 0.0005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     await sleep(30, 60)
@@ -292,7 +293,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] Withdrew all positions successfully")
                 break
 
-            # делаем попытку вывести максимум 5 рах
+            # делаем попытку вывести максимум 3 раза
             if i > 3:
                 logger.error(f"[{self.account_id}][{self.address}] Failed to withdraw all positions, leave")
                 raise Exception("Failed to withdraw all positions")
@@ -321,7 +322,7 @@ class Scenarios(Account):
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
         need_to_buy_wrseth = need_to_buy_wrseth_wei / 10 ** 18
 
-        if need_to_buy_wrseth_wei > 400000000000000:  # 0.0004 ETH
+        if need_to_buy_wrseth_wei > 500000000000000:  # 0.0005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
             await self._buy_wrseth(need_to_buy_wrseth)
@@ -332,7 +333,7 @@ class Scenarios(Account):
         need_to_sell_wrseth_wei = balance_wrseth_wei - should_be_wrseth_wei
         need_to_sell_wrseth = need_to_sell_wrseth_wei / 10 ** 18
 
-        if need_to_sell_wrseth_wei > 400000000000000:  # 0.0004 ETH
+        if need_to_sell_wrseth_wei > 500000000000000:  # 0.0005 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
 
@@ -369,7 +370,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-        if balance_wrseth_wei > 200000000000000:  # 0.0002 ETH
+        if balance_wrseth_wei > 500000000000000:  # 0.0005 ETH
             logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
             await self._sell_wrseth()
 
