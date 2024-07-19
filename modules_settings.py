@@ -621,6 +621,8 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
 
 
 async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
+    # не запускаем сценарий для аккаунтов с балансом меньше
+    min_eth_balance = 0.003
     min_left_eth_balance = 0.0015
     max_left_eth_balance = 0.002
 
@@ -652,7 +654,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
         min_left_eth_balance,
         max_left_eth_balance,
         min_deposit_percent,
-        max_deposit_percent)
+        max_deposit_percent,
+        min_eth_balance)
 
 
 async def deposit_ambient_finance(account_id, key, recipient):

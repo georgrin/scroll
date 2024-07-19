@@ -185,7 +185,8 @@ class Scenarios(Account):
                                                  min_left_eth_balance: float,
                                                  max_left_eth_balance: float,
                                                  min_deposit_percent: int,
-                                                 max_deposit_percent: int):
+                                                 max_deposit_percent: int,
+                                                 min_eth_balance: float = 0.001):
         logger.info(f"[{self.account_id}][{self.address}] Start check redundant wrsETH and reposit ambient positions")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
@@ -199,12 +200,17 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
 
+        if balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot run script due to low EHT balance: {balance_eth / 10 ** 18} < {min_eth_balance}")
+            return False
+
         total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
                 self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
-        if deposit_current_percent > min_deposit_percent * 0.95:
+        if deposit_current_percent > min_deposit_percent - 10:
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
