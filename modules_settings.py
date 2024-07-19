@@ -673,7 +673,7 @@ async def deposit_ambient_finance(account_id, key, recipient):
 
     # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
-    range_width = 1  # 0.25, 0.5, 1, 5, 10
+    range_width = 0.5  # 0.25, 0.5, 1, 5, 10
 
     min_left_eth_balance: float = 0.0045
     max_left_eth_balance: float = 0.0055
