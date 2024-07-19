@@ -375,7 +375,7 @@ class AmbientFinance(Account):
             if response.status == 200:
                 positions_data = await response.json()
 
-                if "data" in positions_data and type(positions_data["data"]) is list:
+                if "data" in positions_data and (type(positions_data["data"]) is list or positions_data["data"] is None):
                     # [{"blockNum": 7562420,
                     #   "txHash": "0x2048c78f0a3a16ba32f9efb78ddcdfd7f3616aa45db0d59863464a848c6bf555",
                     #   "txTime": 1721328090, "user": "0x623b3e76f7d0fff4eaeecc6a9bda55887377fbde", "chainId": "0x82750",
@@ -385,7 +385,7 @@ class AmbientFinance(Account):
                     #   "changeType": "mint", "positionType": "concentrated", "bidTick": 124, "askTick": 228,
                     #   "isBuy": false, "inBaseQty": false,
                     #   "txId": "tx_a4b4f8dedf625f8185d595edec867214ade173118c1f804aea95cb82d94d953e"},...]
-                    return positions_data["data"]
+                    return positions_data["data"] or []
                 else:
                     logger.error(
                         f"[{self.account_id}][{self.address}][{self.chain}] Ambient finance positions wrong response: {positions_data}")
@@ -411,8 +411,8 @@ class AmbientFinance(Account):
             if response.status == 200:
                 txs_data = await response.json()
 
-                if "data" in txs_data and type(txs_data["data"]) is list:
-                    return txs_data["data"]
+                if "data" in txs_data and (type(txs_data["data"]) is list or txs_data["data"] is None):
+                    return txs_data["data"] or []
                 else:
                     logger.error(
                         f"[{self.account_id}][{self.address}][{self.chain}] get Ambient finance user TXs list wrong response: {txs_data}")
