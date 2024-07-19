@@ -97,7 +97,7 @@ def get_module():
             Choice("51) Mint Scroll Canvas", scroll_mint_canvas),
             Choice("52) Mint Scroll Ethereum Year Badge", scroll_mint_ethereum_year_badge),
             Choice("52) Reposit liquidity Ambient Finance",  reposit_ambient_finance),
-            Choice("53) Sell Redundant Wrseth And Reposit Ambient", sell_redundant_wrseth_and_reposit_ambient),
+            Choice("53) Adjust Ambient wrsETH/ETH position", adjust_ambient_wrseth_eth_position),
             Choice("54) Exit", "exit"),
         ],
         qmark="⚙️ ",

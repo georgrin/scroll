@@ -174,18 +174,18 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after buy wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-    async def sell_redundant_wrseth_and_reposit_ambient(self,
-                                                        decimal: int,
-                                                        ambient_min_amount: float,
-                                                        ambient_max_amount: float,
-                                                        ambient_all_amount: bool,
-                                                        ambient_min_percent: int,
-                                                        ambient_max_percent: int,
-                                                        ambient_range_width: float,
-                                                        min_left_eth_balance: float,
-                                                        max_left_eth_balance: float,
-                                                        min_deposit_percent: int,
-                                                        max_deposit_percent: int):
+    async def adjust_ambient_wrseth_eth_position(self,
+                                                 decimal: int,
+                                                 ambient_min_amount: float,
+                                                 ambient_max_amount: float,
+                                                 ambient_all_amount: bool,
+                                                 ambient_min_percent: int,
+                                                 ambient_max_percent: int,
+                                                 ambient_range_width: float,
+                                                 min_left_eth_balance: float,
+                                                 max_left_eth_balance: float,
+                                                 min_deposit_percent: int,
+                                                 max_deposit_percent: int):
         logger.info(f"[{self.account_id}][{self.address}] Start check redundant wrsETH and reposit ambient positions")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
@@ -193,25 +193,17 @@ class Scenarios(Account):
         total_deposit_amount = await ambient_finance.get_total_deposit_amount()
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18
-
-        if total_deposit_amount == 0:
-            logger.info(f"[{self.account_id}][{self.address}] No active positions, skipping")
-            return
-
-        logger.info(
-            f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH and {total_deposit_amount} total deposit amount")
-
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
+
         logger.info(
-            f"[{self.account_id}][{self.address}] balance: {balance_eth} ETH, {balance_wrseth} {wrsETH}")
+            f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
 
         total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                    self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
+                self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
-
         if deposit_current_percent > min_deposit_percent * 0.95:
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
@@ -225,24 +217,27 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
 
-        new_deposit = total_deposit_amount * (min_deposit_percent / deposit_current_percent)
+        new_deposit = total_deposit_amount * (
+                    min_deposit_percent / deposit_current_percent) if deposit_current_percent > 0 else total_deposit_amount * min_deposit_percent
         # считаем сколько нужно добавить в позицию, чтобы депозит был нужного объёма
         need_deposit = new_deposit - total_deposit_amount - balance_wrseth
         need_deposit_wei = int(self.w3.to_wei(need_deposit, "ether")) if need_deposit > 0 else 0
 
         if need_deposit_wei > 0:
-            logger.info(f"[{self.account_id}][{self.address}] will spend {need_deposit} ETH to increase current deposit")
+            logger.info(
+                f"[{self.account_id}][{self.address}] will spend {need_deposit} ETH to increase current deposit")
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to spend ETH balance to increase current deposit")
 
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei
-        should_be_wrseth_wei = int(0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
+        should_be_wrseth_wei = int(
+            0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
         need_to_sell_wrseth_wei = balance_wrseth_wei - should_be_wrseth_wei if balance_wrseth_wei > should_be_wrseth_wei else 0
 
         # так как мы продадим лишний wrsETH, то оставш
         # считаем новый баланс после депозита, он не должен быть слишком маленьким
         balance_eth_after_deposit_wei = balance_eth_wei - need_deposit_wei + need_to_sell_wrseth_wei
-        balance_eth_after_deposit = balance_eth_after_deposit_wei  / 10 ** 18
+        balance_eth_after_deposit = balance_eth_after_deposit_wei / 10 ** 18
         logger.info(f"[{self.account_id}][{self.address}] balance after deposit: {balance_eth_after_deposit} ETH")
 
         # если после депозита осталоось баланса меньше чем минимум необходимо
@@ -294,13 +289,14 @@ class Scenarios(Account):
             f"[{self.account_id}][{self.address}] balance after withdrawal: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei
-        should_be_wrseth_wei = int(0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
+        should_be_wrseth_wei = int(
+            0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
 
         # TODO: проверяем что после покупки останется минимальный баланс
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
         need_to_buy_wrseth = need_to_buy_wrseth_wei / 10 ** 18
 
-        if need_to_buy_wrseth_wei > 400000000000000:   # 0.0004 ETH
+        if need_to_buy_wrseth_wei > 400000000000000:  # 0.0004 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
 
@@ -312,7 +308,7 @@ class Scenarios(Account):
         need_to_sell_wrseth_wei = balance_wrseth_wei - should_be_wrseth_wei
         need_to_sell_wrseth = need_to_sell_wrseth_wei / 10 ** 18
 
-        if need_to_sell_wrseth_wei > 400000000000000:   # 0.0004 ETH
+        if need_to_sell_wrseth_wei > 400000000000000:  # 0.0004 ETH
             logger.info(
                 f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
 
@@ -359,8 +355,9 @@ class Scenarios(Account):
             balance_eth_wei = await self.w3.eth.get_balance(self.address)
             total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
             deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                        self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
+                    self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
-            logger.info(f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
+            logger.info(
+                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
         except Exception as ex:
             logger.error(f"Failed to get deposit proportion after deposit: {ex}")
