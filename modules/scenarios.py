@@ -196,6 +196,8 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
+        deposit_percent_allowed_error = 10
+
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
 
@@ -210,7 +212,7 @@ class Scenarios(Account):
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
-        if deposit_current_percent > min_deposit_percent - 5:
+        if deposit_current_percent > min_deposit_percent - deposit_percent_allowed_error:
             logger.info(f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
             out_range_positions = await ambient_finance.get_outrange_positions(ambient_finance.eth_address, SCROLL_TOKENS["WRSETH"])
@@ -228,7 +230,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] there are {len(out_range_positions)} out range positions, need to withdrawal and make new deposit")
 
         logger.info(
-            f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - 10}%")
+            f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - deposit_percent_allowed_error}%")
 
         new_deposit = total_deposit_amount * (
                     min_deposit_percent / deposit_current_percent) if deposit_current_percent > 0 else total_deposit_amount * min_deposit_percent
@@ -381,6 +383,6 @@ class Scenarios(Account):
             deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
             logger.info(
-                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - 5}%")
+                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - deposit_percent_allowed_error}%")
         except Exception as ex:
             logger.error(f"Failed to get deposit proportion after deposit: {ex}")
