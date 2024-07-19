@@ -215,7 +215,7 @@ class Scenarios(Account):
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
             out_range_positions = await ambient_finance.get_outrange_positions(ambient_finance.eth_address, SCROLL_TOKENS["WRSETH"])
-            if len(out_range_positions) != 0:
+            if len(out_range_positions) == 0:
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
