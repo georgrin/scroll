@@ -186,7 +186,7 @@ class Scenarios(Account):
                                                  max_left_eth_balance: float,
                                                  min_deposit_percent: int,
                                                  max_deposit_percent: int,
-                                                 min_eth_balance: float = 0.001):
+                                                 min_eth_balance: float = 0.0005):
         logger.info(f"[{self.account_id}][{self.address}] Start check redundant wrsETH and reposit ambient positions")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
@@ -221,7 +221,7 @@ class Scenarios(Account):
             return True
 
         logger.info(
-            f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
+            f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - 10}%")
 
         new_deposit = total_deposit_amount * (
                     min_deposit_percent / deposit_current_percent) if deposit_current_percent > 0 else total_deposit_amount * min_deposit_percent
@@ -364,6 +364,6 @@ class Scenarios(Account):
                     self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei) * 100)
 
             logger.info(
-                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent}%")
+                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - 10}%")
         except Exception as ex:
             logger.error(f"Failed to get deposit proportion after deposit: {ex}")
