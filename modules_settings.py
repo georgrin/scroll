@@ -620,7 +620,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     )
 
 
-async def sell_redundant_wrseth_and_reposit_ambient(account_id, key, recipient):
+async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     min_left_eth_balance = 0.0015
     max_left_eth_balance = 0.002
 
@@ -641,7 +641,7 @@ async def sell_redundant_wrseth_and_reposit_ambient(account_id, key, recipient):
     max_deposit_percent = 80
 
     scenario = Scenarios(account_id, key, recipient)
-    return await scenario.sell_redundant_wrseth_and_reposit_ambient(
+    return await scenario.adjust_ambient_wrseth_eth_position(
         decimal,
         ambient_min_amount,
         ambient_max_amount,
