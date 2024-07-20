@@ -6,6 +6,7 @@ import aiohttp
 
 from loguru import logger
 from web3 import Web3
+from web3.exceptions import ContractLogicError
 from eth_abi import encode
 from config import (AMBIENT_FINANCE_ROUTER_ABI,
                     AMBIENT_FINANCE_CROC_ABI,
@@ -290,7 +291,7 @@ class AmbientFinance(Account):
             )
 
             return
-        if min_left_eth_balance > 0 and balance_eth_wei - amount_wei_eth < self.w3.to_wei(min_left_eth_balance, "ether"):
+        if min_left_eth_balance > 0 and balance_eth_wei - amount_wei_eth < self.w3.to_wei(min_left_eth_balance,"ether"):
             logger.info(
                 f"[{self.account_id}][{self.address}] Cannot deposit {amount_eth} ETH, " +
                 f"because left balance would be less than {min_left_eth_balance} ETH, " +
@@ -312,53 +313,68 @@ class AmbientFinance(Account):
             amount_eth = amount_wei_eth / 10 ** 18
             amount_wrseth = amount_wei_wrseth / 10 ** 18
 
-        qty = amount_wei_eth
+        count = 0
+        max_attempts = 15
+        while True:
+            try:
+                if amount_wei_eth < 500000000000000:  # 0,0005 ETH:
+                    logger.info(
+                        f"[{self.account_id}][{self.address}] Cannot Deposit {amount_eth} ETH, amount too small, min deposit: {500000000000000 / 10 ** 18}")
+                    return
 
-        if qty < 500000000000000:  # 0,0005 ETH:
-            logger.info(
-                f"[{self.account_id}][{self.address}] Cannot Deposit {amount_eth} ETH, amount too small, min deposit: {500000000000000 / 10 ** 18}")
-            return
+                logger.info(
+                    f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price}, {range_width}), {count +1}/{max_attempts + 1} attempt")
 
-        logger.info(
-            f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price})")
+                cmd = encode(
+                    ["uint8",
+                     "address",
+                     "address",
+                     "uint256",
+                     "int24",
+                     "int24",
+                     "uint128",
+                     "uint128",
+                     "uint128",
+                     "uint8",
+                     "address"],
+                    [code,
+                     base,
+                     quote,
+                     self.pool_id,
+                     low_tick,
+                     upper_tick,
+                     amount_wei_eth,
+                     limitLower,
+                     limitHigher,
+                     settleFlags,
+                     lpConduit]
+                )
+                callpath_code = 128
 
-        cmd = encode(
-            ["uint8",
-             "address",
-             "address",
-             "uint256",
-             "int24",
-             "int24",
-             "uint128",
-             "uint128",
-             "uint128",
-             "uint8",
-             "address"],
-            [code,
-             base,
-             quote,
-             self.pool_id,
-             low_tick,
-             upper_tick,
-             qty,
-             limitLower,
-             limitHigher,
-             settleFlags,
-             lpConduit]
-        )
-        callpath_code = 128
+                tx_data = await self.get_tx_data(amount_wei_eth, gas_price=False)
 
-        tx_data = await self.get_tx_data(amount_wei_eth, gas_price=False)
+                transaction = await self.swap_contract.functions.userCmd(
+                    callpath_code,
+                    cmd
+                ).build_transaction(tx_data)
 
-        transaction = await self.swap_contract.functions.userCmd(
-            callpath_code,
-            cmd
-        ).build_transaction(tx_data)
+                signed_txn = await self.sign(transaction)
+                txn_hash = await self.send_raw_transaction(signed_txn)
 
-        signed_txn = await self.sign(transaction)
-        txn_hash = await self.send_raw_transaction(signed_txn)
+                await self.wait_until_tx_finished(txn_hash.hex())
+            except ContractLogicError as ex:
+                logger.error(f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, something wrong with tokens proportional, try to reduce ETH deposit amount by 1%; error: {ex}")
+                amount_wei_eth = int(amount_wei_eth * 0.99)
+                amount_eth = amount_wei_eth / 10 ** 18
 
-        await self.wait_until_tx_finished(txn_hash.hex())
+                if count > 15:
+                    raise
+                continue
+            except Exception as ex:
+                logger.error(f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, error: {ex}")
+
+                raise
+            break
 
     async def get_liquidity_positions(self, base: str, quote: str):
         url = "https://ambindexer.net/scroll-gcgo/user_pool_positions"
