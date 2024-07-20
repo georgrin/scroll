@@ -376,15 +376,6 @@ class AmbientFinance(Account):
                 positions_data = await response.json()
 
                 if "data" in positions_data and (type(positions_data["data"]) is list or positions_data["data"] is None):
-                    # [{"blockNum": 7562420,
-                    #   "txHash": "0x2048c78f0a3a16ba32f9efb78ddcdfd7f3616aa45db0d59863464a848c6bf555",
-                    #   "txTime": 1721328090, "user": "0x623b3e76f7d0fff4eaeecc6a9bda55887377fbde", "chainId": "0x82750",
-                    #   "base": "0x0000000000000000000000000000000000000000",
-                    #   "quote": "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f", "poolIdx": 420,
-                    #   "baseFlow": 3178487101439531, "quoteFlow": 3000000000000000, "entityType": "liqchange",
-                    #   "changeType": "mint", "positionType": "concentrated", "bidTick": 124, "askTick": 228,
-                    #   "isBuy": false, "inBaseQty": false,
-                    #   "txId": "tx_a4b4f8dedf625f8185d595edec867214ade173118c1f804aea95cb82d94d953e"},...]
                     return positions_data["data"] or []
                 else:
                     logger.error(
@@ -412,6 +403,15 @@ class AmbientFinance(Account):
                 txs_data = await response.json()
 
                 if "data" in txs_data and (type(txs_data["data"]) is list or txs_data["data"] is None):
+                    # [{"blockNum": 7562420,
+                    #   "txHash": "0x2048c78f0a3a16ba32f9efb78ddcdfd7f3616aa45db0d59863464a848c6bf555",
+                    #   "txTime": 1721328090, "user": "0x623b3e76f7d0fff4eaeecc6a9bda55887377fbde", "chainId": "0x82750",
+                    #   "base": "0x0000000000000000000000000000000000000000",
+                    #   "quote": "0xa25b25548b4c98b0c7d3d27dca5d5ca743d68b7f", "poolIdx": 420,
+                    #   "baseFlow": 3178487101439531, "quoteFlow": 3000000000000000, "entityType": "liqchange",
+                    #   "changeType": "mint", "positionType": "concentrated", "bidTick": 124, "askTick": 228,
+                    #   "isBuy": false, "inBaseQty": false,
+                    #   "txId": "tx_a4b4f8dedf625f8185d595edec867214ade173118c1f804aea95cb82d94d953e"},...]
                     return txs_data["data"] or []
                 else:
                     logger.error(
@@ -480,6 +480,8 @@ class AmbientFinance(Account):
                         tx["askTick"]
                     ).call()
                     tx["concLiq"] = liq
+                    tx["positionId"] = "no id, tx hash: " + tx["txHash"]
+
                     active_positions.append(tx)
             else:
                 break
@@ -495,7 +497,7 @@ class AmbientFinance(Account):
 
             if is_out_range:
                 out_range_positions.append(position)
-                pos_id = position["positionId"] if "positionId" in position else "no_id_found"
+                pos_id = position["positionId"]
                 logger.info(f"[{self.account_id}][{self.address}][{self.chain}] position is out of range, id: {pos_id}, liq: {position['concLiq']}")
         return out_range_positions
 
