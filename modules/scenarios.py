@@ -196,7 +196,10 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        deposit_percent_allowed_error = 10
+        # минимальный размер ордера продажи покупки wrseth
+        min_trade_amount_wrseth_wei = 5000000000000000
+        # разрешенное отклонение депозита от желаемого объёма в процентах
+        deposit_percent_allowed_error = 8
 
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
@@ -220,7 +223,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > 5000000000000000:  # 0.005 ETH
+                if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     return True
@@ -274,7 +277,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] new deposit amount {need_deposit} ETH is too small")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > 5000000000000000:  # 0.005 ETH
+                if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     await sleep(30, 60)
@@ -342,7 +345,7 @@ class Scenarios(Account):
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to sell wrsETH to make deposit")
 
-        logger.info(f"Start new deposit to wrsETH/ETH pool ({ambient_min_percent}-{ambient_max_percent}%)")
+        logger.info(f"Start new deposit to wrsETH/ETH pool")
 
         deposit_result = await ambient_finance.deposit(
             ambient_min_amount,
@@ -370,7 +373,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-        if balance_wrseth > 5000000000000000:  # 0.005 ETH  # 0.0005 ETH
+        if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH  # 0.0005 ETH
             logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
             await self._sell_wrseth()
 

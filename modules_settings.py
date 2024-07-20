@@ -636,9 +636,9 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
     ambient_range_width = 0.5
 
-    # сколько процентов депозит должен составлять от баланса ETH
-    min_deposit_percent = 89
-    max_deposit_percent = 91
+    # сколько процентов депозит должен составлять от баланса ETH - min_left_eth_balance
+    min_deposit_percent = 91
+    max_deposit_percent = 95
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.adjust_ambient_wrseth_eth_position(
