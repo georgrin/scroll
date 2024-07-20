@@ -363,12 +363,16 @@ class AmbientFinance(Account):
 
                 await self.wait_until_tx_finished(txn_hash.hex())
             except ContractLogicError as ex:
+                count += 1
+                if count > 15:
+                    logger.error(
+                        f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, error: {ex}")
+                    raise
+
                 logger.error(f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, something wrong with tokens proportional, try to reduce ETH deposit amount by 1%; error: {ex}")
                 amount_wei_eth = int(amount_wei_eth * 0.99)
                 amount_eth = amount_wei_eth / 10 ** 18
 
-                if count > 15:
-                    raise
                 continue
             except Exception as ex:
                 logger.error(f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, error: {ex}")
