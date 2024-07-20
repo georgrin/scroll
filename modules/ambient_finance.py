@@ -216,7 +216,8 @@ class AmbientFinance(Account):
                       max_percent: int,
                       range_width: float = 1,
                       min_left_eth_balance: float = 0,
-                      max_left_eth_balance: float = 0):
+                      max_left_eth_balance: float = 0,
+                      max_deposit_attempts: int = 15):
         amount_wei_wrseth, amount_wrseth, balance = await self.get_amount(
             wrsETH,
             min_amount,
@@ -314,7 +315,6 @@ class AmbientFinance(Account):
             amount_wrseth = amount_wei_wrseth / 10 ** 18
 
         count = 0
-        max_attempts = 15
         while True:
             try:
                 if amount_wei_eth < 500000000000000:  # 0,0005 ETH:
@@ -323,7 +323,7 @@ class AmbientFinance(Account):
                     return
 
                 logger.info(
-                    f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price}, {range_width}), {count +1}/{max_attempts + 1} attempt")
+                    f"[{self.account_id}][{self.address}] Deposit {amount_wrseth} wrsETH and {amount_eth} ETH (price range: {low_price}-{upper_price}, {range_width}), {count + 1}/{max_deposit_attempts} attempt")
 
                 cmd = encode(
                     ["uint8",
@@ -364,7 +364,7 @@ class AmbientFinance(Account):
                 await self.wait_until_tx_finished(txn_hash.hex())
             except ContractLogicError as ex:
                 count += 1
-                if count > 15:
+                if count >= max_deposit_attempts:
                     logger.error(
                         f"[{self.account_id}][{self.address}] Failed to deposit {amount_wrseth} wrsETH and {amount_eth} ETH, error: {ex}")
                     raise

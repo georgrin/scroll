@@ -185,7 +185,8 @@ class Scenarios(Account):
                                                  min_left_eth_balance: float,
                                                  max_left_eth_balance: float,
                                                  min_deposit_percent: int,
-                                                 max_deposit_percent: int):
+                                                 max_deposit_percent: int,
+                                                 ambient_max_deposit_attempts: int = 1):
         logger.info(f"[{self.account_id}][{self.address}] Start check redundant wrsETH and reposit ambient positions")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
@@ -357,6 +358,7 @@ class Scenarios(Account):
             ambient_range_width,
             min_left_eth_balance,
             max_left_eth_balance,
+            ambient_max_deposit_attempts
         )
 
         if deposit_result is False:

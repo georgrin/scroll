@@ -640,6 +640,9 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     min_deposit_percent = 91
     max_deposit_percent = 95
 
+    # сколько раз повторяем депозит с уменьшением кол-ва баланса
+    ambient_max_deposit_attempts = 16
+
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.adjust_ambient_wrseth_eth_position(
         decimal,
@@ -652,7 +655,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
         min_left_eth_balance,
         max_left_eth_balance,
         min_deposit_percent,
-        max_deposit_percent)
+        max_deposit_percent,
+        ambient_max_deposit_attempts)
 
 
 async def deposit_ambient_finance(account_id, key, recipient):
