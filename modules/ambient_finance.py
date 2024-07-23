@@ -508,6 +508,13 @@ class AmbientFinance(Account):
 
         return active_positions
 
+    async def is_position_out_of_range(self, base, quote, position) -> float:
+        eth_wrs_curve_price = await self.get_curve_price(base, quote)
+        current_price = sqrtp_to_price(eth_wrs_curve_price)
+        current_tick = price_to_tick(current_price)
+
+        return current_tick >= int(position["askTick"])
+
     async def get_outrange_positions(self, base: str, quote: str) -> List[dict]:
         active_positions = await self.get_active_positions(base, quote)
         out_range_positions = []
@@ -585,14 +592,6 @@ class AmbientFinance(Account):
                 logger.error(f"Failed to remove liquidity {count} position {position['positionId']}: {ex}")
 
                 raise
-
-    async def is_position_out_of_range(self, base, quote, position) -> float:
-        eth_wrs_curve_price = await self.get_curve_price(base, quote)
-        current_price = sqrtp_to_price(eth_wrs_curve_price)
-
-        current_tick = price_to_tick(current_price)
-
-        return current_tick >= int(position["askTick"])
 
     @retry
     @check_gas
