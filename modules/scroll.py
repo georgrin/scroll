@@ -25,7 +25,6 @@ from config import (
     SCROLL_CANVAS_CONTRACT,
     SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
     SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI,
-    SCROLL_CANVAS_BADGES_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
     PROXIES, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI,
@@ -323,6 +322,10 @@ class Scroll(Account):
             log=False
         ))
 
+    async def is_ambient_providoor_badge_minted(self):
+        return await self.is_badge_minted(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT,
+                                          SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI)
+
     @retry
     async def is_badge_minted(self, badge_address, badge_abi):
         badge_contract = self.get_contract(badge_address, badge_abi)
@@ -372,7 +375,6 @@ class Scroll(Account):
             else:
                 raise Exception(f"Random nicknames request failed: {response.status}:{response}")
 
-
     @retry
     async def get_random_name(self, canvas_contract):
         random_names = await self.create_random_names_spinxo()
@@ -384,7 +386,7 @@ class Scroll(Account):
         raise Exception(f"All random nicknames are already used: {random_names}")
 
     @retry
-    @AsyncCacheDecorator(ttl=1000)
+    @AsyncCacheDecorator(ttl=1000 * 60 * 60)
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
         if not proxy:
             proxy = get_random_proxy()
@@ -425,7 +427,7 @@ class Scroll(Account):
             return None, None
 
     @retry
-    @AsyncCacheDecorator(ttl=15)
+    @AsyncCacheDecorator(ttl=1000 * 30)
     async def referral_code_sign(self, referral_code: str, proxy=None):
         if not proxy:
             proxy = get_random_proxy()
@@ -446,6 +448,36 @@ class Scroll(Account):
                     raise Exception(f"Bad get Scroll referral code signature: {response.status}:{data}")
             else:
                 raise Exception(f"Failed to get Scroll Canvas referral code signature: {response.status}")
+
+    @retry
+    @AsyncCacheDecorator(ttl=1000 * 1)
+    async def is_badge_eligible(self, badge: str, proxy=None) -> bool:
+        if not proxy:
+            proxy = get_random_proxy()
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+
+        url = f"https://ambient-scroll-badge.liquidity.tools/api/check"
+        params = {
+            "badge": badge,
+            "recipient": self.address
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                data = await response.json()
+
+                if "eligibility" in data:
+                    return data["eligibility"]
+                else:
+                    raise Exception(f"Bad Scroll Canvas badge eligibility check response: {response.status}:{data}")
+            else:
+                raise Exception(f"Failed to check eligibility of Scroll Canvas badge: {response.status}")
+
+    async def is_ambient_providoor_badge_eligible(self):
+        return await self.is_badge_eligible(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
 
     async def add_account_to_referral_file(self):
         logger.info(
@@ -517,7 +549,7 @@ class Scroll(Account):
             await self.add_account_to_referral_file()
 
     @retry
-    @AsyncCacheDecorator(ttl=15)
+    @AsyncCacheDecorator(ttl=1000 * 1)
     async def get_mint_badge_tx_data(self, badge_address: str, proxy=None):
         if not proxy:
             proxy = get_random_proxy()
@@ -556,12 +588,15 @@ class Scroll(Account):
     async def mint_ethereum_year_badge(self, min_eth_balance: float = 0.0005):
         is_minted = await self.is_profile_minted()
         if not is_minted:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            logger.info(
+                f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
             return False
 
-        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT, SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI)
+        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
+                                                     SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI)
         if is_minted_badge:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ethereum Year Badge")
+            logger.info(
+                f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ethereum Year Badge")
             return False
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ethereum Year Badge")
@@ -591,12 +626,14 @@ class Scroll(Account):
     async def mint_ambient_providoor_badge(self, min_eth_balance: float = 0.0005):
         is_minted = await self.is_profile_minted()
         if not is_minted:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            logger.info(
+                f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
             return False
 
-        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI)
+        is_minted_badge = await self.is_ambient_providoor_badge_minted()
         if is_minted_badge:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ambient Providoor Badge")
+            logger.info(
+                f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ambient Providoor Badge")
             return False
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ambient Providoor Badge")
@@ -610,7 +647,8 @@ class Scroll(Account):
             )
             return False
 
-        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
+        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(
+            SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
 
         tx_data = await self.get_tx_data(0, False)
 
