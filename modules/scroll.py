@@ -28,7 +28,7 @@ from config import (
     SCROLL_CANVAS_BADGES_CONTRACT,
     SCROLL_TOKENS,
     WETH_ABI,
-    PROXIES,
+    PROXIES, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI,
 )
 
 
@@ -312,8 +312,8 @@ class Scroll(Account):
 
     @retry
     async def is_profile_minted(self):
+        # isProfileMinted почему то возвращает False для всех аккаунтов, проверить потом
         # return await canvas_contract.functions.isProfileMinted(self.address).call()
-
         return not (await checkLastIteration(
             interval=-1,
             account=self.account,
@@ -326,7 +326,6 @@ class Scroll(Account):
     @retry
     async def is_badge_minted(self, badge_address, badge_abi):
         badge_contract = self.get_contract(badge_address, badge_abi)
-        print('hello')
         return await badge_contract.functions.hasBadge(self.address).call()
 
     async def create_random_names(self, proxy=None):
@@ -577,6 +576,41 @@ class Scroll(Account):
             return False
 
         mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT)
+
+        tx_data = await self.get_tx_data(0, False)
+
+        tx_data["to"] = self.w3.to_checksum_address(mint_ethereum_year_badge_tx_data["to"])
+        tx_data["data"] = mint_ethereum_year_badge_tx_data["data"]
+
+        signed_txn = await self.sign(tx_data)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
+    async def mint_ambient_providoor_badge(self, min_eth_balance: float = 0.0005):
+        is_minted = await self.is_profile_minted()
+        if not is_minted:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            return False
+
+        is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI)
+        if is_minted_badge:
+            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ambient Providoor Badge")
+            return False
+
+        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ambient Providoor Badge")
+
+        # мы проверяем что на аккаунте есть минимальный баланс нативки
+        balance_eth = await self.w3.eth.get_balance(self.address)
+        if min_eth_balance > 0 and balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
+            logger.info(
+                f"[{self.account_id}][{self.address}] Cannot mint Scroll Ambient Providoor Badge, " +
+                f"due to small ETH balance {balance_eth / 10 ** 18} ETH, min balance should be {min_eth_balance} ETH"
+            )
+            return False
+
+        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
 
         tx_data = await self.get_tx_data(0, False)
 
