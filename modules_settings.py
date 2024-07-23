@@ -641,7 +641,7 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     max_deposit_percent = 95
 
     # сколько раз повторяем депозит с уменьшением кол-ва баланса
-    ambient_max_deposit_attempts = 16
+    ambient_max_deposit_attempts = 100
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.adjust_ambient_wrseth_eth_position(
