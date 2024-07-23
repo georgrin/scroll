@@ -634,7 +634,7 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     ambient_max_percent = 100
     # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
     # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
-    ambient_range_width = 0.5
+    ambient_range_width = 0.1
 
     # сколько процентов депозит должен составлять от баланса ETH - min_left_eth_balance
     min_deposit_percent = 91
