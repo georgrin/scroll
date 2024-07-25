@@ -659,6 +659,12 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
         ambient_max_deposit_attempts)
 
 
+async def mint_ambient_providoor_badge(account_id, key, recipient):
+    scenario = Scenarios(account_id, key, recipient)
+
+    return await scenario.mint_ambient_providoor_badge()
+
+
 async def deposit_ambient_finance(account_id, key, recipient):
     """
     Make deposit on Ambient Finance to wrsETH/ETH pool

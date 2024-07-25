@@ -3,8 +3,9 @@ import random
 from loguru import logger
 
 from config import SCROLL_TOKENS
+from utils.helpers import get_eth_usd_price
 from utils.sleeping import sleep
-from . import AmbientFinance, Kelp
+from . import AmbientFinance, Kelp, Scroll
 from .account import Account
 
 wrsETH = "WRSETH"
@@ -13,6 +14,9 @@ wrsETH = "WRSETH"
 class Scenarios(Account):
     def __init__(self, account_id: int, private_key: str, recipient: str) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain="scroll", recipient=recipient)
+        self.ambient_finance = AmbientFinance(account_id, private_key, recipient)
+        self.scroll = Scroll(account_id, private_key, "scroll", recipient)
+        self.scroll_ethereum = Scroll(account_id, private_key, "ethereum", recipient)
 
     async def get_wrseth_balance(self) -> int:
         return (await self.get_balance(SCROLL_TOKENS[wrsETH]))["balance_wei"]
@@ -187,7 +191,7 @@ class Scenarios(Account):
                                                  min_deposit_percent: int,
                                                  max_deposit_percent: int,
                                                  ambient_max_deposit_attempts: int = 1):
-        logger.info(f"[{self.account_id}][{self.address}] Start check redundant wrsETH and reposit ambient positions")
+        logger.info(f"[{self.account_id}][{self.address}] Start adjust Ambient wrsETH/ETH position")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
         min_left_eth_balance_wei = int(self.w3.to_wei(min_left_eth_balance, "ether"))
@@ -213,13 +217,16 @@ class Scenarios(Account):
         total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
         total_deposit_and_balance_wei = self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei
         # мы считаем процент от общего объёма все активов - min_left_eth_balance
-        deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
+        deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
+                    total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
         if deposit_current_percent > min_deposit_percent - deposit_percent_allowed_error:
-            logger.info(f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
+            logger.info(
+                f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH and wrsETH balances, that is enough")
 
-            out_range_positions = await ambient_finance.get_outrange_positions(ambient_finance.eth_address, SCROLL_TOKENS["WRSETH"])
+            out_range_positions = await ambient_finance.get_outrange_positions(ambient_finance.eth_address,
+                                                                               SCROLL_TOKENS["WRSETH"])
             if len(out_range_positions) == 0:
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
@@ -228,17 +235,19 @@ class Scenarios(Account):
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     return True
-                logger.info(f"[{self.account_id}][{self.address}] redundant {balance_wrseth} wrsETH is too small to sell, skipping")
+                logger.info(
+                    f"[{self.account_id}][{self.address}] redundant {balance_wrseth} wrsETH is too small to sell, skipping")
 
                 return False
             else:
-                logger.info(f"[{self.account_id}][{self.address}] there are {len(out_range_positions)} out range positions, need to withdrawal and make new deposit")
+                logger.info(
+                    f"[{self.account_id}][{self.address}] there are {len(out_range_positions)} out range positions, need to withdrawal and make new deposit")
 
         logger.info(
             f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - deposit_percent_allowed_error}%")
 
         new_deposit = total_deposit_amount * (
-                    min_deposit_percent / deposit_current_percent) if deposit_current_percent > 0 else total_deposit_amount * min_deposit_percent
+                min_deposit_percent / deposit_current_percent) if deposit_current_percent > 0 else total_deposit_amount * min_deposit_percent
         # считаем сколько нужно добавить в позицию, чтобы депозит был нужного объёма
         need_deposit = new_deposit - total_deposit_amount - balance_wrseth
         need_deposit_wei = int(self.w3.to_wei(need_deposit, "ether")) if need_deposit > 0 else 0
@@ -253,7 +262,8 @@ class Scenarios(Account):
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei - min_left_eth_balance_wei
         if total_wrseth_eth_amount_wei <= 0:
             total_wrseth_eth_amount = total_wrseth_eth_amount_wei / 10 ** 18
-            logger.error(f"[{self.account_id}][{self.address}] something wrong with calculations, {total_wrseth_eth_amount} total wrseth and eth amount < {min_left_eth_balance} min left eth balance")
+            logger.error(
+                f"[{self.account_id}][{self.address}] something wrong with calculations, {total_wrseth_eth_amount} total wrseth and eth amount < {min_left_eth_balance} min left eth balance")
             return False
 
         should_be_wrseth_wei = int(
@@ -318,9 +328,11 @@ class Scenarios(Account):
         total_wrseth_eth_amount_wei = balance_wrseth_wei + balance_eth_wei - min_left_eth_balance_wei
         if total_wrseth_eth_amount_wei <= 0:
             total_wrseth_eth_amount = total_wrseth_eth_amount_wei / 10 ** 18
-            logger.error(f"[{self.account_id}][{self.address}] something wrong with calculations, {total_wrseth_eth_amount} total wrseth and eth amount < {min_left_eth_balance} min left eth balance")
+            logger.error(
+                f"[{self.account_id}][{self.address}] something wrong with calculations, {total_wrseth_eth_amount} total wrseth and eth amount < {min_left_eth_balance} min left eth balance")
             return False
-        should_be_wrseth_wei = int(0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
+        should_be_wrseth_wei = int(
+            0.5 * (total_wrseth_eth_amount_wei * random.randint(max_deposit_percent, max_deposit_percent) / 100))
 
         # TODO: проверяем что после покупки останется минимальный баланс
         need_to_buy_wrseth_wei = should_be_wrseth_wei - balance_wrseth_wei
@@ -386,9 +398,186 @@ class Scenarios(Account):
             total_wrseth_eth_balance_wei = balance_wrseth_wei + balance_eth_wei
             total_deposit_and_balance_wei = self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei
             # мы считаем процент от общего объёма все активов - min_left_eth_balance
-            deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
+            deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
+                        total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - deposit_percent_allowed_error}%")
         except Exception as ex:
             logger.error(f"Failed to get deposit proportion after deposit: {ex}")
+
+    async def _withdraw_to_okex(self):
+        # на балансе более $1000, то делаем вывод на биржу через майннет
+        # проверяем что нет активного вывода
+        # проверяем что есть активная позиция и она больше 500 долларов
+        # проверяем что текущий баланс больше 500 долларов
+        # выводим с ambient finance позицию у которой больше 500 долларов (?)
+        # выводим со скролла в майннет
+        # выводим с майннета на окекс
+
+        # если все действия выполнены и ничего делать не надо, то возращаем Noner
+
+        return None
+
+    async def _make_1000_usd_deposit_ambient(self):
+        min_left_eth_balance = 0.0045
+        max_left_eth_balance = 0.0055
+
+        decimal = 5
+
+        ambient_min_amount = 0.0001
+        ambient_max_amount = 0.0002
+        # all_amount - deposit from min_percent to max_percent of wrsETH
+        ambient_all_amount = True
+        ambient_min_percent = 100
+        ambient_max_percent = 100
+        # Percentage width of the range around current pool price (1 = 1%, 0.5 = 0.5%)
+        # Tighter ranges accumulate rewards at faster rates, but are more likely to suffer divergence losses.
+        ambient_range_width = 0.5
+
+        # сколько процентов депозит должен составлять от баланса ETH - min_left_eth_balance
+        min_deposit_percent = 98
+        max_deposit_percent = 99
+
+        # сколько раз повторяем депозит с уменьшением кол-ва баланса
+        ambient_max_deposit_attempts = 100
+        await self.adjust_ambient_wrseth_eth_position(
+            decimal,
+            ambient_min_amount,
+            ambient_max_amount,
+            ambient_all_amount,
+            ambient_min_percent,
+            ambient_max_percent,
+            ambient_range_width,
+            min_left_eth_balance,
+            max_left_eth_balance,
+            min_deposit_percent,
+            max_deposit_percent,
+            ambient_max_deposit_attempts
+        )
+
+    async def _deposit_economy_to_scroll(self):
+        min_amount = 0.01
+        max_amount = 0.02
+        decimal = 4
+
+        all_amount = True
+
+        min_percent = 1
+        max_percent = 1
+
+        await self.scroll_ethereum.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+
+    async def _get_pending_bridge_tx(self):
+        proxy = self.scroll.get_random_proxy()
+        tx_list = await self.scroll.get_bridge_tx_list(4, proxy)
+
+        for tx in tx_list:
+            if tx["tx_status"] != 8:
+                return tx
+
+        return None
+
+    async def _mint_ambient_providoor_badge_iteration(self):
+        min_deposit_amount_usd = 1000
+        logger.info(f"[{self.account_id}][{self.address}] Start check conditions to mint Ambient Providoor badge")
+
+        is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
+
+        # TODO: проверяем что нет pending transaction у аккаунта
+
+        if is_minted_badge:
+            # если у нас уже есть значок, то нам нужно вывести деньги назад на окекс
+            logger.info(f"[{self.account_id}][{self.address}] Badge minted")
+            result = await self._withdraw_to_okex()
+            return result
+
+        logger.info(f"[{self.account_id}][{self.address}] Badge is not minted")
+
+        # если у нас нет значка, то нужно его сминтить
+        is_badge_eligible = await self.scroll.is_ambient_providoor_badge_eligible()
+
+        if is_badge_eligible:
+            # если у нас нет значка, но мы можем его сминтить, то запускаем минт
+            logger.info(f"[{self.account_id}][{self.address}] Badge is eligible to mint")
+            await self.scroll.mint_ambient_providoor_badge()
+            return True
+
+        logger.info(f"[{self.account_id}][{self.address}] Badge is not eligible to mint")
+
+        eth_price_in_usd = await get_eth_usd_price()
+
+        logger.info(f"[{self.account_id}][{self.address}] ETH price is {eth_price_in_usd} USD")
+
+        current_deposit = await self.ambient_finance.get_total_deposit_amount()
+        est_current_deposit_in_isd = current_deposit * eth_price_in_usd
+
+        logger.info(f"[{self.account_id}][{self.address}] current deposit ~{est_current_deposit_in_isd} USD")
+
+        if est_current_deposit_in_isd > min_deposit_amount_usd:
+            # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
+            logger.info(f"[{self.account_id}][{self.address}] current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
+            await sleep(60, 60 * 5)
+            return True
+
+        balance_eth_wei = await self.w3.eth.get_balance(self.address)
+        balance_eth = balance_eth_wei / 10 ** 18
+        balacne_wrseth_wei = await self.get_wrseth_balance()
+        balance_wrseth = balacne_wrseth_wei / 10 ** 18
+
+        logger.info(f"[{self.account_id}][{self.address}] current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
+
+        if eth_price_in_usd * (balance_eth + balance_wrseth) > min_deposit_amount_usd:
+            logger.info(
+                f"[{self.account_id}][{self.address}] current Scroll balance is enough to make deposit")
+            # если на аккаунте достаточно средств, чтобы сделать новый депозит, то делаем его
+            await self._make_1000_usd_deposit_ambient()
+            return True
+
+        # если на аккаунте недостаточно средств, то проверяем нет ли пендинг вывода
+        bridge_tx_pending = await self._get_pending_bridge_tx()
+
+        if bridge_tx_pending:
+            # мы не можем действовать пока нет пендинг бридж транзакции
+            logger.info(
+                f"[{self.account_id}][{self.address}] there PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
+            return True
+
+        # теперь мы должно проверить, что в майннете нет нужного баланса, чтобы сделать депозит
+        balance_eth_wei_ethereum = self.scroll_ethereum.w3.eth.get_balance(self.address)
+        balance_eth_ethereum = balance_eth_wei_ethereum / 10 ** 18
+
+        logger.info(f"[{self.account_id}][{self.address}] current Ethereum balance: {balance_eth_ethereum} ETH")
+
+        if eth_price_in_usd * (balance_eth_wei_ethereum) > min_deposit_amount_usd:
+            # если на аккаунте в майннете достаточно средств, чтобы сделать новый депозит, то делаем бридж
+            logger.info(
+                f"[{self.account_id}][{self.address}] current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
+            await self._deposit_economy_to_scroll()
+            return True
+
+        # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то вывод с биржи
+
+        # для начала проверяем что нет пендинг выводов
+
+        # запускаем аккаунт
+        # 1. проверяем, что нет значка за депозит $1000 баксов (если есть и на балансе более $1000, то делаем вывод на биржу через майннет)
+        # 2. проверяем, что текущий объём депозита меньше $1000 баксов (если больше, то минтим значок)
+        # 3. проверяем что на аккаунте не хватает средств, чтобы увеличить депозит до 1000 долларов (если хватает, то делаем депозит и минтим значок)
+        # 4. проверяем что нет pending транзы бриджа с майннета в скролл (если есть, то ждём обновления баланса и уже потом решаем выводить ещё или хватает на депозит)
+        # 5. проверяем что в эфириуме нет средств, которые можно было забриджить, чтобы хватило $1000 депозит (если есть, то делаем бридж и ждём)
+        # 6. проверяем что нет pending выводов с биржи, если есть то ждём обновления баланса, далее смотрим хватает или нет
+        # 7. проверяем что на бирже достаточно средств, чтобы закинуть на аккаунте недостающий амаунт (если хватает, то делаем вывод в эфириум, далее бридж и депозит)
+
+        # плюс/минус, только надо проверять не только что значка нет,
+        # а была ли транза со свапом на 500+ баксов и ликвидностью на 1000 баксов - т.к.
+        # бейдж доступен для минта через какое то время
+
+    async def mint_ambient_providoor_badge(
+            self,
+    ):
+        while True:
+            iteration_result = await self._mint_ambient_providoor_badge_iteration()
+
+            if iteration_result is None:
+                break

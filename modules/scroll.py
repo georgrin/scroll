@@ -31,17 +31,17 @@ from config import (
 )
 
 
-def get_random_proxy():
-    if USE_PROXIES and (PROXIES is None or len(PROXIES) == 0):
-        return None
-    else:
-        return random.choice(PROXIES)
-
-
 class Scroll(Account):
     def __init__(self, account_id: int, private_key: str, chain: str, recipient) -> None:
         super().__init__(account_id=account_id, private_key=private_key, chain=chain, recipient=recipient)
         self.connector = None
+
+    @staticmethod
+    def get_random_proxy():
+        if USE_PROXIES and (PROXIES is None or len(PROXIES) == 0):
+            return None
+        else:
+            return random.choice(PROXIES)
 
     @retry
     @check_gas
@@ -239,7 +239,7 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
-    async def _check_signed_terms_of_use(self, proxy) -> bool:
+    async def _check_signed_terms_of_use(self, proxy=None) -> bool:
         url = "https://venus.scroll.io/v1/signature/address"
 
         params = {
@@ -261,7 +261,7 @@ class Scroll(Account):
 
                 raise Exception(f"Bad Scroll request: {response.status}")
 
-    async def _sign_terms_of_use(self, proxy) -> bool:
+    async def _sign_terms_of_use(self, proxy=None) -> bool:
         url = "https://venus.scroll.io/v1/signature/sign"
 
         message = "By signing this message, you acknowledge that you have read and understood the Scroll Sessions Terms of Use, Scroll Terms of Service and Privacy Policy, and agree to abide by all of the terms and conditions contained therein."
@@ -289,13 +289,37 @@ class Scroll(Account):
                 else:
                     return False
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll sign terms of use request")
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll sign terms of use response")
 
-                raise Exception(f"Bad Scroll sign terms of use request: {response.status}")
+                raise Exception(f"Bad Scroll sign terms of use response: {response.status}")
+
+    async def get_bridge_tx_list(self, tx_count=3, proxy=None):
+        url = "https://mainnet-api-bridge-v2.scroll.io/api/txs"
+
+        params = {
+            "address": self.address,
+            "page": 1,
+            "page_size": tx_count
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                tx_list = await response.json()
+
+                if "data" in tx_list and "results" in tx_list["data"] and tx_list["data"]["results"]:
+                    return tx_list["data"]["results"]
+                else:
+                    return []
+            else:
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll response, url: {url}")
+
+                raise Exception(f"Bad Scroll response: {response.status}")
 
     @retry
     async def sign_terms_of_use(self):
-        proxy = get_random_proxy()
+        proxy = self.get_random_proxy
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -389,7 +413,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 60 * 60)
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
         if not proxy:
-            proxy = get_random_proxy()
+            proxy = self.get_random_proxy
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -430,7 +454,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 30)
     async def referral_code_sign(self, referral_code: str, proxy=None):
         if not proxy:
-            proxy = get_random_proxy()
+            proxy = self.get_random_proxy
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -453,7 +477,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 1)
     async def is_badge_eligible(self, badge: str, proxy=None) -> bool:
         if not proxy:
-            proxy = get_random_proxy()
+            proxy = self.get_random_proxy
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -540,7 +564,7 @@ class Scroll(Account):
 
         await self.create_and_send_mint_tx(name, canvas_contract, mint_fee, referral_code_sign)
 
-        # await sleep(EXPLORER_CACHE_S)
+        # await sleep(EXPLORER_CACHE_MS)
         await sleep(30)
 
         is_minted = await self.is_profile_minted()
@@ -552,7 +576,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 1)
     async def get_mint_badge_tx_data(self, badge_address: str, proxy=None):
         if not proxy:
-            proxy = get_random_proxy()
+            proxy = self.get_random_proxy
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 

@@ -1,7 +1,7 @@
 import traceback
 from onecache import AsyncCacheDecorator
 from loguru import logger
-from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_S
+from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_MS
 from utils.sleeping import sleep
 from datetime import datetime
 import requests
@@ -34,7 +34,57 @@ def remove_wallet(private_key: str):
                 file.write(line)
 
 
-@AsyncCacheDecorator(ttl=EXPLORER_CACHE_S)
+@AsyncCacheDecorator(ttl=EXPLORER_CACHE_MS)
+async def get_eth_usd_price(chain: str):
+    explorers_data = {
+        "scroll": {
+            "url": "https://api.scrollscan.com/api",
+            "api_key": SCROLL_API_KEY
+        }
+    }
+
+    explorer_data = explorers_data.get(chain)
+    if explorer_data is None:
+        raise ValueError(f"Unsupported chain: {chain}")
+
+    explorer_api_url = explorer_data.get("url")
+    explorer_api_key = explorer_data.get("api_key")
+
+    params = {
+        "module": "stats",
+        "action": "ethprice",
+    }
+
+    if explorer_api_key:
+        params["apikey"] = explorer_api_key
+
+    while True:
+        try:
+            response = requests.get(explorer_api_url, params=params)
+            response.raise_for_status()
+            data = response.json()
+
+            if "result" not in data:
+                # logger.error("No 'result' field in the response")
+                raise Exception("Response does not contain 'result' field")
+
+            if "Invalid API Key" in data["result"]:
+                # logger.error("Invalid API Key")
+                raise Exception(data["result"])
+            if "rate limit" in data["result"]:
+                # logger.error("Explorer api max rate limit reached")
+                raise Exception(data["result"])
+
+            if "error" in data:
+                raise Exception(data["error"])
+
+            return float(data["result"]["ethusd"])
+        except (requests.exceptions.HTTPError, json.decoder.JSONDecodeError, Exception) as e:
+            logger.error(f"Error get_eth_usd_price: {e}")
+            await sleep(10)
+
+
+@AsyncCacheDecorator(ttl=EXPLORER_CACHE_MS)
 async def get_account_transfer_tx_list(account_address: str, chain: str):
     explorers_data = {
         'zksync': {
@@ -135,7 +185,12 @@ async def get_last_action_tx(address: str, dst: str, chain: str):
     return last
 
 
-async def checkLastIteration(interval: int, account, deposit_contract_address: str, chain: str, log_prefix: str, log: bool = True):
+async def checkLastIteration(interval: int,
+                             account,
+                             deposit_contract_address: str,
+                             chain: str,
+                             log_prefix: str,
+                             log: bool = True):
     current_datetime = datetime.now()
     last_tx = await get_last_action_tx(address=account.address, dst=deposit_contract_address, chain=chain)
     if last_tx:

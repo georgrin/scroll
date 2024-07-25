@@ -2,7 +2,7 @@
 RANDOM_WALLET = True  # True/False
 
 # EXPLORER CACHE
-EXPLORER_CACHE_S = 10
+EXPLORER_CACHE_MS = 1000 * 10
 
 # removing a wallet from the list after the job is done
 REMOVE_WALLET = False
@@ -42,7 +42,7 @@ RETRY_COUNT = 3
 LAYERSWAP_API_KEY = ""
 SCROLL_API_KEY = ""
 
+# PROXY = "socks5://127.0.0.1:1080"
 PROXY = None
-
-# Пока используется только в Scroll signed terms of use
+# Пока используется только для запросов к Scroll (офф сайт)
 USE_PROXIES = True
