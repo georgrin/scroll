@@ -501,7 +501,7 @@ class Scenarios(Account):
         return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
 
     async def _mint_ambient_providoor_badge_iteration(self):
-        min_deposit_amount_usd = 1100
+        min_deposit_amount_usd = 900
         logger.info(f"[{self.account_id}][{self.address}] Start check conditions to mint Ambient Providoor badge")
 
         is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
@@ -616,12 +616,18 @@ class Scenarios(Account):
             self,
     ):
         self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
+        i = 1
         while True:
+            logger.info(f"Start {i} iteration")
             iteration_result = await self._mint_ambient_providoor_badge_iteration()
 
             if iteration_result is None:
+                logger.info(f"Finished script")
                 break
             elif iteration_result is False:
+                logger.info(f"Finished {i} iteration")
                 await sleep(30, 90)
             else:
+                logger.info(f"Finished {i} iteration")
                 await sleep(15, 30)
+            i+=1
