@@ -501,7 +501,7 @@ class Scenarios(Account):
         return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
 
     async def _mint_ambient_providoor_badge_iteration(self):
-        min_deposit_amount_usd = 900
+        min_deposit_amount_usd = 1100
         logger.info(f"[{self.account_id}][{self.address}] Start check conditions to mint Ambient Providoor badge")
 
         is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
