@@ -319,7 +319,7 @@ class Scroll(Account):
 
     @retry
     async def sign_terms_of_use(self):
-        proxy = self.get_random_proxy
+        proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -413,7 +413,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 60 * 60)
     async def get_wallet_canvas_referral_code(self, address: str, proxy=None):
         if not proxy:
-            proxy = self.get_random_proxy
+            proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -454,7 +454,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 30)
     async def referral_code_sign(self, referral_code: str, proxy=None):
         if not proxy:
-            proxy = self.get_random_proxy
+            proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -477,7 +477,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 1)
     async def is_badge_eligible(self, badge: str, proxy=None) -> bool:
         if not proxy:
-            proxy = self.get_random_proxy
+            proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
@@ -576,7 +576,7 @@ class Scroll(Account):
     @AsyncCacheDecorator(ttl=1000 * 1)
     async def get_mint_badge_tx_data(self, badge_address: str, proxy=None):
         if not proxy:
-            proxy = self.get_random_proxy
+            proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 

@@ -2,11 +2,12 @@ import random
 
 from loguru import logger
 
-from config import SCROLL_TOKENS
+from config import SCROLL_TOKENS, OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY
 from utils.helpers import get_eth_usd_price
 from utils.sleeping import sleep
 from . import AmbientFinance, Kelp, Scroll
 from .account import Account
+from .okex import Okex
 
 wrsETH = "WRSETH"
 
@@ -17,6 +18,7 @@ class Scenarios(Account):
         self.ambient_finance = AmbientFinance(account_id, private_key, recipient)
         self.scroll = Scroll(account_id, private_key, "scroll", recipient)
         self.scroll_ethereum = Scroll(account_id, private_key, "ethereum", recipient)
+        self.okex = None
 
     async def get_wrseth_balance(self) -> int:
         return (await self.get_balance(SCROLL_TOKENS[wrsETH]))["balance_wei"]
@@ -218,7 +220,7 @@ class Scenarios(Account):
         total_deposit_and_balance_wei = self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei
         # мы считаем процент от общего объёма все активов - min_left_eth_balance
         deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                    total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
+                total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
         # TODO: ДОБАВИТЬБ СЮДА УЧЁТ баланс wrsETH
         if deposit_current_percent > min_deposit_percent - deposit_percent_allowed_error:
@@ -399,7 +401,7 @@ class Scenarios(Account):
             total_deposit_and_balance_wei = self.w3.to_wei(total_deposit_amount, "ether") + total_wrseth_eth_balance_wei
             # мы считаем процент от общего объёма все активов - min_left_eth_balance
             deposit_current_percent = int(self.w3.to_wei(total_deposit_amount, "ether") / (
-                        total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
+                    total_deposit_and_balance_wei - min_left_eth_balance_wei) * 100)
 
             logger.info(
                 f"[{self.account_id}][{self.address}] current deposit is {deposit_current_percent}% of total ETH balance, should be minimum {min_deposit_percent - deposit_percent_allowed_error}%")
@@ -463,23 +465,43 @@ class Scenarios(Account):
 
         all_amount = True
 
-        min_percent = 1
-        max_percent = 1
+        min_percent = 100
+        max_percent = 100
 
-        await self.scroll_ethereum.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
+        await self.scroll_ethereum.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent,
+                                                   max_percent)
 
     async def _get_pending_bridge_tx(self):
         proxy = self.scroll.get_random_proxy()
         tx_list = await self.scroll.get_bridge_tx_list(4, proxy)
 
         for tx in tx_list:
-            if tx["tx_status"] != 8:
+            # tx["message_type"] == 3 это депозит
+            if tx["tx_status"] != 8 and tx["message_type"] == 3:
                 return tx
-
+            # tx["message_type"] == 2 это вывод
+            elif tx["tx_status"] != 2 and tx["message_type"] == 2:
+                return tx
+            # какой то другой тип
+            if tx["tx_status"] != 8 and tx["message_type"] not in [2, 3]:
+                return tx
         return None
 
+    async def _get_okex_total_balance(self, symbol) -> float:
+        funding_balance = self.okex.get_funding_balance(symbol)
+        trading_balance = self.okex.get_trading_balance(symbol)
+        total_balance = funding_balance + trading_balance
+
+        logger.debug(
+            f"{symbol} funding balance: {funding_balance}; trading balance: {trading_balance}; total: {total_balance}")
+
+        return float(total_balance)
+
+    async def _buy_and_withdraw_eth(self, amount: float):
+        return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
+
     async def _mint_ambient_providoor_badge_iteration(self):
-        min_deposit_amount_usd = 1000
+        min_deposit_amount_usd = 900
         logger.info(f"[{self.account_id}][{self.address}] Start check conditions to mint Ambient Providoor badge")
 
         is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
@@ -505,19 +527,19 @@ class Scenarios(Account):
 
         logger.info(f"[{self.account_id}][{self.address}] Badge is not eligible to mint")
 
-        eth_price_in_usd = await get_eth_usd_price()
+        eth_price_in_usd = await get_eth_usd_price("scroll")
 
         logger.info(f"[{self.account_id}][{self.address}] ETH price is {eth_price_in_usd} USD")
 
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
-        est_current_deposit_in_isd = current_deposit * eth_price_in_usd
+        est_current_deposit_in_usd = current_deposit * eth_price_in_usd
 
-        logger.info(f"[{self.account_id}][{self.address}] current deposit ~{est_current_deposit_in_isd} USD")
+        logger.info(f"[{self.account_id}][{self.address}] current deposit ~{est_current_deposit_in_usd} USD")
 
-        if est_current_deposit_in_isd > min_deposit_amount_usd:
+        if est_current_deposit_in_usd > min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
-            logger.info(f"[{self.account_id}][{self.address}] current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
-            await sleep(60, 60 * 5)
+            logger.info(
+                f"[{self.account_id}][{self.address}] current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
             return True
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
@@ -525,7 +547,8 @@ class Scenarios(Account):
         balacne_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balacne_wrseth_wei / 10 ** 18
 
-        logger.info(f"[{self.account_id}][{self.address}] current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
+        logger.info(
+            f"[{self.account_id}][{self.address}] current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
         if eth_price_in_usd * (balance_eth + balance_wrseth) > min_deposit_amount_usd:
             logger.info(
@@ -536,7 +559,6 @@ class Scenarios(Account):
 
         # если на аккаунте недостаточно средств, то проверяем нет ли пендинг вывода
         bridge_tx_pending = await self._get_pending_bridge_tx()
-
         if bridge_tx_pending:
             # мы не можем действовать пока нет пендинг бридж транзакции
             logger.info(
@@ -544,40 +566,62 @@ class Scenarios(Account):
             return True
 
         # теперь мы должно проверить, что в майннете нет нужного баланса, чтобы сделать депозит
-        balance_eth_wei_ethereum = self.scroll_ethereum.w3.eth.get_balance(self.address)
+        balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
         balance_eth_ethereum = balance_eth_wei_ethereum / 10 ** 18
+        balance_eth_ethereum_in_usd = eth_price_in_usd * balance_eth_ethereum
 
-        logger.info(f"[{self.account_id}][{self.address}] current Ethereum balance: {balance_eth_ethereum} ETH")
+        logger.info(f"[{self.account_id}][{self.address}] current Ethereum balance: {balance_eth_ethereum} ETH (~{balance_eth_ethereum_in_usd} USD)")
 
-        if eth_price_in_usd * (balance_eth_wei_ethereum) > min_deposit_amount_usd:
+        if balance_eth_ethereum_in_usd > min_deposit_amount_usd:
             # если на аккаунте в майннете достаточно средств, чтобы сделать новый депозит, то делаем бридж
             logger.info(
                 f"[{self.account_id}][{self.address}] current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
             await self._deposit_economy_to_scroll()
             return True
 
-        # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то вывод с биржи
+        # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то делаем вывод с биржи
+        # но для начала проверяем что нет сейчас пендинг выводов
+        pending_withdrawals = self.okex.get_pending_withdrawals(self.address)
 
-        # для начала проверяем что нет пендинг выводов
+        if len(pending_withdrawals) > 0:
+            logger.info(f"There are pending withdrawals, have to wait them before continue: {pending_withdrawals}")
+            return True
 
-        # запускаем аккаунт
-        # 1. проверяем, что нет значка за депозит $1000 баксов (если есть и на балансе более $1000, то делаем вывод на биржу через майннет)
-        # 2. проверяем, что текущий объём депозита меньше $1000 баксов (если больше, то минтим значок)
-        # 3. проверяем что на аккаунте не хватает средств, чтобы увеличить депозит до 1000 долларов (если хватает, то делаем депозит и минтим значок)
-        # 4. проверяем что нет pending транзы бриджа с майннета в скролл (если есть, то ждём обновления баланса и уже потом решаем выводить ещё или хватает на депозит)
-        # 5. проверяем что в эфириуме нет средств, которые можно было забриджить, чтобы хватило $1000 депозит (если есть, то делаем бридж и ждём)
-        # 6. проверяем что нет pending выводов с биржи, если есть то ждём обновления баланса, далее смотрим хватает или нет
-        # 7. проверяем что на бирже достаточно средств, чтобы закинуть на аккаунте недостающий амаунт (если хватает, то делаем вывод в эфириум, далее бридж и депозит)
+        logger.info(f"There are no pending withdrawals")
 
-        # плюс/минус, только надо проверять не только что значка нет,
-        # а была ли транза со свапом на 500+ баксов и ликвидностью на 1000 баксов - т.к.
-        # бейдж доступен для минта через какое то время
+        # делаем вывод ETH
+        amount_to_withdraw = min_deposit_amount_usd * (1 / eth_price_in_usd) * 1.1
+        logger.info(f"Try to buy and withdraw {amount_to_withdraw} ETH")
+
+        okex_balance_usdt = await self._get_okex_total_balance("USDT")
+        okex_balance_eth = await self._get_okex_total_balance("ETH")
+        okex_balance_usdt_in_eth = okex_balance_usdt * (1 / eth_price_in_usd)
+        can_withdraw_eth_estimated = okex_balance_usdt_in_eth + okex_balance_eth
+        can_withdraw_usd_estimated = can_withdraw_eth_estimated * eth_price_in_usd
+
+        logger.info(f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
+
+        if can_withdraw_eth_estimated < amount_to_withdraw:
+            logger.info(
+                f"Not enough money on Okex to continue, need: {amount_to_withdraw} ETH, but can only ~{can_withdraw_eth_estimated} ETH")
+            return None
+
+        await self._buy_and_withdraw_eth(amount_to_withdraw)
+
+        logger.info(f"Done this iteration, return")
+
+        return True
 
     async def mint_ambient_providoor_badge(
             self,
     ):
+        self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
         while True:
             iteration_result = await self._mint_ambient_providoor_badge_iteration()
 
             if iteration_result is None:
                 break
+            elif iteration_result is False:
+                await sleep(30, 90)
+            else:
+                await sleep(15, 30)

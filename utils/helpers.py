@@ -1,4 +1,8 @@
+import random
+import time
 import traceback
+from typing import Tuple, Type
+
 from onecache import AsyncCacheDecorator
 from loguru import logger
 from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_MS
@@ -8,7 +12,39 @@ import requests
 import json
 
 
-def retry(func):
+def retry_sync(times: int, exceptions: Tuple[Type[Exception]] = Exception, sleep_from: int = 10, sleep_to: int = 20):
+    """
+    Retry Decorator
+    Retries the wrapped function/method `times` times if the exceptions listed
+    in ``exceptions`` are thrown
+    :param times: The number of times to repeat the wrapped function/method
+    :param exceptions: Lists of exceptions that trigger a retry attempt
+    """
+
+    def decorator(func):
+        def newfn(*args, **kwargs):
+            attempt = 0
+            while attempt < times:
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as ex:
+                    delay = random.randint(sleep_from, sleep_to)
+
+                    logger.debug(
+                        'Exception thrown when attempting to run %s, attempt '
+                        '%d of %d, wait %i second before new attempt'
+                        ', error: %s' % (str(func).split()[1], attempt + 1, times, delay, ex)
+                    )
+                    attempt += 1
+                    time.sleep(delay)
+                    return func(*args, **kwargs)
+
+        return newfn
+
+    return decorator
+
+
+def retry(func, sleep_from: int = 10, sleep_to: int = 20):
     async def wrapper(*args, **kwargs):
         retries = 0
         while retries <= RETRY_COUNT:
@@ -18,7 +54,7 @@ def retry(func):
             except Exception as e:
                 trace = traceback.format_exc()
                 logger.error(f"Error | {e}\n{trace}")
-                await sleep(10, 20)
+                await sleep(sleep_from, sleep_to)
                 retries += 1
 
     return wrapper

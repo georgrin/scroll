@@ -1,4 +1,8 @@
 import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 with open('data/rpc.json') as file:
     RPC = json.load(file)
@@ -242,3 +246,8 @@ SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT = "0x3dacAd961e5e2de850F5E027c70b56b5
 SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT = "0xC634b718618729df70331D79fcd6E889a547fbEB"
 
 SCROLL_CANVAS_BADGES_CONTRACT = "0x39fb5E85C7713657c2D9E869E974FF1e0B06F20C"
+
+OKEX_API_KEY = os.getenv("OKEX_API_KEY", None)
+OKEX_SECRET_KEY = os.getenv("OKEX_SECRET_KEY", None)
+OKEX_PASSPHRASE = os.getenv("OKEX_PASSPHRASE", None)
+OKEX_PROXY = os.getenv("OKEX_PROXY", None)
