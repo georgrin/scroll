@@ -47,9 +47,9 @@ class Scenarios(Account):
         current_deposit = await ambient_finance.get_total_deposit_amount()
 
         logger.info(
-            f"[{self.account_id}][{self.address}] Current estimated ETH amount deposited to wrsETH/ETH pool: {current_deposit * 0.5}")
+            f"[{self.account_id}][{self.address}] Current estimated ETH amount deposited to wrsETH/ETH pool: {current_deposit}")
 
-        if current_deposit * 0.5 > max_deposit_amount:
+        if current_deposit > max_deposit_amount:
             logger.info(
                 f"[{self.account_id}][{self.address}] Current deposit is greater than max deposit amount: {current_deposit} > {max_deposit_amount}")
             return False
@@ -468,8 +468,10 @@ class Scenarios(Account):
         min_percent = 100
         max_percent = 100
 
+        sub_fee_from_value = True
+
         await self.scroll_ethereum.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent,
-                                                   max_percent)
+                                                   max_percent, sub_fee_from_value)
 
     async def _get_pending_bridge_tx(self):
         proxy = self.scroll.get_random_proxy()
@@ -564,6 +566,9 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] there PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
             return True
+
+        logger.info(
+            f"[{self.account_id}][{self.address}] there no PENDING bridge TXs, continue")
 
         # теперь мы должно проверить, что в майннете нет нужного баланса, чтобы сделать депозит
         balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)

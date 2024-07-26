@@ -95,7 +95,8 @@ class Scroll(Account):
             decimal: int,
             all_amount: bool,
             min_percent: int,
-            max_percent: int
+            max_percent: int,
+            sub_fee_from_value = False
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -121,11 +122,13 @@ class Scroll(Account):
         # Тут скорее всего неправильно считается комса для экономного депозита
         fee = await contract_oracle.functions.estimateCrossDomainMessageFee(168000).call()
 
-        tx_data = await self.get_tx_data(amount_wei + fee, False)
+        tx_data = await self.get_tx_data(amount_wei + fee if min_percent != 100 else amount_wei, False)
 
         transaction = await contract.functions.depositETH().build_transaction(tx_data)
 
-        signed_txn = await self.sign(transaction)
+        gas_limit = 168000
+
+        signed_txn = await self.sign(transaction, gas_limit, sub_fee_from_value)
 
         txn_hash = await self.send_raw_transaction(signed_txn)
 

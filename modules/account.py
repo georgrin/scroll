@@ -25,7 +25,7 @@ def floor(value: Decimal, places=6) -> Decimal:
 def float_floor(value: Decimal, places=6):
     return float(floor(Decimal(value), places=places))
 
- 
+
 class Account:
     def __init__(self, account_id: int, private_key: str, chain: str, recipient: str) -> None:
         self.account_id = account_id
@@ -63,8 +63,8 @@ class Account:
             fee_history = await self.w3.eth.fee_history(1, 'latest', [10])
             base_fee = int(fee_history['baseFeePerGas'][-1] * GAS_MULTIPLIER)
             priority_fee = await self.w3.eth.max_priority_fee
-            max_fee = base_fee + priority_fee           
-            gas_price = max_fee 
+            max_fee = base_fee + priority_fee
+            gas_price = max_fee
             tx.update({"gasPrice": gas_price})
 
         return tx
@@ -154,7 +154,7 @@ class Account:
 
             approve_amount = 2 ** 128 if amount > allowance_amount else 0
 
-            tx_data = await self.get_tx_data(gas_price = gas_price)
+            tx_data = await self.get_tx_data(gas_price=gas_price)
 
             transaction = await contract.functions.approve(
                 contract_address,
@@ -190,8 +190,8 @@ class Account:
                     return
                 await asyncio.sleep(1)
 
-    async def sign(self, transaction) -> Any:
-        if transaction.get("gasPrice", None) is None:
+    async def sign(self, transaction, gas=None, sub_fee_from_value=False) -> Any:
+        if transaction.get("gasPrice", transaction.get("maxPriorityFeePerGas", None)) is None:
             fee_history = await self.w3.eth.fee_history(1, 'latest', [10])
             base_fee = int(fee_history['baseFeePerGas'][-1] * GAS_MULTIPLIER)
             priority_fee = await self.w3.eth.max_priority_fee
@@ -212,10 +212,20 @@ class Account:
             print(f"Gas price: {gasPrice}")
             transaction.update({"gasPrice": gasPrice})
         """
-        gas = await self.w3.eth.estimate_gas(transaction)
-        gas = int(gas * GAS_LIMIT_MULTIPLIER)
+
+        if gas is None:
+            gas = await self.w3.eth.estimate_gas(transaction)
+            gas = int(gas * GAS_LIMIT_MULTIPLIER)
 
         transaction.update({"gas": gas})
+
+        if sub_fee_from_value is True:
+            transaction.update(
+                {
+                    "value": transaction.get("value") - int(
+                        transaction.get("gasPrice", transaction.get("maxFeePerGas")) * gas)
+                }
+            )
 
         signed_txn = self.w3.eth.account.sign_transaction(transaction, self.private_key)
 
