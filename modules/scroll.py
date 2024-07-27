@@ -96,6 +96,16 @@ class Scroll(Account):
             log=False
         )
 
+    async def check_last_withdraw_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=BRIDGE_CONTRACTS["withdraw"],
+            chain="ethereum",
+            log_prefix="Scroll withdraw",
+            log=False
+        )
+
     @retry
     @check_gas
     async def deposit_economy(

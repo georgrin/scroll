@@ -1,6 +1,7 @@
 import random
 import time
 import traceback
+from itertools import chain
 from typing import Tuple, Type
 
 from onecache import AsyncCacheDecorator
@@ -249,3 +250,15 @@ async def checkLastIteration(interval: int,
         if log:
             logger.info(f"{log_prefix} previous TX not found, working")
         return True
+
+
+def find_duplicate_in_dict(dict):
+    # finding duplicate values
+    # from dictionary using set
+    rev_dict = {}
+    for key, value in dict.items():
+        rev_dict.setdefault(value, set()).add(key)
+
+    return set(chain.from_iterable(
+        values for key, values in rev_dict.items()
+        if len(values) > 1))

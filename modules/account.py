@@ -44,6 +44,7 @@ class Account:
 
         self.account = EthereumAccount.from_key(private_key)
         self.address = self.account.address
+        self.log_prefix = f"[{self.account_id}][{self.address}]"
 
     def get_name(self):
         return type(self).__name__

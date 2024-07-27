@@ -1,6 +1,9 @@
 import json
 import os
 from dotenv import load_dotenv
+from web3 import Web3
+
+from utils.helpers import find_duplicate_in_dict
 
 load_dotenv()
 
@@ -18,6 +21,15 @@ with open("recipients.txt", "r") as file:
 
 with open("proxies.txt", "r") as file:
     PROXIES = [row.strip() for row in file]
+
+with open("fromto.txt", "r") as file:
+    DEPOSITS_ADDRESSES = dict(
+        [Web3.to_checksum_address(address[0]), Web3.to_checksum_address(address[1])] for address in
+        [line.strip().split("\t") for line in file.readlines()]
+    )
+    duplicate_deposits_addresses = find_duplicate_in_dict(DEPOSITS_ADDRESSES)
+    if duplicate_deposits_addresses:
+        raise Exception(f"Following addresses have duplicate deposits addresses: {duplicate_deposits_addresses}")
 
 with open('data/abi/bridge/deposit.json') as file:
     DEPOSIT_ABI = json.load(file)
