@@ -422,8 +422,8 @@ class Scenarios(Account):
         return None
 
     async def _make_1000_usd_deposit_ambient(self):
-        min_left_eth_balance = 0.0045
-        max_left_eth_balance = 0.0055
+        min_left_eth_balance = 0.001
+        max_left_eth_balance = 0.0015
 
         decimal = 5
 
@@ -438,8 +438,8 @@ class Scenarios(Account):
         ambient_range_width = 0.5
 
         # сколько процентов депозит должен составлять от баланса ETH - min_left_eth_balance
-        min_deposit_percent = 98
-        max_deposit_percent = 99
+        min_deposit_percent = 100
+        max_deposit_percent = 100
 
         # сколько раз повторяем депозит с уменьшением кол-ва баланса
         ambient_max_deposit_attempts = 100
@@ -503,45 +503,43 @@ class Scenarios(Account):
         return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
 
     async def _mint_ambient_providoor_badge_iteration(self):
-        min_deposit_amount_usd = 900
-        logger.info(f"[{self.account_id}][{self.address}] Start check conditions to mint Ambient Providoor badge")
+        log_prefix = f"[{self.account_id}][{self.address}]"
+        min_deposit_amount_usd = 1000
+        logger.info(f"{log_prefix} Start check conditions to mint Ambient Providoor badge")
 
         is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
 
         # TODO: проверяем что нет pending transaction у аккаунта
-
         if is_minted_badge:
             # если у нас уже есть значок, то нам нужно вывести деньги назад на окекс
-            logger.info(f"[{self.account_id}][{self.address}] Badge minted")
+            logger.info(f"{log_prefix} Badge minted")
             result = await self._withdraw_to_okex()
             return result
 
-        logger.info(f"[{self.account_id}][{self.address}] Badge is not minted")
+        logger.info(f"{log_prefix} Badge is not minted")
 
         # если у нас нет значка, то нужно его сминтить
         is_badge_eligible = await self.scroll.is_ambient_providoor_badge_eligible()
-
         if is_badge_eligible:
             # если у нас нет значка, но мы можем его сминтить, то запускаем минт
-            logger.info(f"[{self.account_id}][{self.address}] Badge is eligible to mint")
+            logger.info(f"{log_prefix} Badge is eligible to mint")
             await self.scroll.mint_ambient_providoor_badge()
             return True
 
-        logger.info(f"[{self.account_id}][{self.address}] Badge is not eligible to mint")
+        logger.info(f"{log_prefix} Badge is not eligible to mint")
 
         eth_price_in_usd = await get_eth_usd_price("scroll")
 
-        logger.info(f"[{self.account_id}][{self.address}] ETH price is {eth_price_in_usd} USD")
+        logger.info(f"{log_prefix} ETH price is {eth_price_in_usd} USD")
 
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
         est_current_deposit_in_usd = current_deposit * eth_price_in_usd
 
-        logger.info(f"[{self.account_id}][{self.address}] current deposit ~{est_current_deposit_in_usd} USD")
+        logger.info(f"{log_prefix} current deposit {current_deposit} ETH/wrsETH (~{est_current_deposit_in_usd} USD)")
 
         if est_current_deposit_in_usd > min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
-            logger.info(
-                f"[{self.account_id}][{self.address}] current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
+            logger.info(f"{log_prefix} current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
             return True
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
@@ -549,38 +547,46 @@ class Scenarios(Account):
         balacne_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balacne_wrseth_wei / 10 ** 18
 
-        logger.info(
-            f"[{self.account_id}][{self.address}] current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
+        logger.info(f"{log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
         if eth_price_in_usd * (balance_eth + balance_wrseth) > min_deposit_amount_usd:
             logger.info(
-                f"[{self.account_id}][{self.address}] current Scroll balance is enough to make deposit")
+                f"{log_prefix} current Scroll balance is enough to make deposit")
             # если на аккаунте достаточно средств, чтобы сделать новый депозит, то делаем его
             await self._make_1000_usd_deposit_ambient()
             return True
 
-        # если на аккаунте недостаточно средств, то проверяем нет ли пендинг вывода
+        # если на аккаунте недостаточно средств, то проверяем не делали ли недавно вывод (чтобы дать обновиться информации в апи)
+        deposit_economy_cooldown = 60 * 20
+        last_iter_deposit_economy = await self.scroll_ethereum.check_last_deposit_economy_iteration(
+            deposit_economy_cooldown
+        )
+        if not last_iter_deposit_economy:
+            # депозит был слишком недавно, нужно время, чтобы информация в апи обновилась
+            logger.info(
+                f"{log_prefix} Economy Deposit to Scroll was pretty recently, have to wait before continue")
+            return True
+
         bridge_tx_pending = await self._get_pending_bridge_tx()
         if bridge_tx_pending:
             # мы не можем действовать пока нет пендинг бридж транзакции
             logger.info(
-                f"[{self.account_id}][{self.address}] there PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
+                f"{log_prefix} there PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
             return True
 
-        logger.info(
-            f"[{self.account_id}][{self.address}] there no PENDING bridge TXs, continue")
+        logger.info(f"{log_prefix} there no PENDING bridge TXs, continue")
 
         # теперь мы должно проверить, что в майннете нет нужного баланса, чтобы сделать депозит
         balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
         balance_eth_ethereum = balance_eth_wei_ethereum / 10 ** 18
         balance_eth_ethereum_in_usd = eth_price_in_usd * balance_eth_ethereum
 
-        logger.info(f"[{self.account_id}][{self.address}] current Ethereum balance: {balance_eth_ethereum} ETH (~{balance_eth_ethereum_in_usd} USD)")
+        logger.info(f"{log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH (~{balance_eth_ethereum_in_usd} USD)")
 
         if balance_eth_ethereum_in_usd > min_deposit_amount_usd:
             # если на аккаунте в майннете достаточно средств, чтобы сделать новый депозит, то делаем бридж
             logger.info(
-                f"[{self.account_id}][{self.address}] current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
+                f"{log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
             await self._deposit_economy_to_scroll()
             return True
 

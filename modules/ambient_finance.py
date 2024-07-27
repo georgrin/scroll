@@ -134,7 +134,7 @@ class AmbientFinance(Account):
             quote: str,
             is_buy: bool
     ):
-        price = int((await self.get_curve_price(base, quote) / q64) ** 2)
+        price = (await self.get_curve_price(base, quote) / q64) ** 2
 
         return 1 / price if is_buy else price
 
@@ -184,13 +184,13 @@ class AmbientFinance(Account):
 
         logger.info(f"Get pool price: {price}, set min amount out wei")
 
-        # Using a meaningful value here is not necessary if the caller is uninterested in partial fills and slippage is set with minOut parameter value
-        # In this case this value can be set to "max values" below based on the direction of the swap:
-        limit_price = 21267430153580247136652501917186561137 if is_buy else 65537
-
         if from_token != "ETH":
             logger.info(f"Check if {from_token} is allow to swap")
             await self.approve(int(amount_wei * 100), SCROLL_TOKENS[from_token], self.swap_contract.address)
+
+        # Using a meaningful value here is not necessary if the caller is uninterested in partial fills and slippage is set with minOut parameter value
+        # In this case this value can be set to "max values" below based on the direction of the swap:
+        limit_price = 21267430153580247136652501917186561137 if is_buy else 65537
 
         contract_txn = await self._swap(base,
                                         quote,
@@ -451,10 +451,9 @@ class AmbientFinance(Account):
 
         total = 0
         for position in active_positions:
-            total += int(position["concLiq"])
+            total += int(position["quoteQty"]) + int(position["baseQty"])
 
-        # мы делим на 100, потому что в апихе значение concLiq больше в 100 раз чем реальной ликвидности
-        return total / 10 ** 18 / 100
+        return total / 10 ** 18
 
     async def get_active_positions(self, base: str, quote: str) -> List[dict]:
         positions = await self.get_liquidity_positions(base, quote)
@@ -478,7 +477,9 @@ class AmbientFinance(Account):
                 if int(position["concLiq"]) != liq:
                     logger.error(f"Something wrong with data in Ambient API: {position['concLiq']} concLiq no equal to {liq} liq from contract")
                     # используем значение депозита из контракта! там точно правильное
-                    position["concLiq"] = liq
+                position["concLiq"] = liq
+                position["baseQty"] = baseQty
+                position["quoteQty"] = quoteQty
                 active_positions.append(position)
 
         user_tx_list = await self.get_user_txs(base, quote)

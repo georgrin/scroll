@@ -86,6 +86,16 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
+    async def check_last_deposit_economy_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=BRIDGE_CONTRACTS["deposit_economy"],
+            chain="ethereum",
+            log_prefix="Scroll Deposit Economy",
+            log=False
+        )
+
     @retry
     @check_gas
     async def deposit_economy(
@@ -577,13 +587,12 @@ class Scroll(Account):
 
     @retry
     @AsyncCacheDecorator(ttl=1000 * 1)
-    async def get_mint_badge_tx_data(self, badge_address: str, proxy=None):
+    async def get_mint_badge_tx_data(self, badge_address: str, url="https://canvas.scroll.cat/badge/claim", proxy=None):
         if not proxy:
             proxy = self.get_random_proxy()
 
         logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
 
-        url = "https://canvas.scroll.cat/badge/claim"
         params = {
             "badge": badge_address,
             "recipient": self.address
@@ -637,7 +646,9 @@ class Scroll(Account):
             )
             return False
 
-        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT)
+        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(
+            SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
+        )
 
         tx_data = await self.get_tx_data(0, False)
 
@@ -674,13 +685,15 @@ class Scroll(Account):
             )
             return False
 
-        mint_ethereum_year_badge_tx_data = await self.get_mint_badge_tx_data(
-            SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
+        mint_ambient_providoor_tx_data = await self.get_mint_badge_tx_data(
+            SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT,
+            "https://ambient-scroll-badge.liquidity.tools/api/claim"
+        )
 
         tx_data = await self.get_tx_data(0, False)
 
-        tx_data["to"] = self.w3.to_checksum_address(mint_ethereum_year_badge_tx_data["to"])
-        tx_data["data"] = mint_ethereum_year_badge_tx_data["data"]
+        tx_data["to"] = self.w3.to_checksum_address(mint_ambient_providoor_tx_data["to"])
+        tx_data["data"] = mint_ambient_providoor_tx_data["data"]
 
         signed_txn = await self.sign(tx_data)
         txn_hash = await self.send_raw_transaction(signed_txn)

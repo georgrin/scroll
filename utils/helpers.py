@@ -5,7 +5,7 @@ from typing import Tuple, Type
 
 from onecache import AsyncCacheDecorator
 from loguru import logger
-from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_MS
+from settings import RETRY_COUNT, SCROLL_API_KEY, EXPLORER_CACHE_MS, ETHEREUM_API_KEY
 from utils.sleeping import sleep
 from datetime import datetime
 import requests
@@ -129,6 +129,10 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
         'scroll': {
             'url': 'https://api.scrollscan.com/api',
             'api_key': SCROLL_API_KEY
+        },
+        'ethereum': {
+            'url': 'https://api.etherscan.io/api',
+            'api_key': ETHEREUM_API_KEY
         }
     }
 
