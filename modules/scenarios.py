@@ -520,6 +520,8 @@ class Scenarios(Account):
             txn_hash = await self.send_raw_transaction(signed_txn)
             await self.wait_until_tx_finished(txn_hash.hex())
 
+            return True
+
         logger.info(f"No enough balance to deposit to Okex")
 
         return None
