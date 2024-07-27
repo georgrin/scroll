@@ -427,7 +427,7 @@ class Scenarios(Account):
         )
 
     async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script):
-        withdraw_cooldown = 60 * 55
+        withdraw_cooldown = 60 * 45
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
         )
@@ -757,9 +757,9 @@ class Scenarios(Account):
                 logger.info(f"Finished script")
                 break
             elif iteration_result is False:
-                logger.info(f"Finished {i} iteration")
-                await sleep(30, 90)
+                logger.info(f"Finished {i} iteration, no action")
+                await sleep(30, 40)
             else:
-                logger.info(f"Finished {i} iteration")
-                await sleep(15, 30)
+                logger.info(f"Finished {i} iteration, made action")
+                await sleep(45, 60)
             i += 1

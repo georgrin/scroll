@@ -206,7 +206,6 @@ class Scroll(Account):
             unclaimed_withdrawal
     ):
         claim_info = unclaimed_withdrawal["claim_info"]
-
         if not claim_info:
             logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal")
             return claim_info
@@ -220,10 +219,10 @@ class Scroll(Account):
 
         _from = self.w3.to_checksum_address(claim_info["from"])
         _to = self.w3.to_checksum_address(claim_info["to"])
-        _value = claim_info["value"]
-        _nonce = claim_info["nonce"]
+        _value = int(claim_info["value"])
+        _nonce = int(claim_info["nonce"])
         _message = Web3.to_bytes(hexstr=claim_info["message"])
-        _proof = (claim_info["nonce"]["batch_index"], Web3.to_bytes(hexstr=claim_info["nonce"]["merkle_proof"]))
+        _proof = (int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
 
         contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
         transaction = await contract.functions.relayMessageWithProof(
