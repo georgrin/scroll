@@ -412,8 +412,8 @@ class Scenarios(Account):
         from_token = "WRSETH"
         to_token = "ETH"
 
-        min_amount = 0.0007
-        max_amount = 0.001
+        min_amount = 0.001
+        max_amount = 0.002
         decimal = 6
         slippage = 2
 
@@ -527,8 +527,8 @@ class Scenarios(Account):
         return None
 
     async def _make_1000_usd_deposit_ambient(self):
-        min_left_eth_balance = 0.001
-        max_left_eth_balance = 0.0015
+        min_left_eth_balance = 0.0025
+        max_left_eth_balance = 0.0035
 
         decimal = 5
 
