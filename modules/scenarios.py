@@ -459,8 +459,7 @@ class Scenarios(Account):
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18
 
-        logger.info(
-            f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
         logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
         if balance_wrseth + balance_eth + current_deposit > 1.5 * (
@@ -562,7 +561,7 @@ class Scenarios(Account):
             ambient_max_deposit_attempts
         )
 
-    async def _deposit_economy_to_scroll(self):
+    async def _deposit_economy_to_scroll(self, eth_left_balance_min_after_deposit):
         min_amount = 0.01
         max_amount = 0.02
         decimal = 4
@@ -575,7 +574,7 @@ class Scenarios(Account):
         sub_fee_from_value = True
 
         await self.scroll_ethereum.deposit_economy(min_amount, max_amount, decimal, all_amount, min_percent,
-                                                   max_percent, sub_fee_from_value)
+                                                   max_percent, sub_fee_from_value, eth_left_balance_min_after_deposit)
 
     async def _get_pending_bridge_tx(self):
         proxy = self.scroll.get_random_proxy()
@@ -606,11 +605,13 @@ class Scenarios(Account):
     async def _buy_and_withdraw_eth(self, amount: float):
         return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
 
-    async def _mint_ambient_providoor_badge_iteration(self):
-        min_deposit_amount_usd = 1000
-        min_eth_balance_after_script = 0.03
-        max_eth_balance_after_script = 0.04
-
+    async def _mint_ambient_providoor_badge_iteration(
+            self,
+            min_deposit_amount_usd,
+            min_eth_balance_after_script,
+            max_eth_balance_after_script,
+            ethereum_eth_left_balance_min_after_deposit,
+    ):
         logger.info(f"{self.log_prefix} Start check conditions to mint Ambient Providoor badge")
 
         is_minted_badge = await self.scroll.is_ambient_providoor_badge_minted()
@@ -696,7 +697,7 @@ class Scenarios(Account):
             # если на аккаунте в майннете достаточно средств, чтобы сделать новый депозит, то делаем бридж
             logger.info(
                 f"{self.log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
-            await self._deposit_economy_to_scroll()
+            await self._deposit_economy_to_scroll(ethereum_eth_left_balance_min_after_deposit)
             return True
 
         # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то делаем вывод с биржи
@@ -735,12 +736,22 @@ class Scenarios(Account):
 
     async def mint_ambient_providoor_badge(
             self,
+            min_deposit_amount_usd,
+            min_eth_balance_after_script,
+            max_eth_balance_after_script,
+            ethereum_eth_left_balance_min_after_deposit,
     ):
         self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
+
         i = 1
         while True:
             logger.info(f"Start {i} iteration")
-            iteration_result = await self._mint_ambient_providoor_badge_iteration()
+            iteration_result = await self._mint_ambient_providoor_badge_iteration(
+                min_deposit_amount_usd,
+                min_eth_balance_after_script,
+                max_eth_balance_after_script,
+                ethereum_eth_left_balance_min_after_deposit,
+            )
 
             if iteration_result is None:
                 logger.info(f"Finished script")

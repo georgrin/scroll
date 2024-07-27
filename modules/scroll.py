@@ -116,7 +116,8 @@ class Scroll(Account):
             all_amount: bool,
             min_percent: int,
             max_percent: int,
-            sub_fee_from_value = False
+            sub_fee_from_value: bool = False,
+            eth_left_balance_min_after_deposit: float = 0
     ):
         amount_wei, amount, balance = await self.get_amount(
             "ETH",
@@ -142,7 +143,13 @@ class Scroll(Account):
         # Тут скорее всего неправильно считается комса для экономного депозита
         fee = await contract_oracle.functions.estimateCrossDomainMessageFee(168000).call()
 
-        tx_data = await self.get_tx_data(amount_wei + fee if min_percent != 100 else amount_wei, False)
+        eth_left_balance_min_after_deposit_wei = self.w3.to_wei(eth_left_balance_min_after_deposit, "ether")
+        deposit_amount_wei = amount_wei + fee if min_percent != 100 else amount_wei
+        if balance - deposit_amount_wei < eth_left_balance_min_after_deposit_wei:
+            deposit_amount_wei = balance - eth_left_balance_min_after_deposit_wei
+            logger.info(f"[{self.account_id}][{self.address}] Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
+
+        tx_data = await self.get_tx_data(deposit_amount_wei, False)
 
         transaction = await contract.functions.depositETH().build_transaction(tx_data)
 
@@ -244,7 +251,6 @@ class Scroll(Account):
         for unclaimed_withdrawal in unclaimed_withdrawals:
             logger.info(f"{self.log_prefix} start to claim: {unclaimed_withdrawal}")
             await self.withdraw_claim(unclaimed_withdrawal)
-
 
     @retry
     @check_gas
