@@ -427,20 +427,25 @@ class Scenarios(Account):
         )
 
     async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script):
-        withdraw_cooldown = 60 * 20
-        last_iter_withdraw= await self.scroll.check_last_withdraw_iteration(
+        withdraw_cooldown = 60 * 55
+        last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
         )
         if not last_iter_withdraw:
             # вывод был слишком недавно, нужно время, чтобы информация в апи обновилась
             logger.info(f"{self.log_prefix} withdraw from Scroll was pretty recently, have to wait before continue")
-            return True
+            await sleep(240, 420)
+            return False
 
         bridge_tx_pending = await self._get_pending_bridge_tx()
         if bridge_tx_pending:
-            # мы не можем действовать пока нет пендинг бридж транзакции
-            logger.info(
-                f"{self.log_prefix} there PENDING bridge or withdraw TX, wait it for complete before take any actions: {bridge_tx_pending}")
+            # мы не можем действовать пока есть пендинг транзакции
+            if bridge_tx_pending["message_type"] == 2:  # вывод
+                logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
+                return (await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)) is not False
+            else:  # депозит
+                logger.info(
+                    f"{self.log_prefix} there is PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
             return True
 
         # на балансе более чем нужно, то делаем вывод на биржу через майннет
@@ -451,28 +456,27 @@ class Scenarios(Account):
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
-        balacne_wrseth_wei = await self.get_wrseth_balance()
-        balance_wrseth = balacne_wrseth_wei / 10 ** 18
+        balance_wrseth_wei = await self.get_wrseth_balance()
+        balance_wrseth = balance_wrseth_wei / 10 ** 18
 
-        logger.info(f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(
+            f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
         logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
-        if balance_wrseth + balance_eth + current_deposit > 1.5 * (max_eth_balance_after_script + min_bridge_amount_eth):
+        if balance_wrseth + balance_eth + current_deposit > 1.5 * (
+                max_eth_balance_after_script + min_bridge_amount_eth):
             logger.info(f"{self.log_prefix} Scroll account balance is too big, have to withdraw to Ethereum")
-            logger.info(f"{self.log_prefix} Try to withdraw all position before withdraw to Ethereum")
-            await self.ambient_finance.withdrawal()
-            await sleep(20, 40)
 
-            # надо продать весь wsrETH, чтобы вывести средства в ETH обратно на биржу
-            logger.info(f"{self.log_prefix} Try to sell all wrsETH before withdraw to Ethereum")
-            await self._sell_all_wrsETH()
+            if current_deposit > 0:
+                logger.info(f"{self.log_prefix} Try to withdraw all position before withdraw to Ethereum")
+                await self.ambient_finance.withdrawal()
+                return True
 
-            # обновляем баланс после вывода и продажи wsrETH
-            balance_eth_wei = await self.w3.eth.get_balance(self.address)
-            balance_eth = balance_eth_wei / 10 ** 18
-            logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
-
-            logger.info(f"{self.log_prefix} Try to withdraw ETH to Ethereum from Scroll")
+            if balance_wrseth_wei > 500000000000000:  # 0.0005 ETH
+                # надо продать весь wsrETH, чтобы вывести средства в ETH обратно на биржу
+                logger.info(f"{self.log_prefix} Try to sell all wrsETH before withdraw to Ethereum")
+                await self._sell_all_wrsETH()
+                return True
 
             min_amount = balance_eth - max_eth_balance_after_script
             max_amount = balance_eth - min_eth_balance_after_script
@@ -480,6 +484,8 @@ class Scenarios(Account):
             all_amount = False
             min_percent = 10
             max_percent = 10
+
+            logger.info(f"{self.log_prefix} Try to withdraw {round(min_amount, decimal)}-{round(max_amount)} ETH to Ethereum from Scroll")
 
             await self.scroll.withdraw(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
             return True
@@ -490,7 +496,8 @@ class Scenarios(Account):
         balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
         balance_eth_ethereum = balance_eth_wei_ethereum / 10 ** 18
         balance_eth_ethereum_in_usd = eth_price_in_usd * balance_eth_ethereum
-        logger.info(f"{self.log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH, ~{balance_eth_ethereum_in_usd} USD")
+        logger.info(
+            f"{self.log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH, ~{balance_eth_ethereum_in_usd} USD")
 
         # получаем минимальный депозит
         deposit_info = self.okex.get_deposit_info("ETH", "ethereum")
@@ -634,7 +641,8 @@ class Scenarios(Account):
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
         est_current_deposit_in_usd = current_deposit * eth_price_in_usd
 
-        logger.info(f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(
+            f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
 
         if est_current_deposit_in_usd > min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
@@ -644,8 +652,8 @@ class Scenarios(Account):
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
-        balacne_wrseth_wei = await self.get_wrseth_balance()
-        balance_wrseth = balacne_wrseth_wei / 10 ** 18
+        balance_wrseth_wei = await self.get_wrseth_balance()
+        balance_wrseth = balance_wrseth_wei / 10 ** 18
 
         logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 

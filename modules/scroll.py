@@ -101,7 +101,7 @@ class Scroll(Account):
             interval=module_cooldown,
             account=self.account,
             deposit_contract_address=BRIDGE_CONTRACTS["withdraw"],
-            chain="ethereum",
+            chain="scroll",
             log_prefix="Scroll withdraw",
             log=False
         )
@@ -191,6 +191,60 @@ class Scroll(Account):
         txn_hash = await self.send_raw_transaction(signed_txn)
 
         await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
+    @check_gas
+    async def withdraw_claim(
+            self,
+            unclaimed_withdrawal
+    ):
+        claim_info = unclaimed_withdrawal["claim_info"]
+
+        if not claim_info:
+            logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal")
+            return claim_info
+
+        can_claim = claim_info["claimable"]
+        if not can_claim:
+            logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal")
+            return False
+
+        tx_data = await self.get_tx_data(gas_price=False)
+
+        _from = self.w3.to_checksum_address(claim_info["from"])
+        _to = self.w3.to_checksum_address(claim_info["to"])
+        _value = claim_info["value"]
+        _nonce = claim_info["nonce"]
+        _message = Web3.to_bytes(hexstr=claim_info["message"])
+        _proof = (claim_info["nonce"]["batch_index"], Web3.to_bytes(hexstr=claim_info["nonce"]["merkle_proof"]))
+
+        contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
+        transaction = await contract.functions.relayMessageWithProof(
+            _from,
+            _to,
+            _value,
+            _nonce,
+            _message,
+            _proof
+        ).build_transaction(tx_data)
+        signed_txn = await self.sign(transaction)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
+    @check_gas
+    async def withdraw_claim_all(
+            self,
+    ):
+        unclaimed_withdrawals = await self.get_unclaimed_withdrawals_tx_list()
+
+        logger.info(f"{self.log_prefix} there are {len(unclaimed_withdrawals)} unclaimed withdrawals")
+
+        for unclaimed_withdrawal in unclaimed_withdrawals:
+            logger.info(f"{self.log_prefix} start to claim: {unclaimed_withdrawal}")
+            await self.withdraw_claim(unclaimed_withdrawal)
+
 
     @retry
     @check_gas
@@ -315,6 +369,30 @@ class Scroll(Account):
                 logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll sign terms of use response")
 
                 raise Exception(f"Bad Scroll sign terms of use response: {response.status}")
+
+    async def get_unclaimed_withdrawals_tx_list(self, tx_count=3, proxy=None):
+        url = "https://mainnet-api-bridge-v2.scroll.io/api/l2/unclaimed/withdrawals"
+
+        params = {
+            "address": self.address,
+            "page": 1,
+            "page_size": tx_count
+        }
+
+        async with aiohttp.ClientSession(connector=ProxyConnector.from_url(proxy) if proxy else None) as session:
+            response = await session.get(url=url, params=params)
+
+            if response.status == 200:
+                tx_list = await response.json()
+
+                if "data" in tx_list and "results" in tx_list["data"] and tx_list["data"]["results"]:
+                    return tx_list["data"]["results"]
+                else:
+                    return []
+            else:
+                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll response, url: {url}")
+
+                raise Exception(f"Bad Scroll response: {response.status}")
 
     async def get_bridge_tx_list(self, tx_count=3, proxy=None):
         url = "https://mainnet-api-bridge-v2.scroll.io/api/txs"
