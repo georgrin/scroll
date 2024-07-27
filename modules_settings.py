@@ -664,8 +664,8 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     min_deposit_amount_usd = 1050
 
     # сколько минимум должно остаться на аккаунте скролл после минта значка и вывода денег на окекс
-    min_eth_balance_after_script = 0.03
-    max_eth_balance_after_script = 0.04
+    min_eth_balance_after_script = 0.02
+    max_eth_balance_after_script = 0.035
 
     # сколько минимум должно остаться на аккаунте ethereum после депозита в скролл (чтобы потом сделать транзу claim на вывод)
     ethereum_eth_left_balance_min_after_deposit = 0.0005
