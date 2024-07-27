@@ -427,7 +427,7 @@ class Scenarios(Account):
         )
 
     async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script):
-        withdraw_cooldown = 60 * 45
+        withdraw_cooldown = 60 * 35
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
         )
