@@ -586,14 +586,17 @@ class Scenarios(Account):
         tx_list = await self.scroll.get_bridge_tx_list(4, proxy)
 
         for tx in tx_list:
-            # tx["message_type"] == 3 это депозит
+            # tx["message_type"] == 3 это экономный депозит
             if tx["tx_status"] != 8 and tx["message_type"] == 3:
                 return tx
             # tx["message_type"] == 2 это вывод
             elif tx["tx_status"] != 2 and tx["message_type"] == 2:
                 return tx
+            # tx["message_type"] == 3 это депозит
+            elif tx["tx_status"] != 2 and tx["message_type"] == 1:
+                return tx
             # какой то другой тип
-            if tx["tx_status"] != 8 and tx["message_type"] not in [2, 3]:
+            if tx["tx_status"] != 8 and tx["message_type"] not in [1, 2, 3]:
                 return tx
         return None
 
