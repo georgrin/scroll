@@ -102,7 +102,7 @@ class Okex:
 
     @staticmethod
     def convert_network(network_name: str, symbol: str):
-        if network_name == "Ethereum":
+        if network_name.lower() == "ethereum":
             return "ERC20"
         return network_name
 

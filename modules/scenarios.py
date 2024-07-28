@@ -509,16 +509,19 @@ class Scenarios(Account):
             if not deposit_addresses:
                 raise Exception(f"{self.log_prefix} Unknown deposit address")
 
+            logger.debug(f"Deposit {balance_eth_wei_ethereum / 10 ** 18} ETH")
+
             tx = await self.get_tx_data(balance_eth_wei_ethereum, False)
             tx.update({
                 "to": self.w3.to_checksum_address(deposit_addresses),
-                "chainId": await self.w3.eth.chain_id,
+                "chainId": await self.scroll_ethereum.w3.eth.chain_id,
                 "from": self.address,
-                "nonce": await self.w3.eth.get_transaction_count(self.address)
+                "nonce": await self.scroll_ethereum.w3.eth.get_transaction_count(self.address)
             })
-            signed_txn = await self.sign(tx, gas=21000, sub_fee_from_value=True)
-            txn_hash = await self.send_raw_transaction(signed_txn)
-            await self.wait_until_tx_finished(txn_hash.hex())
+
+            signed_txn = await self.scroll_ethereum.sign(tx, gas=21000, sub_fee_from_value=True)
+            txn_hash = await self.scroll_ethereum.send_raw_transaction(signed_txn)
+            await self.scroll_ethereum.wait_until_tx_finished(txn_hash.hex())
 
             return True
 
