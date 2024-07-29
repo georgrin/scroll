@@ -627,11 +627,27 @@ class Scenarios(Account):
         # TODO: проверяем что нет pending transaction у аккаунта
         if is_minted_badge:
             # если у нас уже есть значок, то нам нужно вывести деньги назад на окекс
-            logger.info(f"{self.log_prefix} Badge minted")
+            logger.info(f"{self.log_prefix} Ambient Providoor Badge minted")
+
+            # так же мы можем попробовать сминтить значок за обмен на $500
+            is_swapoor_minted_badge = await self.scroll.is_ambient_swapooor_badge_minted()
+            if not is_swapoor_minted_badge:
+                logger.info(f"{self.log_prefix} Ambient Swapooor Badge is not minted")
+
+                is_swapoor_badge_eligible = await self.scroll.is_ambient_swapoor_badge_eligible()
+                if is_swapoor_badge_eligible:
+                    logger.info(f"{self.log_prefix} Try to mint Ambient Swapooor Badge")
+                    await self.scroll.mint_ambient_swapooor_badge()
+                    return True
+                logger.info(f"{self.log_prefix} Ambient Swapooor Badge is not eligible to mint")
+            else:
+                logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
+
+            # выводим на окекс
             result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script)
             return result
 
-        logger.info(f"{self.log_prefix} Badge is not minted")
+        logger.info(f"{self.log_prefix} Ambient Providoor Badge is not minted")
 
         # если у нас нет значка, то нужно его сминтить
         is_badge_eligible = await self.scroll.is_ambient_providoor_badge_eligible()

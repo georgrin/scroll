@@ -28,6 +28,7 @@ from config import (
     SCROLL_TOKENS,
     WETH_ABI,
     PROXIES, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI,
+    SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT, SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT_ABI,
 )
 
 
@@ -64,7 +65,7 @@ class Scroll(Account):
             max_percent
         )
 
-        logger.info(f"[{self.account_id}][{self.address}] Bridge to Scroll | {amount} ETH")
+        logger.info(f"{self.log_prefix} Bridge to Scroll | {amount} ETH")
 
         contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
         contract_oracle = self.get_contract(BRIDGE_CONTRACTS["oracle"], ORACLE_ABI)
@@ -129,7 +130,7 @@ class Scroll(Account):
             max_percent
         )
 
-        logger.info(f"[{self.account_id}][{self.address}] Bridge to Scroll | {amount} ETH")
+        logger.info(f"{self.log_prefix} Bridge to Scroll | {amount} ETH")
 
         # TODO: добавить проверку, что мы отправляем не меньше, чем 0.01 ETH
 
@@ -147,7 +148,7 @@ class Scroll(Account):
         deposit_amount_wei = amount_wei + fee if min_percent != 100 else amount_wei
         if balance - deposit_amount_wei < eth_left_balance_min_after_deposit_wei:
             deposit_amount_wei = balance - eth_left_balance_min_after_deposit_wei
-            logger.info(f"[{self.account_id}][{self.address}] Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
+            logger.info(f"{self.log_prefix} Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
 
         tx_data = await self.get_tx_data(deposit_amount_wei, False)
 
@@ -182,7 +183,7 @@ class Scroll(Account):
             max_percent
         )
 
-        logger.info(f"[{self.account_id}][{self.address}] Bridge from Scroll | {amount} ETH")
+        logger.info(f"{self.log_prefix} Bridge from Scroll | {amount} ETH")
 
         contract = self.get_contract(BRIDGE_CONTRACTS["withdraw"], WITHDRAW_ABI)
 
@@ -274,7 +275,7 @@ class Scroll(Account):
 
         weth_contract = self.get_contract(SCROLL_TOKENS["WETH"], WETH_ABI)
 
-        logger.info(f"[{self.account_id}][{self.address}] Wrap {amount} ETH")
+        logger.info(f"{self.log_prefix} Wrap {amount} ETH")
 
         tx_data = await self.get_tx_data(amount_wei)
 
@@ -309,7 +310,7 @@ class Scroll(Account):
 
         weth_contract = self.get_contract(SCROLL_TOKENS["WETH"], WETH_ABI)
 
-        logger.info(f"[{self.account_id}][{self.address}] Unwrap {amount} ETH")
+        logger.info(f"{self.log_prefix} Unwrap {amount} ETH")
 
         tx_data = await self.get_tx_data()
 
@@ -339,7 +340,7 @@ class Scroll(Account):
                 else:
                     return False
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll request")
+                logger.error(f"{self.log_prefix} Bad Scroll request")
 
                 raise Exception(f"Bad Scroll request: {response.status}")
 
@@ -365,13 +366,13 @@ class Scroll(Account):
 
                 if int(status["errcode"]) == 0:
                     logger.info(
-                        f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use successfully signed: {status}")
+                        f"{self.log_prefix} Scroll Terms of Use successfully signed: {status}")
 
                     return True
                 else:
                     return False
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll sign terms of use response")
+                logger.error(f"{self.log_prefix} Bad Scroll sign terms of use response")
 
                 raise Exception(f"Bad Scroll sign terms of use response: {response.status}")
 
@@ -395,7 +396,7 @@ class Scroll(Account):
                 else:
                     return []
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll response, url: {url}")
+                logger.error(f"{self.log_prefix} Bad Scroll response, url: {url}")
 
                 raise Exception(f"Bad Scroll response: {response.status}")
 
@@ -419,7 +420,7 @@ class Scroll(Account):
                 else:
                     return []
             else:
-                logger.error(f"[{self.account_id}][{self.address}][{self.chain}] Bad Scroll response, url: {url}")
+                logger.error(f"{self.log_prefix} Bad Scroll response, url: {url}")
 
                 raise Exception(f"Bad Scroll response: {response.status}")
 
@@ -427,15 +428,15 @@ class Scroll(Account):
     async def sign_terms_of_use(self):
         proxy = self.get_random_proxy()
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        logger.info(f"{self.log_prefix} use proxy: {proxy}")
 
         signed = await self._check_signed_terms_of_use(proxy)
 
         if signed:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use already signed")
+            logger.info(f"{self.log_prefix} Scroll Terms of Use already signed")
             return False
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Scroll Terms of Use haven't signed yet")
+        logger.info(f"{self.log_prefix} Scroll Terms of Use haven't signed yet")
 
         return await self._sign_terms_of_use(proxy)
 
@@ -455,6 +456,22 @@ class Scroll(Account):
     async def is_ambient_providoor_badge_minted(self):
         return await self.is_badge_minted(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT,
                                           SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT_ABI)
+
+    async def is_ambient_swapooor_badge_minted(self):
+        return await self.is_badge_minted(SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT,
+                                          SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT_ABI)
+
+    async def is_ambient_providoor_badge_eligible(self):
+        return await self.is_badge_eligible(
+            SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT,
+            url=f"https://ambient-scroll-badge.liquidity.tools/api/check"
+        )
+
+    async def is_ambient_swapoor_badge_eligible(self):
+        return await self.is_badge_eligible(
+            SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT,
+            url = f"https://ambient-scroll-badge.liquidity.tools/api/check"
+        )
 
     @retry
     async def is_badge_minted(self, badge_address, badge_abi):
@@ -521,7 +538,7 @@ class Scroll(Account):
         if not proxy:
             proxy = self.get_random_proxy()
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        logger.info(f"{self.log_prefix} use proxy: {proxy}")
 
         url = f"https://canvas.scroll.cat/acc/{address}/code"
 
@@ -562,7 +579,7 @@ class Scroll(Account):
         if not proxy:
             proxy = self.get_random_proxy()
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        logger.info(f"{self.log_prefix} use proxy: {proxy}")
 
         url = f"https://canvas.scroll.cat/code/{referral_code}/sig/{self.address}"
 
@@ -581,13 +598,12 @@ class Scroll(Account):
 
     @retry
     @AsyncCacheDecorator(ttl=1000 * 1)
-    async def is_badge_eligible(self, badge: str, proxy=None) -> bool:
+    async def is_badge_eligible(self, badge: str, proxy=None, url = "https://canvas.scroll.cat/badge/check") -> bool:
         if not proxy:
             proxy = self.get_random_proxy()
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        logger.info(f"{self.log_prefix} use proxy: {proxy}")
 
-        url = f"https://ambient-scroll-badge.liquidity.tools/api/check"
         params = {
             "badge": badge,
             "recipient": self.address
@@ -606,12 +622,9 @@ class Scroll(Account):
             else:
                 raise Exception(f"Failed to check eligibility of Scroll Canvas badge: {response.status}")
 
-    async def is_ambient_providoor_badge_eligible(self):
-        return await self.is_badge_eligible(SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT)
-
     async def add_account_to_referral_file(self):
         logger.info(
-            f"[{self.account_id}][{self.address}][{self.chain}] Try to add account to file with accounts with referral code")
+            f"{self.log_prefix} Try to add account to file with accounts with referral code")
 
         with open("scroll_canvas_referral_accounts.txt", 'r+') as file:
             wallets = [row.strip().lower() for row in file if row.strip() != ""]
@@ -619,7 +632,7 @@ class Scroll(Account):
             if self.address.lower() not in wallets:
                 file.write(f"{self.address}\n")
             else:
-                logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already in file")
+                logger.info(f"{self.log_prefix} Account already in file")
 
     @retry
     async def create_and_send_mint_tx(self, name, canvas_contract, mint_fee, referral_code_sign):
@@ -641,13 +654,13 @@ class Scroll(Account):
         is_minted = await self.is_profile_minted()
 
         if is_minted:
-            logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Account already minted canvas")
+            logger.info(f"{self.log_prefix} Account already minted canvas")
             await self.add_account_to_referral_file()
             return False
 
         name = await self.get_random_name(canvas_contract)
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with random name: {name}")
+        logger.info(f"{self.log_prefix} Mint Scroll Canvas with random name: {name}")
 
         mint_fee = await canvas_contract.functions.MINT_FEE().call()
 
@@ -655,7 +668,7 @@ class Scroll(Account):
         referral_code_sign = await self.referral_code_sign(referral_code) if referral_code else ""
 
         logger.info(
-            f"[{self.account_id}][{self.address}][{self.chain}] Mint Scroll Canvas with referral code: {referral_code} ({referral_code_wallet})")
+            f"{self.log_prefix} Mint Scroll Canvas with referral code: {referral_code} ({referral_code_wallet})")
 
         mint_fee = int(mint_fee * 0.5) if len(referral_code_sign) > 0 else mint_fee
 
@@ -663,7 +676,7 @@ class Scroll(Account):
         balance_eth = await self.w3.eth.get_balance(self.address)
         if min_left_eth_balance > 0 and balance_eth - mint_fee < self.w3.to_wei(min_left_eth_balance, "ether"):
             logger.info(
-                f"[{self.account_id}][{self.address}] Cannot mint Scroll canvas, " +
+                f"{self.log_prefix} Cannot mint Scroll canvas, " +
                 f"because left balance would be less than {min_left_eth_balance} ETH, mint cost is {mint_fee / 10 ** 18} ETH, balance {balance_eth / 10 ** 18} ETH"
             )
             return False
@@ -684,7 +697,7 @@ class Scroll(Account):
         if not proxy:
             proxy = self.get_random_proxy()
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] use proxy: {proxy}")
+        logger.info(f"{self.log_prefix} use proxy: {proxy}")
 
         params = {
             "badge": badge_address,
@@ -718,23 +731,22 @@ class Scroll(Account):
         is_minted = await self.is_profile_minted()
         if not is_minted:
             logger.info(
-                f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+                f"{self.log_prefix} Account have to minted canvas before mint badges")
             return False
 
         is_minted_badge = await self.is_badge_minted(SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT,
                                                      SCROLL_CANVAS_ETHEREUM_YEAR_BADGE_CONTRACT_ABI)
         if is_minted_badge:
-            logger.info(
-                f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ethereum Year Badge")
+            logger.info(f"{self.log_prefix} Account already minted Scroll Ethereum Year Badge")
             return False
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ethereum Year Badge")
+        logger.info(f"{self.log_prefix} Try to mint Scroll Ethereum Year Badge")
 
         # мы проверяем что на аккаунте есть минимальный баланс нативки
         balance_eth = await self.w3.eth.get_balance(self.address)
         if min_eth_balance > 0 and balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
             logger.info(
-                f"[{self.account_id}][{self.address}] Cannot mint Scroll Ethereum Year Badge, " +
+                f"{self.log_prefix} Cannot mint Scroll Ethereum Year Badge, " +
                 f"due to small ETH balance {balance_eth / 10 ** 18} ETH, min balance should be {min_eth_balance} ETH"
             )
             return False
@@ -757,29 +769,75 @@ class Scroll(Account):
     async def mint_ambient_providoor_badge(self, min_eth_balance: float = 0.0005):
         is_minted = await self.is_profile_minted()
         if not is_minted:
-            logger.info(
-                f"[{self.account_id}][{self.address}][{self.chain}] Account have to minted canvas before mint badges")
+            logger.info(f"{self.log_prefix} Account have to minted canvas before mint badges")
             return False
 
         is_minted_badge = await self.is_ambient_providoor_badge_minted()
         if is_minted_badge:
-            logger.info(
-                f"[{self.account_id}][{self.address}][{self.chain}] Account already minted Scroll Ambient Providoor Badge")
+            logger.info(f"{self.log_prefix} Account already minted Scroll Ambient Providoor Badge")
             return False
 
-        logger.info(f"[{self.account_id}][{self.address}][{self.chain}] Try to mint Scroll Ambient Providoor Badge")
+        is_eligible = await self.is_ambient_providoor_badge_eligible()
+        if not is_eligible:
+            logger.info(f"{self.log_prefix} cannot mint Scroll Ambient Providoor Badge, it is not eligible")
+            return False
+
+        logger.info(f"{self.log_prefix} Try to mint Scroll Ambient Providoor Badge")
 
         # мы проверяем что на аккаунте есть минимальный баланс нативки
         balance_eth = await self.w3.eth.get_balance(self.address)
         if min_eth_balance > 0 and balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
             logger.info(
-                f"[{self.account_id}][{self.address}] Cannot mint Scroll Ambient Providoor Badge, " +
+                f"{self.log_prefix} Cannot mint Scroll Ambient Providoor Badge, " +
                 f"due to small ETH balance {balance_eth / 10 ** 18} ETH, min balance should be {min_eth_balance} ETH"
             )
             return False
 
         mint_ambient_providoor_tx_data = await self.get_mint_badge_tx_data(
             SCROLL_CANVAS_AMBIENT_PROVIDOOR_BADGE_CONTRACT,
+            "https://ambient-scroll-badge.liquidity.tools/api/claim"
+        )
+
+        tx_data = await self.get_tx_data(0, False)
+
+        tx_data["to"] = self.w3.to_checksum_address(mint_ambient_providoor_tx_data["to"])
+        tx_data["data"] = mint_ambient_providoor_tx_data["data"]
+
+        signed_txn = await self.sign(tx_data)
+        txn_hash = await self.send_raw_transaction(signed_txn)
+
+        await self.wait_until_tx_finished(txn_hash.hex())
+
+    @retry
+    async def mint_ambient_swapooor_badge(self, min_eth_balance: float = 0.0005):
+        is_minted = await self.is_profile_minted()
+        if not is_minted:
+            logger.info(f"{self.log_prefix} Account have to minted canvas before mint badges")
+            return False
+
+        is_minted_badge = await self.is_ambient_swapooor_badge_minted()
+        if is_minted_badge:
+            logger.info(f"{self.log_prefix} Account already minted Scroll Ambient Swapooor Badge")
+            return False
+
+        logger.info(f"{self.log_prefix} Try to mint Scroll Ambient Swapooor Badge")
+
+        is_eligible = await self.is_ambient_swapoor_badge_eligible()
+        if not is_eligible:
+            logger.info(f"{self.log_prefix} cannot mint Scroll Ambient Swapooor Badge, it is not eligible")
+            return False
+
+        # мы проверяем что на аккаунте есть минимальный баланс нативки
+        balance_eth = await self.w3.eth.get_balance(self.address)
+        if min_eth_balance > 0 and balance_eth < self.w3.to_wei(min_eth_balance, "ether"):
+            logger.info(
+                f"{self.log_prefix} Cannot mint Scroll Ambient Swapooor Badge, " +
+                f"due to small ETH balance {balance_eth / 10 ** 18} ETH, min balance should be {min_eth_balance} ETH"
+            )
+            return False
+
+        mint_ambient_providoor_tx_data = await self.get_mint_badge_tx_data(
+            SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT,
             "https://ambient-scroll-badge.liquidity.tools/api/claim"
         )
 
