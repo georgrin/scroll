@@ -498,32 +498,34 @@ class Scenarios(Account):
         logger.info(
             f"{self.log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH, ~{balance_eth_ethereum_in_usd} USD")
 
-        # получаем минимальный депозит
-        deposit_info = self.okex.get_deposit_info("ETH", "ethereum")
-        min_deposit = deposit_info.min_amount
-        logger.debug(f"Min deposit for ethereum.ETH: {min_deposit}")
+        # если баланс меньше  0.001 ETH, то не имеет даже смысла делать запрос к окексу
+        if balance_eth_wei_ethereum > 1000000000000000:  # 0.001 ETH
+            # получаем минимальный депозит
+            deposit_info = self.okex.get_deposit_info("ETH", "ethereum")
+            min_deposit = deposit_info.min_amount
+            logger.debug(f"Min deposit for ethereum.ETH: {min_deposit}")
 
-        if balance_eth_ethereum > 2 * min_deposit:
-            deposit_addresses = DEPOSITS_ADDRESSES.get(self.address, None)
-            logger.info(f"{self.log_prefix} deposit address: {deposit_addresses}")
-            if not deposit_addresses:
-                raise Exception(f"{self.log_prefix} Unknown deposit address")
+            if balance_eth_ethereum > 2 * min_deposit:
+                deposit_addresses = DEPOSITS_ADDRESSES.get(self.address, None)
+                logger.info(f"{self.log_prefix} deposit address: {deposit_addresses}")
+                if not deposit_addresses:
+                    raise Exception(f"{self.log_prefix} Unknown deposit address")
 
-            logger.debug(f"Deposit {balance_eth_wei_ethereum / 10 ** 18} ETH")
+                logger.debug(f"Deposit {balance_eth_wei_ethereum / 10 ** 18} ETH")
 
-            tx = await self.get_tx_data(balance_eth_wei_ethereum, False)
-            tx.update({
-                "to": self.w3.to_checksum_address(deposit_addresses),
-                "chainId": await self.scroll_ethereum.w3.eth.chain_id,
-                "from": self.address,
-                "nonce": await self.scroll_ethereum.w3.eth.get_transaction_count(self.address)
-            })
+                tx = await self.get_tx_data(balance_eth_wei_ethereum, False)
+                tx.update({
+                    "to": self.w3.to_checksum_address(deposit_addresses),
+                    "chainId": await self.scroll_ethereum.w3.eth.chain_id,
+                    "from": self.address,
+                    "nonce": await self.scroll_ethereum.w3.eth.get_transaction_count(self.address)
+                })
 
-            signed_txn = await self.scroll_ethereum.sign(tx, gas=21000, sub_fee_from_value=True)
-            txn_hash = await self.scroll_ethereum.send_raw_transaction(signed_txn)
-            await self.scroll_ethereum.wait_until_tx_finished(txn_hash.hex())
+                signed_txn = await self.scroll_ethereum.sign(tx, gas=21000, sub_fee_from_value=True)
+                txn_hash = await self.scroll_ethereum.send_raw_transaction(signed_txn)
+                await self.scroll_ethereum.wait_until_tx_finished(txn_hash.hex())
 
-            return True
+                return True
 
         logger.info(f"No enough balance to deposit to Okex")
 
