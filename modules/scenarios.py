@@ -1,15 +1,100 @@
+import os
 import random
 
 from loguru import logger
+from eth_account import Account as EthereumAccount
 
-from config import SCROLL_TOKENS, OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY, DEPOSITS_ADDRESSES
-from utils.helpers import get_eth_usd_price
+from config import (SCROLL_TOKENS,
+                    OKEX_API_KEY,
+                    OKEX_SECRET_KEY,
+                    OKEX_PASSPHRASE,
+                    OKEX_PROXY,
+                    DEPOSITS_ADDRESSES,
+                    ACCOUNTS)
+from settings import RANDOM_WALLET
+from utils.helpers import get_eth_usd_price, retry
 from utils.sleeping import sleep
 from . import AmbientFinance, Kelp, Scroll
 from .account import Account
 from .okex import Okex
 
 wrsETH = "WRSETH"
+AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE = "ambient_badge_current_accounts.txt"
+AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE = "ambient_badge_scenario_finished_accounts.txt"
+USD_1000 = 1000
+
+def get_random_account():
+    wallets = [
+        {
+            "id": _id,
+            "key": key,
+        } for _id, key in enumerate(ACCOUNTS, start=1)
+    ]
+
+    if os.path.exists('wl.txt'):
+        wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
+
+        with open('wl.txt', 'r') as file:
+            logger.info(f"wl.txt is specified, filter current accounts")
+            existing_addresses = {line.strip().lower() for line in file.readlines()}
+
+        filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in existing_addresses]
+        wallets = filtered_wallets
+
+    with open(AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE, 'r') as file:
+        wallets_already_finished_scenario = [row.strip().lower() for row in file if row.strip() != ""]
+        logger.debug(
+            f"There are {len(wallets_already_finished_scenario)} accounts what already finished ambient badge scenario (file: {AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE})")
+
+    with open(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, 'r') as file:
+        wallets_to_continue = [row.strip().lower() for row in file if row.strip() != ""]
+        logger.debug(
+            f"There are {len(wallets_to_continue)} accounts to continue (file: {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE})")
+
+    wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
+    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address not in wallets_already_finished_scenario and address not in wallets_to_continue]
+    wallets = filtered_wallets
+
+    if len(wallets) == 0:
+        logger.info(f"There are no new eligible wallets to run script")
+        return None
+
+    if RANDOM_WALLET:
+        random.shuffle(wallets)
+
+    return wallets[0]
+
+
+def get_current_accounts():
+    wallets = [
+        {
+            "id": _id,
+            "key": key,
+        } for _id, key in enumerate(ACCOUNTS, start=1)
+    ]
+
+    wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
+    with open(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, 'r') as file:
+        current_addresses = [row.strip().lower() for row in file if row.strip() != ""]
+        logger.info(
+            f"There are {len(current_addresses)} accounts to continue ambient badge scenario (file: {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE})")
+
+    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in current_addresses]
+    wallets = filtered_wallets
+
+    filtered_addresses = [address for address, wallet in wallet_addresses.items() if address in current_addresses]
+    current_addresses_no_private_key = [address for address in current_addresses if address not in filtered_addresses]
+
+    if len(current_addresses_no_private_key) > 0:
+        logger.error(
+            f"Some addresses in {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE} have no a private key: {current_addresses_no_private_key}")
+        return None
+
+    return wallets
+
+
+def get_acc_address(acc):
+    return EthereumAccount.from_key(acc['key']).address.lower()
 
 
 class Scenarios(Account):
@@ -19,6 +104,24 @@ class Scenarios(Account):
         self.scroll = Scroll(account_id, private_key, "scroll", recipient)
         self.scroll_ethereum = Scroll(account_id, private_key, "ethereum", recipient)
         self.okex = None
+
+        # используется для текущих аккаунтов
+        self.current_accounts = []
+        self.current_account_index = 0
+
+    def load_account(self, account_id: int, private_key: str):
+        if account_id == self.account_id:
+            return
+        self.account_id = account_id
+        self.private_key = private_key
+
+        self.account = EthereumAccount.from_key(private_key)
+        self.address = self.account.address
+        self.log_prefix = f"[{self.account_id}][{self.address}]"
+
+        self.ambient_finance = AmbientFinance(account_id, private_key, self.recipient)
+        self.scroll = Scroll(account_id, private_key, "scroll", self.recipient)
+        self.scroll_ethereum = Scroll(account_id, private_key, "ethereum", self.recipient)
 
     async def get_wrseth_balance(self) -> int:
         return (await self.get_balance(SCROLL_TOKENS[wrsETH]))["balance_wei"]
@@ -427,14 +530,13 @@ class Scenarios(Account):
         )
 
     async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script):
-        withdraw_cooldown = 60 * 35
+        withdraw_cooldown = 60 * 25
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
         )
         if not last_iter_withdraw:
             # вывод был слишком недавно, нужно время, чтобы информация в апи обновилась
             logger.info(f"{self.log_prefix} withdraw from Scroll was pretty recently, have to wait before continue")
-            await sleep(240, 420)
             return False
 
         bridge_tx_pending = await self._get_pending_bridge_tx()
@@ -442,11 +544,13 @@ class Scenarios(Account):
             # мы не можем действовать пока есть пендинг транзакции
             if bridge_tx_pending["message_type"] == 2:  # вывод
                 logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
-                return (await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)) is not False
+                claim_result = await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)
+                return claim_result is not False
             else:  # депозит
+                # мы не можем действовать пока есть пендинг транзакции, поэтому лучше переключиться на другие аккаунты
                 logger.info(
                     f"{self.log_prefix} there is PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
-            return True
+            return False
 
         # на балансе более чем нужно, то делаем вывод на биржу через майннет
         min_bridge_amount_eth = 0.01
@@ -459,7 +563,8 @@ class Scenarios(Account):
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18
 
-        logger.info(f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(
+            f"{self.log_prefix} current Ambient deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
         logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
         if balance_wrseth + balance_eth + current_deposit > 1.5 * (
@@ -484,7 +589,8 @@ class Scenarios(Account):
             min_percent = 10
             max_percent = 10
 
-            logger.info(f"{self.log_prefix} Try to withdraw {round(min_amount, decimal)}-{round(max_amount)} ETH to Ethereum from Scroll")
+            logger.info(
+                f"{self.log_prefix} Try to withdraw {round(min_amount, decimal)}-{round(max_amount)} ETH to Ethereum from Scroll")
 
             await self.scroll.withdraw(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
             return True
@@ -602,6 +708,9 @@ class Scenarios(Account):
                 return tx
         return None
 
+    def _get_okex_eth_price(self):
+        return float(self.okex.get_price("ETH"))
+
     async def _get_okex_total_balance(self, symbol) -> float:
         funding_balance = self.okex.get_funding_balance(symbol)
         trading_balance = self.okex.get_trading_balance(symbol)
@@ -613,11 +722,13 @@ class Scenarios(Account):
         return float(total_balance)
 
     async def _buy_and_withdraw_eth(self, amount: float):
-        return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount)
+        return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount, include_fee=False)
 
+    @retry
     async def _mint_ambient_providoor_badge_iteration(
             self,
-            min_deposit_amount_usd,
+            min_deposit_amount_usd: int,
+            max_deposit_amount_usd: int,
             min_eth_balance_after_script,
             max_eth_balance_after_script,
             ethereum_eth_left_balance_min_after_deposit,
@@ -661,9 +772,10 @@ class Scenarios(Account):
 
         logger.info(f"{self.log_prefix} Badge is not eligible to mint")
 
-        eth_price_in_usd = await get_eth_usd_price("scroll")
+        # eth_price_in_usd = await get_eth_usd_price("scroll")
+        eth_price_in_usd = self._get_okex_eth_price()
 
-        logger.info(f"{self.log_prefix} ETH price is {eth_price_in_usd} USD")
+        logger.debug(f"{self.log_prefix} ETH price is {eth_price_in_usd} USD")
 
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
         est_current_deposit_in_usd = current_deposit * eth_price_in_usd
@@ -671,11 +783,11 @@ class Scenarios(Account):
         logger.info(
             f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
 
-        if est_current_deposit_in_usd > min_deposit_amount_usd:
+        if est_current_deposit_in_usd > USD_1000 or est_current_deposit_in_usd > 0.9 * min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
             logger.info(
                 f"{self.log_prefix} current deposit is enough, but the badge is still not eligible to mint, need to wait some time")
-            return True
+            return False
 
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
@@ -700,14 +812,14 @@ class Scenarios(Account):
             # депозит был слишком недавно, нужно время, чтобы информация в апи обновилась
             logger.info(
                 f"{self.log_prefix} Economy Deposit to Scroll was pretty recently, have to wait before continue")
-            return True
+            return False
 
         bridge_tx_pending = await self._get_pending_bridge_tx()
         if bridge_tx_pending:
-            # мы не можем действовать пока нет пендинг бридж транзакции
+            # мы не можем действовать пока есть пендинг бридж транзакции
             logger.info(
                 f"{self.log_prefix} there PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
-            return True
+            return False
 
         logger.info(f"{self.log_prefix} there no PENDING bridge TXs, continue")
 
@@ -732,27 +844,36 @@ class Scenarios(Account):
 
         if len(pending_withdrawals) > 0:
             logger.info(f"There are pending withdrawals, have to wait them before continue: {pending_withdrawals}")
-            return True
+            return False
 
         logger.info(f"There are no pending withdrawals")
 
         # делаем вывод ETH
-        amount_to_withdraw = min_deposit_amount_usd * (1 / eth_price_in_usd) * 1.1
-        logger.info(f"Try to buy and withdraw {amount_to_withdraw} ETH")
-
         okex_balance_usdt = await self._get_okex_total_balance("USDT")
         okex_balance_eth = await self._get_okex_total_balance("ETH")
         okex_balance_usdt_in_eth = okex_balance_usdt * (1 / eth_price_in_usd)
         can_withdraw_eth_estimated = okex_balance_usdt_in_eth + okex_balance_eth
         can_withdraw_usd_estimated = can_withdraw_eth_estimated * eth_price_in_usd
 
-        logger.info(
-            f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
+        logger.info(f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
+
+        if can_withdraw_usd_estimated < max_deposit_amount_usd and can_withdraw_usd_estimated > min_deposit_amount_usd:
+            max_deposit_amount_usd = int(can_withdraw_usd_estimated)
+
+        deposit_amount_usd = random.randint(min_deposit_amount_usd, max_deposit_amount_usd)
+        amount_to_withdraw = deposit_amount_usd * (1 / eth_price_in_usd)
+        logger.info(f"Try to buy and withdraw {amount_to_withdraw} ETH (~{deposit_amount_usd} USD, range: {min_deposit_amount_usd}-{max_deposit_amount_usd} USD)")
+
 
         if can_withdraw_eth_estimated < amount_to_withdraw:
-            logger.info(
-                f"Not enough money on Okex to continue, need: {amount_to_withdraw} ETH, but can only ~{can_withdraw_eth_estimated} ETH")
-            return None
+            logger.error(f"""
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                !!                                                                                                                          !!
+                     NOT ENOUGH MONEY ON OKEX TO CONTINUE, need: {amount_to_withdraw} ETH, but can only ~{can_withdraw_eth_estimated} ETH
+                !!                                                                                                                          !!
+                !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+            """)
+            return True
 
         await self._buy_and_withdraw_eth(amount_to_withdraw)
 
@@ -760,32 +881,153 @@ class Scenarios(Account):
 
         return True
 
+    def append_address_to_file(self, file_name: str, address=None):
+        if not address:
+            address = self.address
+        logger.info(f"Try to add {address} to {file_name}")
+
+        with open(file_name, 'r+') as file:
+            wallets = [row.strip().lower() for row in file if row.strip() != ""]
+            if address.lower() not in wallets:
+                file.write(f"{address}\n")
+            else:
+                logger.info(f"Account {address} already in file {file_name}")
+
+    def remove_address_from_file(self, file_name: str, address=None):
+        if not address:
+            address = self.address
+        logger.info(f"Try to remove {self.address} from {file_name}")
+
+        with open(file_name, "r") as file_input:
+            with open(file_name, "w") as output:
+                for line in file_input:
+                    if line.strip("\n").lower() != self.address.lower():
+                        output.write(line.lower())
+                    else:
+                        logger.info(f" Account {address} removed from {file_name}")
+
+    def handle_next_account(self, max_current_accounts):
+        self.current_accounts = get_current_accounts()
+
+        # текущие аккаунты закончили выполнение скрипта, нужно получить новые
+        if len(self.current_accounts) == 0:
+            acc = get_random_account()
+            if acc:
+                # добавляем случайный аккаунт
+                self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
+                self.current_accounts.append(acc)
+                self.current_account_index = 0
+                return True
+            else:
+                # аккаунты закончились
+                self.current_account_index = None
+                return False
+
+        # последний аккаунт успешно выполнил сценарий и мы начинаем заново прогонять аккаунты
+        if self.current_account_index > len(self.current_accounts) - 1:
+            self.current_account_index = 0
+            return True
+
+        # если аккаунт послдений, то пытаемся добавить ещё аккаунт если можем
+        if self.current_account_index == len(self.current_accounts) - 1:
+            # если аккаунтов уже слишком много, то снова возвращаемся к первому
+            if len(self.current_accounts) >= max_current_accounts:
+                self.current_account_index = 0
+                return True
+
+            # если лимит аккаунтов ещё не превышен, то добавляем новый аккаунт
+            acc = get_random_account()
+            if acc:
+                self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
+                self.current_accounts.append(acc)
+                self.current_account_index += 1
+                return True
+            else:
+                # если лимит аккаунтов ещё не превышен, но новых аккаунтов нет, то начинаем заново
+                self.current_account_index = 0
+                return True
+
+        # просто запускаем следующий аккаунт
+        self.current_account_index += 1
+        return True
+
+    def _finish_current_account(self):
+        self.remove_address_from_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE)
+        self.append_address_to_file(AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE)
+
     async def mint_ambient_providoor_badge(
             self,
             min_deposit_amount_usd,
+            max_deposit_amount_usd,
             min_eth_balance_after_script,
             max_eth_balance_after_script,
             ethereum_eth_left_balance_min_after_deposit,
+            max_current_accounts
     ):
         self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
+        self.current_accounts = get_current_accounts()
 
-        i = 1
+        # текущие аккаунты закончили выполнение скрипта, нужно получить новые
+        if len(self.current_accounts) == 0:
+            with open(AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE, 'r') as file:
+                wallets_already_finished_scenario = [row.strip().lower() for row in file if row.strip() != ""]
+                logger.info(
+                    f"There are {len(wallets_already_finished_scenario)} accounts what already finished ambient badge scenario (file: {AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE})")
+            if self.address.lower() in wallets_already_finished_scenario:
+                logger.info(f"{self.log_prefix} Account already finished the scenario, move to next")
+                return False
+
+            # добавляем случайный аккаунт
+            self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE)
+            self.current_accounts.append(
+                {
+                    "id": self.account_id,
+                    "key": self.private_key
+                }
+            )
+
+        logger.info(f"Start process {get_acc_address(self.current_accounts[0])} account")
+
+        self.current_account_index = 0
+        iterations_map = {}
+
         while True:
+            current_account = self.current_accounts[self.current_account_index]
+            self.load_account(current_account["id"], current_account["key"])
+
+            # для каждого аккаунта будет сохранять его итерации
+            if self.account_id not in iterations_map:
+                iterations_map[self.account_id] = 1
+            i = iterations_map[self.account_id]
+
             logger.info(f"Start {i} iteration")
             iteration_result = await self._mint_ambient_providoor_badge_iteration(
                 min_deposit_amount_usd,
+                max_deposit_amount_usd,
                 min_eth_balance_after_script,
                 max_eth_balance_after_script,
                 ethereum_eth_left_balance_min_after_deposit,
             )
 
             if iteration_result is None:
-                logger.info(f"Finished script")
-                break
+                logger.info(f"Finished script for {self.address} for {i} iterations, try to choose new accounts")
+                self._finish_current_account()
+
+                find_next_account = self.handle_next_account(max_current_accounts)
+                if not find_next_account:
+                    logger.info(f"Finished script for all accounts, leave...")
+                    break
+                await sleep(25, 35)
             elif iteration_result is False:
-                logger.info(f"Finished {i} iteration, no action")
-                await sleep(30, 40)
+                logger.info(
+                    f"Finished {i} iteration, account have no action to do right now, try to process other accounts")
+                find_next_account = self.handle_next_account(max_current_accounts)
+                if not find_next_account:
+                    logger.info(f"There are no other accounts to process, wait and continue the current")
+                    await sleep(60, 90)
+                else:
+                    await sleep(25, 30)
             else:
-                logger.info(f"Finished {i} iteration, made action")
+                logger.info(f"Finished {i} iteration, wait and try to process this account again")
                 await sleep(45, 60)
             i += 1

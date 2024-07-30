@@ -264,6 +264,21 @@ class Okex:
         return received_amount
 
     @retry_sync(OKEX_RETRIES, (RequestTimeout, RateLimitExceeded), OKEX_RETRY_DELAY, OKEX_RETRY_DELAY * 2)
+    def sell_usdt_to_token(self, symbol: str, amount: float) -> Decimal:
+        logger.info(f'SEll {amount} USDT to buy {symbol}')
+        trading_symbol = symbol + '/USDT'
+
+        creation_result = self._api.create_market_order(trading_symbol, 'sell', amount)
+        order = self._api.fetch_order(creation_result['id'], trading_symbol)
+        logger.debug("Created order: %r", order)
+
+        filled = Decimal(order['filled'])
+        fee = Decimal(order['fee']['cost'])
+        received_amount = filled - fee
+
+        return received_amount
+
+    @retry_sync(OKEX_RETRIES, (RequestTimeout, RateLimitExceeded), OKEX_RETRY_DELAY, OKEX_RETRY_DELAY * 2)
     def get_funding_balance(self, symbol: str) -> Decimal:
         balance = self._api.fetch_balance(params={'type': self.funding_account})
 
@@ -306,7 +321,7 @@ class Okex:
             self.transfer_funds("USDT", float(need_transfer_usdt), self.funding_account, self.trading_account)
             self.wait_balance_update("USDT", float(need_transfer_usdt), float(funding_balance_usdt), self.funding_account, self.trading_account)
 
-    def buy_token_and_withdraw(self, symbol: str, network: str, address: str, amount: float) -> None:
+    def buy_token_and_withdraw(self, symbol: str, network: str, address: str, amount: float, include_fee: bool = True) -> None:
         internal_symbol = self.convert_symbol(symbol, network)
         internal_network = self.convert_network(network, symbol)
 
@@ -320,8 +335,8 @@ class Okex:
             raise Exception(
                 f"Withdrawal amount is lower than the lower limit: {amount} < {withdraw_info.min_amount}")
 
-        amount_need = amount + withdraw_info.fee
-        logger.debug(f"{internal_symbol} amount_need: {amount_need} ({amount} + {withdraw_info.fee})")
+        amount_need = amount + withdraw_info.fee if include_fee else amount
+        logger.debug(f"{internal_symbol} amount_need: {amount_need} ({amount}, fee: {withdraw_info.fee})")
 
         funding_balance = self.get_funding_balance(internal_symbol)
         logger.debug(f"{internal_symbol} funding balance: {funding_balance}")
@@ -333,7 +348,7 @@ class Okex:
             logger.debug(f"{symbol} total balance: {total_balance}")
 
             if total_balance < amount_need:
-                need_to_buy = (amount_need - float(total_balance)) * 1.1
+                need_to_buy = (amount_need - float(total_balance))
                 logger.debug(
                     f"No enough {internal_symbol} total balance ({total_balance} < {amount_need}), need to buy {need_to_buy}")
                 self.transfer_usdt_for_order(internal_symbol, need_to_buy)
@@ -372,6 +387,7 @@ class Okex:
                 elif amount_was < float(balance):
                     logger.debug(
                         f"Requested {symbol} transfer from {src_type} to {dst_type} finished with less balance then need (balance: {balance}, need: {amount_need})")
+                    break
                 else:
                     logger.debug(
                         f"Waiting for {symbol} transfer from {src_type} to {dst_type} (balance: {balance}, need: {amount_need} ({i}/{attempts} attempt)")

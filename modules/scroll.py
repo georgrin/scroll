@@ -208,12 +208,12 @@ class Scroll(Account):
     ):
         claim_info = unclaimed_withdrawal["claim_info"]
         if not claim_info:
-            logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal")
-            return claim_info
+            logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal, no claim info")
+            return False
 
         can_claim = claim_info["claimable"]
         if not can_claim:
-            logger.info(f"{self.log_prefix} skipping, cannot claim withdrawal")
+            logger.info(f"{self.log_prefix} skipping, withdrawal is not claimable yet")
             return False
 
         tx_data = await self.get_tx_data(gas_price=False)

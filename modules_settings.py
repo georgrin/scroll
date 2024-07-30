@@ -661,7 +661,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
 
 async def mint_ambient_providoor_badge(account_id, key, recipient):
     # минимальный размер позиции на амбиенте (с учётом скачков курсов рекомедовал бы ставить больше 1000  USD)
-    min_deposit_amount_usd = 1050
+    min_deposit_amount_usd = 991
+    max_deposit_amount_usd = 1100
 
     # сколько минимум должно остаться на аккаунте скролл после минта значка и вывода денег на окекс
     min_eth_balance_after_script = 0.02
@@ -670,12 +671,17 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     # сколько минимум должно остаться на аккаунте ethereum после депозита в скролл (чтобы потом сделать транзу claim на вывод)
     ethereum_eth_left_balance_min_after_deposit = 0.0005
 
+    # сколько аккаунтов можно запускать дополнительно, когда мы упираемся в действие, которое требует ожидание большого времени (например, ожидаем час вывод или депозит)
+    max_current_accounts = 5
+
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.mint_ambient_providoor_badge(
         min_deposit_amount_usd,
+        max_deposit_amount_usd,
         min_eth_balance_after_script,
         max_eth_balance_after_script,
         ethereum_eth_left_balance_min_after_deposit,
+        max_current_accounts
     )
 
 
