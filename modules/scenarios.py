@@ -1,5 +1,6 @@
 import os
 import random
+import traceback
 
 from loguru import logger
 from eth_account import Account as EthereumAccount
@@ -12,8 +13,8 @@ from config import (SCROLL_TOKENS,
                     OKEX_PROXY,
                     DEPOSITS_ADDRESSES,
                     ACCOUNTS)
-from settings import RANDOM_WALLET
-from utils.helpers import get_eth_usd_price, retry
+from settings import RANDOM_WALLET, RETRY_COUNT
+from utils.helpers import get_eth_usd_price
 from utils.sleeping import sleep
 from . import AmbientFinance, Kelp, Scroll
 from .account import Account
@@ -23,6 +24,25 @@ wrsETH = "WRSETH"
 AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE = "temp/ambient_badge_current_accounts.txt"
 AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE = "temp/ambient_badge_scenario_finished_accounts.txt"
 USD_1000 = 1000
+
+
+def retry(func, sleep_from: int = 10, sleep_to: int = 20, return_false=True):
+    async def wrapper(*args, **kwargs):
+        retries = 0
+        while retries <= RETRY_COUNT:
+            try:
+                result = await func(*args, **kwargs)
+                return result
+            except Exception as e:
+                trace = traceback.format_exc()
+                logger.error(f"Error | {e}\n{trace}")
+                await sleep(sleep_from, sleep_to)
+                retries += 1
+
+                if retries == RETRY_COUNT and return_false is True:
+                    return False
+
+    return wrapper
 
 
 def get_random_account():

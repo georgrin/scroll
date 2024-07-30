@@ -369,7 +369,6 @@ class Okex:
         withdraw_amount = amount_need
         if float(withdraw_amount) > float(funding_balance_after_transfer):
             logger.debug(f"{internal_symbol} funding balance less than amount need, try to withdraw all funding balance")
-
             withdraw_amount = funding_balance_after_transfer
 
         withdraw_id = self.withdraw(internal_symbol, float(withdraw_amount), internal_network, address)
