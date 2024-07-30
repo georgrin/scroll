@@ -321,7 +321,7 @@ class Okex:
             self.transfer_funds("USDT", float(need_transfer_usdt), self.funding_account, self.trading_account)
             self.wait_balance_update("USDT", float(need_transfer_usdt), float(funding_balance_usdt), self.funding_account, self.trading_account)
 
-    def buy_token_and_withdraw(self, symbol: str, network: str, address: str, amount: float, include_fee: bool = True) -> None:
+    def buy_token_and_withdraw(self, symbol: str, network: str, address: str, amount: float, include_fee: bool = True, wait_withdrawal: bool = True) -> None:
         internal_symbol = self.convert_symbol(symbol, network)
         internal_network = self.convert_network(network, symbol)
 
@@ -372,7 +372,11 @@ class Okex:
             withdraw_amount = funding_balance_after_transfer
 
         withdraw_id = self.withdraw(internal_symbol, float(withdraw_amount), internal_network, address)
-        self.wait_for_withdraw_to_finish(withdraw_id)
+
+        logger.info(f'Created #{withdraw_id} withdraw')
+
+        if wait_withdrawal:
+            self.wait_for_withdraw_to_finish(withdraw_id)
 
     def wait_balance_update(self, symbol: str, amount_need: float, amount_was: float, src_type: str, dst_type: str, attempts: int = 5):
         logger.debug(f"Waiting {WAIT_TX_SLEEP}s for {symbol} transfer from {src_type} to {dst_type}")

@@ -745,8 +745,15 @@ class Scenarios(Account):
 
         return float(total_balance)
 
-    async def _buy_and_withdraw_eth(self, amount: float):
-        return self.okex.buy_token_and_withdraw("ETH", "Ethereum", self.address, amount, include_fee=False)
+    async def _buy_and_withdraw_eth(self, amount: float, wait_withdrawal=False):
+        return self.okex.buy_token_and_withdraw(
+            "ETH",
+            "Ethereum",
+            self.address,
+            amount,
+            include_fee=False,
+            wait_withdrawal=wait_withdrawal
+        )
 
     @retry
     async def _mint_ambient_providoor_badge_iteration(
@@ -822,7 +829,8 @@ class Scenarios(Account):
 
         total_scroll_assets = eth_price_in_usd * (balance_eth + balance_wrseth) + est_current_deposit_in_usd
 
-        logger.info(f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
+        logger.info(
+            f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
 
         if total_scroll_assets > min_deposit_amount_usd:
             logger.info(
@@ -883,14 +891,16 @@ class Scenarios(Account):
         can_withdraw_eth_estimated = okex_balance_usdt_in_eth + okex_balance_eth
         can_withdraw_usd_estimated = can_withdraw_eth_estimated * eth_price_in_usd
 
-        logger.info(f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
+        logger.info(
+            f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
 
         if can_withdraw_usd_estimated < max_deposit_amount_usd and can_withdraw_usd_estimated > min_deposit_amount_usd:
             max_deposit_amount_usd = int(can_withdraw_usd_estimated)
 
         deposit_amount_usd = random.randint(min_deposit_amount_usd, max_deposit_amount_usd)
         amount_to_withdraw = deposit_amount_usd * (1 / eth_price_in_usd)
-        logger.info(f"Try to buy and withdraw {amount_to_withdraw} ETH (~{deposit_amount_usd} USD, range: {min_deposit_amount_usd}-{max_deposit_amount_usd} USD)")
+        logger.info(
+            f"Try to buy and withdraw {amount_to_withdraw} ETH (~{deposit_amount_usd} USD, range: {min_deposit_amount_usd}-{max_deposit_amount_usd} USD)")
 
         if can_withdraw_eth_estimated < amount_to_withdraw:
             logger.error(f"""
