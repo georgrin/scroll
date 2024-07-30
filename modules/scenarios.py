@@ -783,7 +783,9 @@ class Scenarios(Account):
                     logger.info(f"{self.log_prefix} Try to mint Ambient Swapooor Badge")
                     await self.scroll.mint_ambient_swapooor_badge()
                     return True
-                logger.info(f"{self.log_prefix} Ambient Swapooor Badge is not eligible to mint")
+                logger.error(f"{self.log_prefix} Ambient Swapooor Badge is not eligible to mint!")
+
+                return False
             else:
                 logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
 
