@@ -20,8 +20,8 @@ from .account import Account
 from .okex import Okex
 
 wrsETH = "WRSETH"
-AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE = "ambient_badge_current_accounts.txt"
-AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE = "ambient_badge_scenario_finished_accounts.txt"
+AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE = "temp/ambient_badge_current_accounts.txt"
+AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE = "temp/ambient_badge_scenario_finished_accounts.txt"
 USD_1000 = 1000
 
 
@@ -715,7 +715,7 @@ class Scenarios(Account):
         return float(self.okex.get_price("ETH"))
 
     @CacheDecorator(ttl=1000 * 10)
-    async def _get_okex_total_balance(self, symbol) -> float:
+    def _get_okex_total_balance(self, symbol) -> float:
         funding_balance = self.okex.get_funding_balance(symbol)
         trading_balance = self.okex.get_trading_balance(symbol)
         total_balance = funding_balance + trading_balance
@@ -800,7 +800,11 @@ class Scenarios(Account):
 
         logger.info(f"{self.log_prefix} current Scroll balance: {balance_eth} ETH and {balance_wrseth} wrsETH")
 
-        if eth_price_in_usd * (balance_eth + balance_wrseth) > min_deposit_amount_usd:
+        total_scroll_assets = eth_price_in_usd * (balance_eth + balance_wrseth) + est_current_deposit_in_usd
+
+        logger.info(f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
+
+        if total_scroll_assets > min_deposit_amount_usd:
             logger.info(
                 f"{self.log_prefix} current Scroll balance is enough to make deposit")
             # если на аккаунте достаточно средств, чтобы сделать новый депозит, то делаем его
@@ -853,8 +857,8 @@ class Scenarios(Account):
         logger.info(f"There are no pending withdrawals")
 
         # делаем вывод ETH
-        okex_balance_usdt = await self._get_okex_total_balance("USDT")
-        okex_balance_eth = await self._get_okex_total_balance("ETH")
+        okex_balance_usdt = self._get_okex_total_balance("USDT")
+        okex_balance_eth = self._get_okex_total_balance("ETH")
         okex_balance_usdt_in_eth = okex_balance_usdt * (1 / eth_price_in_usd)
         can_withdraw_eth_estimated = okex_balance_usdt_in_eth + okex_balance_eth
         can_withdraw_usd_estimated = can_withdraw_eth_estimated * eth_price_in_usd
@@ -867,7 +871,6 @@ class Scenarios(Account):
         deposit_amount_usd = random.randint(min_deposit_amount_usd, max_deposit_amount_usd)
         amount_to_withdraw = deposit_amount_usd * (1 / eth_price_in_usd)
         logger.info(f"Try to buy and withdraw {amount_to_withdraw} ETH (~{deposit_amount_usd} USD, range: {min_deposit_amount_usd}-{max_deposit_amount_usd} USD)")
-
 
         if can_withdraw_eth_estimated < amount_to_withdraw:
             logger.error(f"""
@@ -938,6 +941,11 @@ class Scenarios(Account):
         if self.current_account_index == len(self.current_accounts) - 1:
             # если аккаунтов уже слишком много, то снова возвращаемся к первому
             if len(self.current_accounts) >= max_current_accounts:
+                self.current_account_index = 0
+                return True
+
+            # если на окексе нет баланса, то не добавляем новые аккаунты пока что
+            if self.okex_enough_balance is False:
                 self.current_account_index = 0
                 return True
 
