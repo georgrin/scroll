@@ -675,8 +675,8 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     max_current_accounts = 3
 
     # время между действиями для разных аккаунтов
-    min_wait_time_before_accounts = 5
-    max_wait_time_before_accounts = 6
+    min_wait_time_before_accounts = 30
+    max_wait_time_before_accounts = 40
 
     min_wait_time_before_iterations = 45
     max_wait_time_before_iterations = 60
