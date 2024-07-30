@@ -637,8 +637,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
     ambient_range_width = 0.1
 
     # сколько процентов депозит должен составлять от баланса ETH - min_left_eth_balance
-    min_deposit_percent = 91
-    max_deposit_percent = 95
+    min_deposit_percent = 99
+    max_deposit_percent = 100
 
     # сколько раз повторяем депозит с уменьшением кол-ва баланса
     ambient_max_deposit_attempts = 100
