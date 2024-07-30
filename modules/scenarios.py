@@ -3,6 +3,7 @@ import random
 
 from loguru import logger
 from eth_account import Account as EthereumAccount
+from onecache import CacheDecorator
 
 from config import (SCROLL_TOKENS,
                     OKEX_API_KEY,
@@ -337,7 +338,7 @@ class Scenarios(Account):
                 logger.info(f"[{self.account_id}][{self.address}] there are no out range positions")
 
                 # Если текущий баланс wrsETH достаточно не маленький, то продаём его
-                if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH
+                if balance_wrseth_wei > min_trade_amount_wrseth_wei:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
                     return True
@@ -493,7 +494,7 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after deposit: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
-        if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH  # 0.0005 ETH
+        if balance_wrseth_wei > min_trade_amount_wrseth_wei:  # 0.005 ETH
             logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
             await self._sell_wrseth()
 
@@ -712,6 +713,7 @@ class Scenarios(Account):
     def _get_okex_eth_price(self):
         return float(self.okex.get_price("ETH"))
 
+    @CacheDecorator(ttl=1000 * 10)
     async def _get_okex_total_balance(self, symbol) -> float:
         funding_balance = self.okex.get_funding_balance(symbol)
         trading_balance = self.okex.get_trading_balance(symbol)
