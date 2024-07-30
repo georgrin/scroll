@@ -661,8 +661,8 @@ async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
 
 async def mint_ambient_providoor_badge(account_id, key, recipient):
     # минимальный размер позиции на амбиенте (с учётом скачков курсов рекомедовал бы ставить больше 1000  USD)
-    min_deposit_amount_usd = 991
-    max_deposit_amount_usd = 1100
+    min_deposit_amount_usd = 1150
+    max_deposit_amount_usd = 1250
 
     # сколько минимум должно остаться на аккаунте скролл после минта значка и вывода денег на окекс
     min_eth_balance_after_script = 0.02
@@ -675,8 +675,8 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     max_current_accounts = 3
 
     # время между действиями для разных аккаунтов
-    min_wait_time_before_accounts = 30
-    max_wait_time_before_accounts = 60
+    min_wait_time_before_accounts = 5
+    max_wait_time_before_accounts = 6
 
     min_wait_time_before_iterations = 45
     max_wait_time_before_iterations = 60
