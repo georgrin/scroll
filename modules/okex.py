@@ -366,7 +366,13 @@ class Okex:
         funding_balance_after_transfer = self.get_funding_balance(internal_symbol)
         logger.debug(f"{internal_symbol} funding balance after transfer: {funding_balance_after_transfer}")
 
-        withdraw_id = self.withdraw(internal_symbol, float(funding_balance_after_transfer), internal_network, address)
+        withdraw_amount = amount_need
+        if float(withdraw_amount) > float(funding_balance_after_transfer):
+            logger.debug(f"{internal_symbol} funding balance less than amount need, try to withdraw all funding balance")
+
+            withdraw_amount = funding_balance_after_transfer
+
+        withdraw_id = self.withdraw(internal_symbol, float(withdraw_amount), internal_network, address)
         self.wait_for_withdraw_to_finish(withdraw_id)
 
     def wait_balance_update(self, symbol: str, amount_need: float, amount_was: float, src_type: str, dst_type: str, attempts: int = 5):
