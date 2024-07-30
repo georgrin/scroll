@@ -672,7 +672,15 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     ethereum_eth_left_balance_min_after_deposit = 0.0005
 
     # сколько аккаунтов можно запускать дополнительно, когда мы упираемся в действие, которое требует ожидание большого времени (например, ожидаем час вывод или депозит)
-    max_current_accounts = 5
+    max_current_accounts = 3
+
+    # время между действиями для разных аккаунтов
+    min_wait_time_before_accounts = 30
+    max_wait_time_before_accounts = 60
+
+    min_wait_time_before_iterations = 45
+    max_wait_time_before_iterations = 60
+
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.mint_ambient_providoor_badge(
@@ -681,7 +689,11 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
         min_eth_balance_after_script,
         max_eth_balance_after_script,
         ethereum_eth_left_balance_min_after_deposit,
-        max_current_accounts
+        max_current_accounts,
+        min_wait_time_before_accounts,
+        max_wait_time_before_accounts,
+        min_wait_time_before_iterations,
+        max_wait_time_before_iterations,
     )
 
 

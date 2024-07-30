@@ -105,9 +105,10 @@ class Scenarios(Account):
         self.scroll_ethereum = Scroll(account_id, private_key, "ethereum", recipient)
         self.okex = None
 
-        # используется для текущих аккаунтов
+        # используется для текущих аккаунтов для минта значка амбиент за 1000 депозит
         self.current_accounts = []
         self.current_account_index = 0
+        self.okex_enough_balance = True
 
     def load_account(self, account_id: int, private_key: str):
         if account_id == self.account_id:
@@ -873,8 +874,10 @@ class Scenarios(Account):
                 !!                                                                                                                          !!
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             """)
-            return True
+            self.okex_enough_balance = False
+            return False
 
+        self.okex_enough_balance = True
         await self._buy_and_withdraw_eth(amount_to_withdraw)
 
         logger.info(f"Done this iteration, return")
@@ -962,7 +965,11 @@ class Scenarios(Account):
             min_eth_balance_after_script,
             max_eth_balance_after_script,
             ethereum_eth_left_balance_min_after_deposit,
-            max_current_accounts
+            max_current_accounts,
+            min_wait_time_before_accounts,
+            max_wait_time_before_accounts,
+            min_wait_time_before_iterations,
+            max_wait_time_before_iterations,
     ):
         self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
         self.current_accounts = get_current_accounts()
@@ -1017,17 +1024,17 @@ class Scenarios(Account):
                 if not find_next_account:
                     logger.info(f"Finished script for all accounts, leave...")
                     break
-                await sleep(25, 35)
+                await sleep(min_wait_time_before_accounts, max_wait_time_before_accounts)
             elif iteration_result is False:
                 logger.info(
                     f"Finished {i} iteration, account have no action to do right now, try to process other accounts")
                 find_next_account = self.handle_next_account(max_current_accounts)
                 if not find_next_account:
                     logger.info(f"There are no other accounts to process, wait and continue the current")
-                    await sleep(60, 90)
+                    await sleep(2 * min_wait_time_before_iterations, 2 * max_wait_time_before_iterations)
                 else:
-                    await sleep(25, 30)
+                    await sleep(min_wait_time_before_accounts, max_wait_time_before_accounts)
             else:
                 logger.info(f"Finished {i} iteration, wait and try to process this account again")
-                await sleep(45, 60)
+                await sleep(min_wait_time_before_iterations, max_wait_time_before_iterations)
             i += 1
