@@ -24,6 +24,7 @@ AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE = "ambient_badge_current_accounts.txt"
 AMBIENT_BADGE_SCENARIO_FINISHED_ACCOUNTS_FILE = "ambient_badge_scenario_finished_accounts.txt"
 USD_1000 = 1000
 
+
 def get_random_account():
     wallets = [
         {
@@ -53,7 +54,8 @@ def get_random_account():
             f"There are {len(wallets_to_continue)} accounts to continue (file: {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE})")
 
     wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
-    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address not in wallets_already_finished_scenario and address not in wallets_to_continue]
+    filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if
+                        address not in wallets_already_finished_scenario and address not in wallets_to_continue]
     wallets = filtered_wallets
 
     if len(wallets) == 0:
@@ -89,7 +91,6 @@ def get_current_accounts():
     if len(current_addresses_no_private_key) > 0:
         logger.error(
             f"Some addresses in {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE} have no a private key: {current_addresses_no_private_key}")
-        return None
 
     return wallets
 
@@ -640,7 +641,7 @@ class Scenarios(Account):
         return None
 
     async def _make_1000_usd_deposit_ambient(self):
-        min_left_eth_balance = 0.0025
+        min_left_eth_balance = 0.003
         max_left_eth_balance = 0.0035
 
         decimal = 5
