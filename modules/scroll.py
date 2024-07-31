@@ -87,6 +87,16 @@ class Scroll(Account):
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
+    async def check_last_claim_withdraw_iteration(self, module_cooldown):
+        return await checkLastIteration(
+            interval=module_cooldown,
+            account=self.account,
+            deposit_contract_address=BRIDGE_CONTRACTS["deposit"],
+            chain="ethereum",
+            log_prefix="Scroll Claim Withdraw",
+            log=False
+        )
+
     async def check_last_deposit_economy_iteration(self, module_cooldown):
         return await checkLastIteration(
             interval=module_cooldown,
