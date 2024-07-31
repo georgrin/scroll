@@ -502,7 +502,8 @@ class AmbientFinance(Account):
                     ).call()
                     tx["concLiq"] = liq
                     tx["positionId"] = "no id, tx hash: " + tx["txHash"]
-
+                    tx["baseQty"] = baseQty
+                    tx["quoteQty"] = quoteQty
                     active_positions.append(tx)
             else:
                 break

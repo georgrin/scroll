@@ -192,7 +192,7 @@ class Account:
                 await asyncio.sleep(1)
 
     async def sign(self, transaction, gas=None, sub_fee_from_value=False) -> Any:
-        if transaction.get("gasPrice", transaction.get("maxPriorityFeePerGas", None)) is None:
+        if transaction.get("gasPrice", None) is None:
             fee_history = await self.w3.eth.fee_history(1, 'latest', [10])
             base_fee = int(fee_history['baseFeePerGas'][-1] * GAS_MULTIPLIER)
             priority_fee = await self.w3.eth.max_priority_fee
