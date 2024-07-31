@@ -552,7 +552,7 @@ class Scenarios(Account):
             from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
         )
 
-    async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script):
+    async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script, adjust_ambient_wrseth_eth_position_scenario):
         withdraw_cooldown = 60 * 25
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
@@ -619,6 +619,12 @@ class Scenarios(Account):
             return True
 
         logger.info(f"{self.log_prefix} Scroll account balance is good, no need to withdraw to Ethereum")
+
+        if current_deposit == 0:
+            logger.info(f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
+
+            await adjust_ambient_wrseth_eth_position_scenario(self.account_id, self.private_key, self.recipient)
+            return True
 
         # теперь мы должно проверить, что в майннете есть баланс для обратного вывода на биржу
         balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
@@ -763,6 +769,7 @@ class Scenarios(Account):
             min_eth_balance_after_script,
             max_eth_balance_after_script,
             ethereum_eth_left_balance_min_after_deposit,
+            adjust_ambient_wrseth_eth_position_scenario
     ):
         logger.info(f"{self.log_prefix} Start check conditions to mint Ambient Providoor badge")
 
@@ -790,7 +797,7 @@ class Scenarios(Account):
                 logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
 
             # выводим на окекс
-            result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script)
+            result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script, adjust_ambient_wrseth_eth_position_scenario)
             return result
 
         logger.info(f"{self.log_prefix} Ambient Providoor Badge is not minted")
@@ -1013,6 +1020,7 @@ class Scenarios(Account):
             max_wait_time_before_accounts,
             min_wait_time_before_iterations,
             max_wait_time_before_iterations,
+            adjust_ambient_wrseth_eth_position_scenario
     ):
         self.okex = Okex(OKEX_API_KEY, OKEX_SECRET_KEY, OKEX_PASSPHRASE, OKEX_PROXY)
         self.current_accounts = get_current_accounts()
@@ -1057,6 +1065,7 @@ class Scenarios(Account):
                 min_eth_balance_after_script,
                 max_eth_balance_after_script,
                 ethereum_eth_left_balance_min_after_deposit,
+                adjust_ambient_wrseth_eth_position_scenario
             )
 
             if iteration_result is None:

@@ -620,7 +620,7 @@ async def stake_kelp_and_deposit_ambient_finance(account_id, key, recipient):
     )
 
 
-async def adjust_ambient_wrseth_eth_position(account_id, key, recipient):
+async def adjust_ambient_wrseth_eth_position_scenario(account_id, key, recipient):
     min_left_eth_balance = 0.0045
     max_left_eth_balance = 0.0055
 
@@ -693,6 +693,7 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
         max_wait_time_before_accounts,
         min_wait_time_before_iterations,
         max_wait_time_before_iterations,
+        adjust_ambient_wrseth_eth_position_scenario
     )
 
 
@@ -1245,7 +1246,7 @@ async def custom_routes(account_id, key, recipient):
         # withdraw_rhomarkets,
         # stake_kelp_and_deposit_ambient_finance,
         withdrawal_ambient_finance,
-        adjust_ambient_wrseth_eth_position
+        adjust_ambient_wrseth_eth_position_scenario
     ]
 
     sleep_from = 10
