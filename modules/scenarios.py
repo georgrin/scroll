@@ -817,6 +817,14 @@ class Scenarios(Account):
         if is_badge_eligible:
             # если у нас нет значка, но мы можем его сминтить, то запускаем минт
             logger.info(f"{self.log_prefix} Badge is eligible to mint")
+
+            is_minted = await self.scroll.is_profile_minted()
+            if not is_minted:
+                logger.info(f"{self.log_prefix} Account have to minted canvas before mint badges")
+
+                await self.scroll.mint_canvas()
+                return True
+
             await self.scroll.mint_ambient_providoor_badge()
             return True
 
