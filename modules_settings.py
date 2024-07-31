@@ -669,7 +669,7 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     max_eth_balance_after_script = 0.035
 
     # сколько минимум должно остаться на аккаунте ethereum после депозита в скролл (чтобы потом сделать транзу claim на вывод)
-    ethereum_eth_left_balance_min_after_deposit = 0.001
+    ethereum_eth_left_balance_min_after_deposit = 0.005
 
     # сколько аккаунтов можно запускать дополнительно, когда мы упираемся в действие, которое требует ожидание большого времени (например, ожидаем час вывод или депозит)
     max_current_accounts = 18
