@@ -99,7 +99,7 @@ def get_current_accounts():
     wallet_addresses = {EthereumAccount.from_key(wallet['key']).address.lower(): wallet for wallet in wallets}
     with open(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, 'r') as file:
         current_addresses = [row.strip().lower() for row in file if row.strip() != ""]
-        logger.info(
+        logger.debug(
             f"There are {len(current_addresses)} accounts to continue ambient badge scenario (file: {AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE})")
 
     filtered_wallets = [wallet for address, wallet in wallet_addresses.items() if address in current_addresses]
@@ -950,14 +950,14 @@ class Scenarios(Account):
     def append_address_to_file(self, file_name: str, address=None):
         if not address:
             address = self.address
-        logger.info(f"Try to add {address} to {file_name}")
+        logger.debug(f"Try to add {address} to {file_name}")
 
         with open(file_name, 'r+') as file:
             wallets = [row.strip().lower() for row in file if row.strip() != ""]
             if address.lower() not in wallets:
                 file.write(f"{address}\n")
             else:
-                logger.info(f"Account {address} already in file {file_name}")
+                logger.debug(f"Account {address} already in file {file_name}")
 
     def remove_address_from_file(self, file_name: str, address=None):
         if not address:
@@ -983,15 +983,20 @@ class Scenarios(Account):
                 self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
                 self.current_accounts.append(acc)
                 self.current_account_index = 0
+                logger.info(f"(1) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
                 return True
             else:
+                logger.debug(f"(2) No more accounts to process")
                 # аккаунты закончились
                 self.current_account_index = None
+
                 return False
 
         # последний аккаунт успешно выполнил сценарий и мы начинаем заново прогонять аккаунты
         if self.current_account_index > len(self.current_accounts) - 1:
             self.current_account_index = 0
+            logger.info(f"(3) Start handle accounts from the start")
+
             return True
 
         # если аккаунт послдений, то пытаемся добавить ещё аккаунт если можем
@@ -999,11 +1004,14 @@ class Scenarios(Account):
             # если аккаунтов уже слишком много, то снова возвращаемся к первому
             if len(self.current_accounts) >= max_current_accounts:
                 self.current_account_index = 0
+                logger.info(f"(4) Cannot add new accounts to current accounts because reach the limit, return to the first")
                 return True
 
             # если на окексе нет баланса, то не добавляем новые аккаунты пока что
             if self.okex_enough_balance is False:
                 self.current_account_index = 0
+                logger.info(f"(5) Cannot add new accounts to current accounts due to low Okex balance, return to the first")
+
                 return True
 
             # если лимит аккаунтов ещё не превышен, то добавляем новый аккаунт
@@ -1012,14 +1020,20 @@ class Scenarios(Account):
                 self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
                 self.current_accounts.append(acc)
                 self.current_account_index += 1
+                logger.info(f"(6) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
+
                 return True
             else:
                 # если лимит аккаунтов ещё не превышен, но новых аккаунтов нет, то начинаем заново
                 self.current_account_index = 0
+                logger.info(f"(7) Cannot add new accounts to current accounts because now new accounts found, return to the first")
+
                 return True
 
         # просто запускаем следующий аккаунт
         self.current_account_index += 1
+        logger.info(f"(8) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)}")
+
         return True
 
     def _finish_current_account(self):

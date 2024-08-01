@@ -1,13 +1,14 @@
 import random
+import aiohttp
+
 from datetime import datetime
 from onecache import AsyncCacheDecorator
-
-import aiohttp
 
 from loguru import logger
 from eth_account.messages import encode_defunct
 from aiohttp_socks import ProxyType, ProxyConnector, ChainProxyConnector
 from web3 import Web3
+from web3.exceptions import ContractLogicError
 
 from settings import USE_PROXIES
 from utils.gas_checker import check_gas
@@ -228,24 +229,30 @@ class Scroll(Account):
 
         tx_data = await self.get_tx_data(gas_price=False)
 
-        _from = self.w3.to_checksum_address(claim_info["from"])
-        _to = self.w3.to_checksum_address(claim_info["to"])
-        _value = int(claim_info["value"])
-        _nonce = int(claim_info["nonce"])
-        _message = Web3.to_bytes(hexstr=claim_info["message"])
-        _proof = (int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
+        try:
+            _from = self.w3.to_checksum_address(claim_info["from"])
+            _to = self.w3.to_checksum_address(claim_info["to"])
+            _value = int(claim_info["value"])
+            _nonce = int(claim_info["nonce"])
+            _message = Web3.to_bytes(hexstr=claim_info["message"])
+            _proof = (int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
 
-        contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
-        transaction = await contract.functions.relayMessageWithProof(
-            _from,
-            _to,
-            _value,
-            _nonce,
-            _message,
-            _proof
-        ).build_transaction(tx_data)
-        signed_txn = await self.sign(transaction)
-        txn_hash = await self.send_raw_transaction(signed_txn)
+            contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
+            transaction = await contract.functions.relayMessageWithProof(
+                _from,
+                _to,
+                _value,
+                _nonce,
+                _message,
+                _proof
+            ).build_transaction(tx_data)
+            signed_txn = await self.sign(transaction)
+            txn_hash = await self.send_raw_transaction(signed_txn)
+        except ContractLogicError as ex:
+            if "Message was already successfully executed" in str(ex):
+                logger.info("Claim was already successfully executed, skip")
+                return False
+            raise
 
         await self.wait_until_tx_finished(txn_hash.hex())
 
