@@ -14,7 +14,7 @@ from config import (SCROLL_TOKENS,
                     DEPOSITS_ADDRESSES,
                     ACCOUNTS)
 from settings import RANDOM_WALLET, RETRY_COUNT
-from utils.helpers import get_eth_usd_price
+from utils.helpers import get_eth_usd_price, timeout
 from utils.sleeping import sleep
 from . import AmbientFinance, Kelp, Scroll
 from .account import Account
@@ -775,6 +775,7 @@ class Scenarios(Account):
         )
 
     @retry
+    @timeout(60 * 5, RuntimeError, "Iteration timeout reached (5 minutes), skipping the iteration and try again")
     async def _mint_ambient_providoor_badge_iteration(
             self,
             min_deposit_amount_usd: int,
@@ -1035,7 +1036,7 @@ class Scenarios(Account):
 
         # просто запускаем следующий аккаунт
         self.current_account_index += 1
-        logger.info(f"(8) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)}")
+        logger.info(f"(8) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)})")
 
         return True
 
