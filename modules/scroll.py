@@ -237,7 +237,7 @@ class Scroll(Account):
             _nonce = int(claim_info["nonce"])
             _message = Web3.to_bytes(hexstr=claim_info["message"])
             _proof = (
-            int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
+                int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
 
             contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
             transaction = await contract.functions.relayMessageWithProof(
