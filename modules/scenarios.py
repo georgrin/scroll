@@ -730,9 +730,12 @@ class Scenarios(Account):
 
     async def _get_pending_bridge_tx(self):
         proxy = self.scroll.get_random_proxy()
-        tx_list = await self.scroll.get_bridge_tx_list(4, proxy)
+        tx_list = await self.scroll.get_bridge_tx_list(3, proxy)
 
         for tx in tx_list:
+            # статус если tx reverted
+            if tx["tx_status"] == 1:
+                continue
             # tx["message_type"] == 3 это экономный депозит
             if tx["tx_status"] != 8 and tx["message_type"] == 3:
                 return tx
