@@ -159,7 +159,8 @@ class Scroll(Account):
         deposit_amount_wei = amount_wei + fee if min_percent != 100 else amount_wei
         if balance - deposit_amount_wei < eth_left_balance_min_after_deposit_wei:
             deposit_amount_wei = balance - eth_left_balance_min_after_deposit_wei
-            logger.info(f"{self.log_prefix} Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
+            logger.info(
+                f"{self.log_prefix} Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
 
         tx_data = await self.get_tx_data(deposit_amount_wei, False)
 
@@ -235,7 +236,8 @@ class Scroll(Account):
             _value = int(claim_info["value"])
             _nonce = int(claim_info["nonce"])
             _message = Web3.to_bytes(hexstr=claim_info["message"])
-            _proof = (int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
+            _proof = (
+            int(claim_info["proof"]["batch_index"]), Web3.to_bytes(hexstr=claim_info["proof"]["merkle_proof"]))
 
             contract = self.get_contract(BRIDGE_CONTRACTS["deposit"], DEPOSIT_ABI)
             transaction = await contract.functions.relayMessageWithProof(
@@ -248,13 +250,13 @@ class Scroll(Account):
             ).build_transaction(tx_data)
             signed_txn = await self.sign(transaction)
             txn_hash = await self.send_raw_transaction(signed_txn)
+
+            await self.wait_until_tx_finished(txn_hash.hex())
         except ContractLogicError as ex:
             if "Message was already successfully executed" in str(ex):
                 logger.info("Claim was already successfully executed, skip")
                 return False
             raise
-
-        await self.wait_until_tx_finished(txn_hash.hex())
 
     @retry
     @check_gas
@@ -487,7 +489,7 @@ class Scroll(Account):
     async def is_ambient_swapoor_badge_eligible(self):
         return await self.is_badge_eligible(
             SCROLL_CANVAS_AMBIENT_SWAPOOOR_BADGE_CONTRACT,
-            url = f"https://ambient-scroll-badge.liquidity.tools/api/check"
+            url=f"https://ambient-scroll-badge.liquidity.tools/api/check"
         )
 
     @retry
@@ -615,7 +617,7 @@ class Scroll(Account):
 
     @retry
     @AsyncCacheDecorator(ttl=1000 * 1)
-    async def is_badge_eligible(self, badge: str, proxy=None, url = "https://canvas.scroll.cat/badge/check") -> bool:
+    async def is_badge_eligible(self, badge: str, proxy=None, url="https://canvas.scroll.cat/badge/check") -> bool:
         if not proxy:
             proxy = self.get_random_proxy()
 
