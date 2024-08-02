@@ -2,7 +2,6 @@ import asyncio
 import time
 import random
 
-from decimal import ROUND_DOWN, Decimal
 from typing import Union, Type, Dict, Any
 
 from hexbytes import HexBytes
@@ -14,16 +13,9 @@ from web3.exceptions import TransactionNotFound
 from web3.middleware import async_simple_cache_middleware, async_geth_poa_middleware
 
 from config import RPC, ERC20_ABI, SCROLL_TOKENS
-from settings import GAS_MULTIPLIER, MAX_PRIORITY_FEE, GAS_LIMIT_MULTIPLIER
+from settings import GAS_MULTIPLIER, GAS_LIMIT_MULTIPLIER
+from utils.helpers import float_floor
 from utils.sleeping import sleep
-
-
-def floor(value: Decimal, places=6) -> Decimal:
-    return value.quantize(Decimal(10) ** -places, rounding=ROUND_DOWN)
-
-
-def float_floor(value: Decimal, places=6):
-    return float(floor(Decimal(value), places=places))
 
 
 class Account:

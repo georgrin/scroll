@@ -12,7 +12,7 @@ from web3.exceptions import ContractLogicError
 
 from settings import USE_PROXIES
 from utils.gas_checker import check_gas
-from utils.helpers import retry, checkLastIteration
+from utils.helpers import retry, checkLastIteration, float_floor
 from utils.sleeping import sleep
 from .account import Account
 
@@ -158,7 +158,7 @@ class Scroll(Account):
         eth_left_balance_min_after_deposit_wei = self.w3.to_wei(eth_left_balance_min_after_deposit, "ether")
         deposit_amount_wei = amount_wei + fee if min_percent != 100 else amount_wei
         if balance - deposit_amount_wei < eth_left_balance_min_after_deposit_wei:
-            deposit_amount_wei = balance - eth_left_balance_min_after_deposit_wei
+            deposit_amount_wei = float_floor(balance - eth_left_balance_min_after_deposit_wei, decimal)
             logger.info(
                 f"{self.log_prefix} Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
 
