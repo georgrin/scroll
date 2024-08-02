@@ -976,7 +976,7 @@ class Scenarios(Account):
             address = self.address
         logger.info(f"Try to remove {address} from {file_name}")
 
-        with open(file_name, "r") as file_input:
+        with open(file_name, "r+") as file_input:
             with open(file_name, "w") as output:
                 for line in file_input:
                     if line.strip("\n").lower() != address.lower():
