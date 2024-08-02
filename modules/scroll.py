@@ -161,7 +161,7 @@ class Scroll(Account):
             deposit_amount = float_floor((balance - eth_left_balance_min_after_deposit_wei) / 10 ** 18, decimal)
             deposit_amount_wei = self.w3.to_wei(deposit_amount, "ether")
             logger.info(
-                f"{self.log_prefix} Bridge to Scroll | {deposit_amount_wei / 10 ** 18} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
+                f"{self.log_prefix} Bridge to Scroll | {deposit_amount} ETH, not {amount}, because left balance would be less then {eth_left_balance_min_after_deposit} ETH")
 
         tx_data = await self.get_tx_data(deposit_amount_wei, False)
 
