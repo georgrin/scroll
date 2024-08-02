@@ -562,7 +562,7 @@ class Scenarios(Account):
             logger.info(f"{self.log_prefix} withdraw from Scroll was pretty recently, have to wait before continue")
             return False
 
-        claim_withdraw_cooldown = 60 * 2
+        claim_withdraw_cooldown = 30
         last_iter_claim_withdraw = await self.scroll_ethereum.check_last_claim_withdraw_iteration(
             claim_withdraw_cooldown
         )
@@ -578,6 +578,9 @@ class Scenarios(Account):
             if bridge_tx_pending["message_type"] == 2:  # вывод
                 logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
                 claim_result = await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)
+                if claim_result is not False:
+                    await sleep(30, 35)
+
                 return claim_result is not False
             else:  # депозит
                 # мы не можем действовать пока есть пендинг транзакции, поэтому лучше переключиться на другие аккаунты
