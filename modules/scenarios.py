@@ -130,6 +130,7 @@ class Scenarios(Account):
         # используется для текущих аккаунтов для минта значка амбиент за 1000 депозит
         self.current_accounts = []
         self.current_account_index = 0
+        self.okex_enough_balance = True
 
     def load_account(self, account_id: int, private_key: str):
         if account_id == self.account_id:
@@ -951,7 +952,10 @@ class Scenarios(Account):
                 !!                                                                                                                          !!
                 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             """)
+            self.okex_enough_balance = False
             return False
+
+        self.okex_enough_balance = True
 
         await self._buy_and_withdraw_eth(amount_to_withdraw)
 
@@ -980,7 +984,7 @@ class Scenarios(Account):
             wallets = [row.strip().lower() for row in file_input if row.strip() != ""]
 
             with open(file_name, "w") as output:
-                for wallet in wallets :
+                for wallet in wallets:
                     if wallet.lower() != address.lower():
                         output.write(f"{wallet.lower()}\n")
                     else:
@@ -1023,6 +1027,13 @@ class Scenarios(Account):
                     f"(4) Cannot add new accounts to current accounts because reach the limit, return to the first")
                 return True
 
+            # если на окексе нет баланса, то не добавляем новые аккаунты пока что
+            if self.okex_enough_balance is False:
+                self.current_account_index = 0
+                logger.info(f"(5) Cannot add new accounts to current accounts due to low Okex balance, return to the first")
+
+                return True
+
             # если лимит аккаунтов ещё не превышен, то добавляем новый аккаунт
             acc = get_random_account()
             if acc:
@@ -1030,21 +1041,21 @@ class Scenarios(Account):
                 self.current_accounts.append(acc)
                 self.current_account_index += 1
                 logger.info(
-                    f"(5) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
+                    f"(6) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
 
                 return True
             else:
                 # если лимит аккаунтов ещё не превышен, но новых аккаунтов нет, то начинаем заново
                 self.current_account_index = 0
                 logger.info(
-                    f"(6) Cannot add new accounts to current accounts because now new accounts found, return to the first")
+                    f"(7) Cannot add new accounts to current accounts because now new accounts found, return to the first")
 
                 return True
 
         # просто запускаем следующий аккаунт
         self.current_account_index += 1
         logger.info(
-            f"(7) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)})")
+            f"(8) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)})")
 
         return True
 
