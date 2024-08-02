@@ -872,7 +872,7 @@ class Scenarios(Account):
             await self._make_1000_usd_deposit_ambient()
             return True
 
-        # если на аккаунте недостаточно средств, то проверяем не делали ли недавно вывод (чтобы дать обновиться информации в апи)
+        # если на аккаунте недостаточно средств, то проверяем не делали ли недавно экономный (чтобы дать обновиться информации в апи)
         deposit_economy_cooldown = 60 * 20
         last_iter_deposit_economy = await self.scroll_ethereum.check_last_deposit_economy_iteration(
             deposit_economy_cooldown
