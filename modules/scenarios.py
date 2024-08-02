@@ -974,7 +974,7 @@ class Scenarios(Account):
     def remove_address_from_file(self, file_name: str, address=None):
         if not address:
             address = self.address
-        logger.info(f"Try to remove {self.address} from {file_name}")
+        logger.info(f"Try to remove {address} from {file_name}")
 
         with open(file_name, "r") as file_input:
             with open(file_name, "w") as output:
