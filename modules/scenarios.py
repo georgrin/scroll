@@ -968,7 +968,7 @@ class Scenarios(Account):
         with open(file_name, "r") as file_input:
             with open(file_name, "w") as output:
                 for line in file_input:
-                    if line.strip("\n").lower() != self.address.lower():
+                    if line.strip("\n").lower() != address.lower():
                         output.write(line.lower())
                     else:
                         logger.info(f" Account {address} removed from {file_name}")
