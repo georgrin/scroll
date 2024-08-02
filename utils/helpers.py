@@ -2,6 +2,8 @@ import asyncio
 import random
 import time
 import traceback
+from decimal import Decimal, ROUND_DOWN
+
 import requests
 import json
 
@@ -258,6 +260,14 @@ async def checkLastIteration(interval: int,
         return True
 
 
+def floor(value: Decimal, places=6) -> Decimal:
+    return value.quantize(Decimal(10) ** -places, rounding=ROUND_DOWN)
+
+
+def float_floor(value: Decimal, places=6):
+    return float(floor(Decimal(value), places=places))
+
+
 def find_duplicate_in_dict(dict):
     # finding duplicate values
     # from dictionary using set
@@ -272,7 +282,7 @@ def find_duplicate_in_dict(dict):
 
 def timeout(
         timeout_duration: float = None, exception_to_raise: Type[Exception] = TimeoutError,
-        error_msg = "Timeout reached"
+        error_msg="Timeout reached"
 ):
     """
     Wraps a function to raise the specified exception if execution time
