@@ -967,7 +967,7 @@ class Scenarios(Account):
         with open(file_name, 'r+') as file:
             wallets = [row.strip().lower() for row in file if row.strip() != ""]
             if address.lower() not in wallets:
-                file.write(f"{address}\n")
+                file.write(f"{address.lower()}\n")
             else:
                 logger.debug(f"Account {address} already in file {file_name}")
 
@@ -977,10 +977,12 @@ class Scenarios(Account):
         logger.info(f"Try to remove {address} from {file_name}")
 
         with open(file_name, "r+") as file_input:
+            wallets = [row.strip().lower() for row in file_input if row.strip() != ""]
+
             with open(file_name, "w") as output:
-                for line in file_input:
-                    if line.strip("\n").lower() != address.lower():
-                        output.write(line.lower())
+                for wallet in wallets :
+                    if wallet.lower() != address.lower():
+                        output.write(f"{wallet.lower()}\n")
                     else:
                         logger.info(f" Account {address} removed from {file_name}")
 
