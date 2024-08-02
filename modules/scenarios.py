@@ -551,7 +551,8 @@ class Scenarios(Account):
             from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
         )
 
-    async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script, adjust_ambient_wrseth_eth_position_scenario):
+    async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script,
+                                adjust_ambient_wrseth_eth_position_scenario):
         withdraw_cooldown = 60 * 25
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
@@ -630,7 +631,8 @@ class Scenarios(Account):
         logger.info(f"{self.log_prefix} Scroll account balance is good, no need to withdraw to Ethereum")
 
         if current_deposit == 0:
-            logger.info(f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
+            logger.info(
+                f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
 
             await adjust_ambient_wrseth_eth_position_scenario(self.account_id, self.private_key, self.recipient)
             return True
@@ -810,7 +812,8 @@ class Scenarios(Account):
                 logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
 
             # выводим на окекс
-            result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script, adjust_ambient_wrseth_eth_position_scenario)
+            result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script,
+                                                  adjust_ambient_wrseth_eth_position_scenario)
             return result
 
         logger.info(f"{self.log_prefix} Ambient Providoor Badge is not minted")
@@ -924,7 +927,12 @@ class Scenarios(Account):
         logger.info(
             f"Can withdraw from Okex approximately {can_withdraw_eth_estimated} ETH (~{can_withdraw_usd_estimated} USD)")
 
-        if can_withdraw_usd_estimated < max_deposit_amount_usd and can_withdraw_usd_estimated > min_deposit_amount_usd:
+        if balance_eth_ethereum_in_usd > 20:
+            # оставляем дополнительно 10 долларов оплату комсы, деньги на claim и т.д.
+            min_deposit_amount_usd = min_deposit_amount_usd - int(balance_eth_ethereum_in_usd) + 10
+            max_deposit_amount_usd = max_deposit_amount_usd - int(balance_eth_ethereum_in_usd) + 10
+
+        if max_deposit_amount_usd > can_withdraw_usd_estimated > min_deposit_amount_usd:
             max_deposit_amount_usd = int(can_withdraw_usd_estimated)
 
         deposit_amount_usd = random.randint(min_deposit_amount_usd, max_deposit_amount_usd)
@@ -984,7 +992,8 @@ class Scenarios(Account):
                 self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
                 self.current_accounts.append(acc)
                 self.current_account_index = 0
-                logger.info(f"(1) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
+                logger.info(
+                    f"(1) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
                 return True
             else:
                 logger.debug(f"(2) No more accounts to process")
@@ -1005,7 +1014,8 @@ class Scenarios(Account):
             # если аккаунтов уже слишком много, то снова возвращаемся к первому
             if len(self.current_accounts) >= max_current_accounts:
                 self.current_account_index = 0
-                logger.info(f"(4) Cannot add new accounts to current accounts because reach the limit, return to the first")
+                logger.info(
+                    f"(4) Cannot add new accounts to current accounts because reach the limit, return to the first")
                 return True
 
             # если лимит аккаунтов ещё не превышен, то добавляем новый аккаунт
@@ -1014,19 +1024,22 @@ class Scenarios(Account):
                 self.append_address_to_file(AMBIENT_BADGE_CURRENT_ACCOUNTS_FILE, get_acc_address(acc))
                 self.current_accounts.append(acc)
                 self.current_account_index += 1
-                logger.info(f"(5) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
+                logger.info(
+                    f"(5) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
 
                 return True
             else:
                 # если лимит аккаунтов ещё не превышен, но новых аккаунтов нет, то начинаем заново
                 self.current_account_index = 0
-                logger.info(f"(6) Cannot add new accounts to current accounts because now new accounts found, return to the first")
+                logger.info(
+                    f"(6) Cannot add new accounts to current accounts because now new accounts found, return to the first")
 
                 return True
 
         # просто запускаем следующий аккаунт
         self.current_account_index += 1
-        logger.info(f"(7) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)})")
+        logger.info(
+            f"(7) Move from {self.current_account_index - 1} to {self.current_account_index} account (total: {len(self.current_accounts)})")
 
         return True
 
