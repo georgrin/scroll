@@ -862,7 +862,7 @@ class Scenarios(Account):
         logger.info(
             f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
 
-        if total_scroll_assets > min_deposit_amount_usd:
+        if total_scroll_assets > min_deposit_amount_usd or total_scroll_assets > USD_1000 * 1.05:
             logger.info(
                 f"{self.log_prefix} current Scroll balance is enough to make deposit")
             # если на аккаунте достаточно средств, чтобы сделать новый депозит, то делаем его
@@ -897,7 +897,7 @@ class Scenarios(Account):
         logger.info(
             f"{self.log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH (~{balance_eth_ethereum_in_usd} USD)")
 
-        if balance_eth_ethereum_in_usd > min_deposit_amount_usd:
+        if balance_eth_ethereum_in_usd > min_deposit_amount_usd or balance_eth_ethereum_in_usd > USD_1000 * 1.1:
             # если на аккаунте в майннете достаточно средств, чтобы сделать новый депозит, то делаем бридж
             logger.info(
                 f"{self.log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
