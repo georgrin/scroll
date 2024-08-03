@@ -256,7 +256,7 @@ class Scroll(Account):
         except ContractLogicError as ex:
             if "Message was already successfully executed" in str(ex):
                 logger.info("Claim was already successfully executed, skip")
-                return False
+                return None
             raise
 
     @retry
