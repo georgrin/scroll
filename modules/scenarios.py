@@ -656,7 +656,7 @@ class Scenarios(Account):
             min_deposit = deposit_info.min_amount
             logger.debug(f"Min deposit for ethereum.ETH: {min_deposit}")
 
-            if balance_eth_ethereum > 2 * min_deposit:
+            if balance_eth_ethereum > 10 * min_deposit:
                 deposit_addresses = DEPOSITS_ADDRESSES.get(self.address, None)
                 logger.info(f"{self.log_prefix} deposit address: {deposit_addresses}")
                 if not deposit_addresses:
