@@ -643,6 +643,9 @@ async def adjust_ambient_wrseth_eth_position_scenario(account_id, key, recipient
     # сколько раз повторяем депозит с уменьшением кол-ва баланса
     ambient_max_deposit_attempts = 100
 
+    # минимальный размер ордера продажи покупки wrseth
+    min_trade_amount_wrseth_wei = 5000000000000000
+
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.adjust_ambient_wrseth_eth_position(
         decimal,
@@ -656,7 +659,8 @@ async def adjust_ambient_wrseth_eth_position_scenario(account_id, key, recipient
         max_left_eth_balance,
         min_deposit_percent,
         max_deposit_percent,
-        ambient_max_deposit_attempts)
+        ambient_max_deposit_attempts,
+        min_trade_amount_wrseth_wei)
 
 
 async def mint_ambient_providoor_badge(account_id, key, recipient):

@@ -318,7 +318,8 @@ class Scenarios(Account):
                                                  max_left_eth_balance: float,
                                                  min_deposit_percent: int,
                                                  max_deposit_percent: int,
-                                                 ambient_max_deposit_attempts: int = 1):
+                                                 ambient_max_deposit_attempts: int = 1,
+                                                 min_trade_amount_wrseth_wei: int = 5000000000000000):
         logger.info(f"[{self.account_id}][{self.address}] Start adjust Ambient wrsETH/ETH position")
         ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
 
@@ -329,11 +330,8 @@ class Scenarios(Account):
         balance_eth_wei = await self.w3.eth.get_balance(self.address)
         balance_eth = balance_eth_wei / 10 ** 18
 
-        # минимальный размер ордера продажи покупки wrseth
-        min_trade_amount_wrseth_wei = 5000000000000000
-        min_trade_amount_wrseth_wei = 500000000000000000 # убрать после бейджей - тк это вызывает две лишних итерации
         # разрешенное отклонение депозита от желаемого объёма в процентах
-        deposit_percent_allowed_error = 8
+        deposit_percent_allowed_error = 10
 
         logger.info(
             f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
@@ -581,7 +579,7 @@ class Scenarios(Account):
                 logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
                 claim_result = await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)
                 if claim_result is not False:
-                    await sleep(15, 15)
+                    await sleep(15, 17)
 
                 return claim_result is not False
             else:  # депозит
@@ -631,17 +629,18 @@ class Scenarios(Account):
                 f"{self.log_prefix} Try to withdraw {round(min_amount, decimal)}-{round(max_amount)} ETH to Ethereum from Scroll")
 
             await self.scroll.withdraw(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
-            # после вывода из скролла сразу переходим к следующему аккаунту
-            return False
+            # после вывода из скролла мы должнцы сначала сделать ambient позу
+            return True
 
         logger.info(f"{self.log_prefix} Scroll account balance is good, no need to withdraw to Ethereum")
 
         if current_deposit == 0:
-            logger.info(
-                f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
+            logger.info(f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
 
             await adjust_ambient_wrseth_eth_position_scenario(self.account_id, self.private_key, self.recipient)
             return True
+        else:
+            logger.info(f"{self.log_prefix} There are active Ambient positions, no need to adjust")
 
         # теперь мы должно проверить, что в майннете есть баланс для обратного вывода на биржу
         balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
@@ -703,6 +702,9 @@ class Scenarios(Account):
         min_deposit_percent = 100
         max_deposit_percent = 100
 
+        # минимальный размер ордера продажи покупки wrseth
+        min_trade_amount_wrseth_wei = 500000000000000000 # убрать после бейджей - тк это вызывает две лишних итерации
+
         # сколько раз повторяем депозит с уменьшением кол-ва баланса
         ambient_max_deposit_attempts = 100
         await self.adjust_ambient_wrseth_eth_position(
@@ -717,7 +719,8 @@ class Scenarios(Account):
             max_left_eth_balance,
             min_deposit_percent,
             max_deposit_percent,
-            ambient_max_deposit_attempts
+            ambient_max_deposit_attempts,
+            min_trade_amount_wrseth_wei
         )
 
     async def _deposit_economy_to_scroll(self, eth_left_balance_min_after_deposit):
@@ -784,7 +787,7 @@ class Scenarios(Account):
         )
 
     @retry
-    @timeout(60 * 5, RuntimeError, "Iteration timeout reached (5 minutes), skipping the iteration and try again")
+    @timeout(int(60 * 3), RuntimeError, "Iteration timeout reached (3 minutes), skipping the iteration and try again")
     async def _mint_ambient_providoor_badge_iteration(
             self,
             min_deposit_amount_usd: int,
