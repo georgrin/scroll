@@ -738,6 +738,8 @@ class Scenarios(Account):
         tx_list = await self.scroll.get_bridge_tx_list(3, proxy)
 
         for tx in tx_list:
+            if tx["message_type"] == 1 and tx["tx_status"] == 0:
+                continue
             # статус если tx reverted
             if tx["tx_status"] == 1:
                 continue
