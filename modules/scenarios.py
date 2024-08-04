@@ -551,8 +551,13 @@ class Scenarios(Account):
             from_token, to_token, min_amount, max_amount, decimal, slippage, all_amount, min_percent, max_percent
         )
 
-    async def _withdraw_to_okex(self, min_eth_balance_after_script, max_eth_balance_after_script,
-                                adjust_ambient_wrseth_eth_position_scenario):
+    async def _withdraw_to_okex(
+            self,
+            min_eth_balance_after_script,
+            max_eth_balance_after_script,
+            adjust_ambient_wrseth_eth_position_scenario,
+            ethereum_eth_left_balance_min_after_deposit
+    ):
         withdraw_cooldown = 60 * 25
         last_iter_withdraw = await self.scroll.check_last_withdraw_iteration(
             withdraw_cooldown
@@ -577,6 +582,26 @@ class Scenarios(Account):
             # мы не можем действовать пока есть пендинг транзакции
             if bridge_tx_pending["message_type"] == 2:  # вывод
                 logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
+
+                eth_price_in_usd = await get_eth_usd_price("scroll")
+
+                # теперь мы должно проверить, что в майннете есть баланс для claim
+                balance_eth_wei_ethereum = await self.scroll_ethereum.w3.eth.get_balance(self.address)
+                balance_eth_ethereum = balance_eth_wei_ethereum / 10 ** 18
+                balance_eth_ethereum_in_usd = eth_price_in_usd * balance_eth_ethereum
+                logger.info(
+                    f"{self.log_prefix} current Ethereum balance: {balance_eth_ethereum} ETH, ~{balance_eth_ethereum_in_usd} USD")
+
+                # если баланс меньше  0.005 ETH, то не имеет даже смысла делать запрос на клейм
+                if balance_eth_wei_ethereum < 0.7 * ethereum_eth_left_balance_min_after_deposit * 10 ** 18:
+                    logger.info(
+                        f"{self.log_prefix} current Ethereum balance is not enough to make claim tx, try to withdraw {ethereum_eth_left_balance_min_after_deposit} ETH from Okex")
+                    await self._buy_and_withdraw_eth(ethereum_eth_left_balance_min_after_deposit)
+
+                    return False
+
+                logger.info(f"{self.log_prefix} current Ethereum balance is enough to make claim tx")
+
                 claim_result = await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)
                 if claim_result is not False:
                     await sleep(15, 17)
@@ -637,7 +662,8 @@ class Scenarios(Account):
         logger.info(f"{self.log_prefix} Scroll account balance is good, no need to withdraw to Ethereum")
 
         if current_deposit == 0:
-            logger.info(f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
+            logger.info(
+                f"{self.log_prefix} There are no active Ambient position after withdrawal from Scroll to Ethereum, try to make some")
 
             await adjust_ambient_wrseth_eth_position_scenario(self.account_id, self.private_key, self.recipient)
             return True
@@ -705,7 +731,7 @@ class Scenarios(Account):
         max_deposit_percent = 100
 
         # минимальный размер ордера продажи покупки wrseth
-        min_trade_amount_wrseth_wei = 500000000000000000 # убрать после бейджей - тк это вызывает две лишних итерации
+        min_trade_amount_wrseth_wei = 500000000000000000  # убрать после бейджей - тк это вызывает две лишних итерации
 
         # сколько раз повторяем депозит с уменьшением кол-ва баланса
         ambient_max_deposit_attempts = 100
@@ -827,7 +853,8 @@ class Scenarios(Account):
             # выводим на окекс
             result = await self._withdraw_to_okex(min_eth_balance_after_script,
                                                   max_eth_balance_after_script,
-                                                  adjust_ambient_wrseth_eth_position_scenario)
+                                                  adjust_ambient_wrseth_eth_position_scenario,
+                                                  ethereum_eth_left_balance_min_after_deposit)
             return result
 
         logger.info(f"{self.log_prefix} Ambient Providoor Badge is not minted")
