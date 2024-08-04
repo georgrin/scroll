@@ -331,6 +331,7 @@ class Scenarios(Account):
 
         # минимальный размер ордера продажи покупки wrseth
         min_trade_amount_wrseth_wei = 5000000000000000
+        min_trade_amount_wrseth_wei = 500000000000000000 # убрать после бейджей - тк это вызывает две лишних итерации                                         
         # разрешенное отклонение депозита от желаемого объёма в процентах
         deposit_percent_allowed_error = 8
 
