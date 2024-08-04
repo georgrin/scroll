@@ -911,6 +911,7 @@ class Scenarios(Account):
             logger.info(
                 f"{self.log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
             await self._deposit_economy_to_scroll(ethereum_eth_left_balance_min_after_deposit)
+            await sleep(15, 20) # тормозит scrollscan
             return True
 
         # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то делаем вывод с биржи
