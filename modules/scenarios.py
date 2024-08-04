@@ -588,6 +588,8 @@ class Scenarios(Account):
                     f"{self.log_prefix} there is PENDING bridge TX, wait it for complete before take any actions: {bridge_tx_pending}")
             return False
 
+        logger.info(f"{self.log_prefix} there are no PENDING bridge or withdrawal TX, continue")
+
         # на балансе более чем нужно, то делаем вывод на биржу через майннет
         min_bridge_amount_eth = 0.01
         eth_price_in_usd = await get_eth_usd_price("scroll")
