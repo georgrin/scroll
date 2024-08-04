@@ -571,7 +571,7 @@ class Scenarios(Account):
             # депозит был слишком недавно, нужно время, чтобы информация в апи обновилась
             logger.info(
                 f"{self.log_prefix} Claim Withdrawal from Scroll was pretty recently, have to wait before continue")
-            return False
+            return True
 
         bridge_tx_pending = await self._get_pending_bridge_tx()
         if bridge_tx_pending:
@@ -630,7 +630,8 @@ class Scenarios(Account):
                 f"{self.log_prefix} Try to withdraw {round(min_amount, decimal)}-{round(max_amount)} ETH to Ethereum from Scroll")
 
             await self.scroll.withdraw(min_amount, max_amount, decimal, all_amount, min_percent, max_percent)
-            return True
+            # после вывода из скролла сразу переходим к следующему аккаунту
+            return False
 
         logger.info(f"{self.log_prefix} Scroll account balance is good, no need to withdraw to Ethereum")
 
@@ -818,7 +819,8 @@ class Scenarios(Account):
                 logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
 
             # выводим на окекс
-            result = await self._withdraw_to_okex(min_eth_balance_after_script, max_eth_balance_after_script,
+            result = await self._withdraw_to_okex(min_eth_balance_after_script,
+                                                  max_eth_balance_after_script,
                                                   adjust_ambient_wrseth_eth_position_scenario)
             return result
 
@@ -828,19 +830,25 @@ class Scenarios(Account):
         is_badge_eligible = await self.scroll.is_ambient_providoor_badge_eligible()
         if is_badge_eligible:
             # если у нас нет значка, но мы можем его сминтить, то запускаем минт
-            logger.info(f"{self.log_prefix} Badge is eligible to mint")
+            logger.info(f"{self.log_prefix} Ambient Providoor Badge is eligible to mint")
 
             is_minted = await self.scroll.is_profile_minted()
             if not is_minted:
-                logger.info(f"{self.log_prefix} Account have to minted canvas before mint badges")
+                logger.info(f"{self.log_prefix} Account have to minted canvas before mint any badges")
 
                 await self.scroll.mint_canvas()
-                return True
+                await sleep(20, 25)
 
             await self.scroll.mint_ambient_providoor_badge()
+
+            await sleep(15, 15)
+
+            logger.info(f"{self.log_prefix} Try to mint Ambient Swapooor Badge")
+            await self.scroll.mint_ambient_swapooor_badge()
+
             return True
 
-        logger.info(f"{self.log_prefix} Badge is not eligible to mint")
+        logger.info(f"{self.log_prefix} Ambient Providoor Badge is not eligible to mint, continue")
 
         # eth_price_in_usd = await get_eth_usd_price("scroll")
         eth_price_in_usd = self._get_okex_eth_price()
@@ -850,8 +858,7 @@ class Scenarios(Account):
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
         est_current_deposit_in_usd = current_deposit * eth_price_in_usd
 
-        logger.info(
-            f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
 
         if est_current_deposit_in_usd > USD_1000 or est_current_deposit_in_usd > 0.9 * min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
@@ -868,12 +875,10 @@ class Scenarios(Account):
 
         total_scroll_assets = eth_price_in_usd * (balance_eth + balance_wrseth) + est_current_deposit_in_usd
 
-        logger.info(
-            f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
+        logger.info(f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
 
         if total_scroll_assets > min_deposit_amount_usd or total_scroll_assets > USD_1000 * 1.05:
-            logger.info(
-                f"{self.log_prefix} current Scroll balance is enough to make deposit")
+            logger.info(f"{self.log_prefix} current Scroll balance is enough to make deposit")
             # если на аккаунте достаточно средств, чтобы сделать новый депозит, то делаем его
             await self._make_1000_usd_deposit_ambient()
             return True
@@ -911,7 +916,8 @@ class Scenarios(Account):
             logger.info(
                 f"{self.log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
             await self._deposit_economy_to_scroll(ethereum_eth_left_balance_min_after_deposit)
-            return True
+            # после депозита в скролл сразу переходим к следующему аккаунту
+            return False
 
         # если на аккаунте в майннете недостаточно средств, чтобы сделать новый депозит, то делаем вывод с биржи
         # но для начала проверяем что нет сейчас пендинг выводов
@@ -963,7 +969,8 @@ class Scenarios(Account):
 
         logger.info(f"Done this iteration, return")
 
-        return True
+        # после вывода переходим к следующему аккаунту
+        return False
 
     def append_address_to_file(self, file_name: str, address=None):
         if not address:
