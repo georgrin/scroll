@@ -594,9 +594,10 @@ class Scenarios(Account):
 
                 # если баланс меньше  0.005 ETH, то не имеет даже смысла делать запрос на клейм
                 if balance_eth_wei_ethereum < 0.7 * ethereum_eth_left_balance_min_after_deposit * 10 ** 18:
+                    min_withdrawal_eth = 0.01
                     logger.info(
                         f"{self.log_prefix} current Ethereum balance is not enough to make claim tx, try to withdraw {ethereum_eth_left_balance_min_after_deposit} ETH from Okex")
-                    await self._buy_and_withdraw_eth(ethereum_eth_left_balance_min_after_deposit)
+                    await self._buy_and_withdraw_eth(min_withdrawal_eth * 1.3)
 
                     return False
 
