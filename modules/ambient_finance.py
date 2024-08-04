@@ -589,7 +589,7 @@ class AmbientFinance(Account):
                 await self.wait_until_tx_finished(txn_hash.hex())
 
                 count += 1
-                await sleep(15, 30)
+                await sleep(15, 15)
             except Exception as ex:
                 logger.error(f"Failed to remove liquidity {count} position {position['positionId']}: {ex}")
 
