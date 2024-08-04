@@ -331,6 +331,7 @@ class Scenarios(Account):
 
         # минимальный размер ордера продажи покупки wrseth
         min_trade_amount_wrseth_wei = 5000000000000000
+        min_trade_amount_wrseth_wei = 500000000000000000 # убрать после бейджей - тк это вызывает две лишних итерации
         # разрешенное отклонение депозита от желаемого объёма в процентах
         deposit_percent_allowed_error = 8
 
@@ -858,7 +859,8 @@ class Scenarios(Account):
         current_deposit = await self.ambient_finance.get_total_deposit_amount()
         est_current_deposit_in_usd = current_deposit * eth_price_in_usd
 
-        logger.info(f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
+        logger.info(
+            f"{self.log_prefix} current deposit {current_deposit} ETH/wrsETH, ~{est_current_deposit_in_usd} USD")
 
         if est_current_deposit_in_usd > USD_1000 or est_current_deposit_in_usd > 0.9 * min_deposit_amount_usd:
             # если текущий депозит уже больше необходимого, но значок ещё не доступен, то нужно просто ждать
@@ -875,7 +877,8 @@ class Scenarios(Account):
 
         total_scroll_assets = eth_price_in_usd * (balance_eth + balance_wrseth) + est_current_deposit_in_usd
 
-        logger.info(f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
+        logger.info(
+            f"{self.log_prefix} total cost of Scroll balance and current Ambient deposit is {total_scroll_assets} USD, min deposit amount is {min_deposit_amount_usd} USD")
 
         if total_scroll_assets > min_deposit_amount_usd or total_scroll_assets > USD_1000 * 1.05:
             logger.info(f"{self.log_prefix} current Scroll balance is enough to make deposit")
@@ -916,6 +919,7 @@ class Scenarios(Account):
             logger.info(
                 f"{self.log_prefix} current Ethereum balance is enough to make deposit, try to make bridge to Scroll")
             await self._deposit_economy_to_scroll(ethereum_eth_left_balance_min_after_deposit)
+            await sleep(15, 20)  # тормозит scrollscan
             # после депозита в скролл сразу переходим к следующему аккаунту
             return False
 
@@ -1039,7 +1043,8 @@ class Scenarios(Account):
             # если на окексе нет баланса, то не добавляем новые аккаунты пока что
             if self.okex_enough_balance is False:
                 self.current_account_index = 0
-                logger.info(f"(5) Cannot add new accounts to current accounts due to low Okex balance, return to the first")
+                logger.info(
+                    f"(5) Cannot add new accounts to current accounts due to low Okex balance, return to the first")
 
                 return True
 

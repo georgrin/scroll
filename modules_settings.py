@@ -679,7 +679,7 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     max_wait_time_before_accounts = 1
 
     min_wait_time_before_iterations = 5
-    max_wait_time_before_iterations = 15
+    max_wait_time_before_iterations = 5
 
     scenario = Scenarios(account_id, key, recipient)
     return await scenario.mint_ambient_providoor_badge(
