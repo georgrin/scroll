@@ -847,8 +847,7 @@ class Scenarios(Account):
                 logger.error(f"{self.log_prefix} Ambient Swapooor Badge is not eligible to mint!")
 
                 return False
-            else:
-                logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
+            logger.info(f"{self.log_prefix} Ambient Swapooor Badge is minted")
 
             # выводим на окекс
             result = await self._withdraw_to_okex(min_eth_balance_after_script,
@@ -1047,7 +1046,7 @@ class Scenarios(Account):
                 self.current_accounts.append(acc)
                 self.current_account_index = 0
                 logger.info(
-                    f"(1) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts) + 1} accounts")
+                    f"(1) Add new address {get_acc_address(acc)} to current accounts, now there are {len(self.current_accounts)} accounts")
                 return True
             else:
                 logger.debug(f"(2) No more accounts to process")
