@@ -419,7 +419,7 @@ class Scenarios(Account):
                 if balance_wrseth > min_trade_amount_wrseth_wei:  # 0.005 ETH
                     logger.info(f"[{self.account_id}][{self.address}] try to sell redundant {balance_wrseth} wrsETH")
                     await self._sell_wrseth()
-                    await sleep(30, 60)
+                    await sleep(15, 15)
 
                 return True
 
@@ -441,7 +441,7 @@ class Scenarios(Account):
                 raise Exception("Failed to withdraw all positions")
             else:
                 logger.error(f"[{self.account_id}][{self.address}] Failed to withdraw all positions, try again")
-            await sleep(40, 80)
+            await sleep(15, 15)
 
         # получаем все балансы после операций изменивших его
         balance_wrseth_wei = await self.get_wrseth_balance()
@@ -470,7 +470,7 @@ class Scenarios(Account):
             logger.info(
                 f"[{self.account_id}][{self.address}] need to buy {need_to_buy_wrseth} wrsETH to make deposit")
             await self._buy_wrseth(need_to_buy_wrseth)
-            await sleep(30, 60)
+            await sleep(15, 15)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to buy wrsETH to make deposit")
 
@@ -482,7 +482,7 @@ class Scenarios(Account):
                 f"[{self.account_id}][{self.address}] need to sell {need_to_sell_wrseth} wrsETH to make deposit")
 
             await self._sell_wrseth(need_to_sell_wrseth)
-            await sleep(30, 60)
+            await sleep(15, 15)
         else:
             logger.info(f"[{self.account_id}][{self.address}] no need to sell wrsETH to make deposit")
 
@@ -505,7 +505,7 @@ class Scenarios(Account):
             logger.error(f"Failed to deposit to wrsETH/ETH pool, result: {deposit_result}")
             return False
 
-        await sleep(30, 60)
+        await sleep(15, 15)
 
         balance_wrseth_wei = await self.get_wrseth_balance()
         balance_wrseth = balance_wrseth_wei / 10 ** 18
@@ -580,7 +580,7 @@ class Scenarios(Account):
                 logger.info(f"{self.log_prefix} there is PENDING withdrawal TX: {bridge_tx_pending}")
                 claim_result = await self.scroll_ethereum.withdraw_claim(bridge_tx_pending)
                 if claim_result is not False:
-                    await sleep(30, 35)
+                    await sleep(15, 15)
 
                 return claim_result is not False
             else:  # депозит
