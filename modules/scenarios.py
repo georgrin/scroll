@@ -754,7 +754,7 @@ class Scenarios(Account):
             if tx["tx_status"] != 8 and tx["message_type"] == 3:
                 return tx
             # tx["message_type"] == 2 это вывод
-            elif tx["tx_status"] not in [0, 2] and tx["message_type"] == 2:
+            elif tx["tx_status"] != 2 and tx["message_type"] == 2:
                 return tx
             # tx["message_type"] == 3 это депозит
             elif tx["tx_status"] != 2 and tx["message_type"] == 1:
