@@ -500,6 +500,8 @@ class AmbientFinance(Account):
                         tx["bidTick"],
                         tx["askTick"]
                     ).call()
+                    if liq == 0:
+                        continue
                     tx["concLiq"] = liq
                     tx["positionId"] = "no id, tx hash: " + tx["txHash"]
                     tx["baseQty"] = baseQty
