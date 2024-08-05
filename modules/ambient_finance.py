@@ -552,6 +552,21 @@ class AmbientFinance(Account):
                 logger.info(
                     f"[{self.account_id}][{self.address}][{self.chain}] start remove {count} position: {position['positionId']}, {position['concLiq']} liq")
 
+                eth_wrs_curve_price = await self.get_curve_price(base, quote)
+                price = sqrtp_to_price(eth_wrs_curve_price)
+                new_range_width = 5
+                low_tick = price_to_tick(price * (1 - new_range_width / 100))
+                low_tick = int(low_tick / 4) * 4
+
+                upper_tick = price_to_tick(price * (1 + new_range_width / 100))
+                upper_tick = int(upper_tick / 4) * 4 + 4
+
+                low_price = tick_to_price(low_tick)
+                upper_price = tick_to_price(upper_tick)
+
+                limitLower = price_to_sqrtp(low_price)
+                limitHigher = price_to_sqrtp(upper_price)
+
                 cmd = encode(
                     ["uint8",
                      "address",
@@ -571,8 +586,8 @@ class AmbientFinance(Account):
                      position["bidTick"],
                      position["askTick"],
                      position["concLiq"],
-                     price_to_sqrtp(tick_to_price(position["bidTick"] - 32)),
-                     price_to_sqrtp(tick_to_price(position["askTick"] + 16)),
+                     limitLower,
+                     limitHigher,
                      settleFlags,
                      lpConduit]
                 )
