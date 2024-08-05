@@ -554,7 +554,7 @@ class AmbientFinance(Account):
 
                 eth_wrs_curve_price = await self.get_curve_price(base, quote)
                 price = sqrtp_to_price(eth_wrs_curve_price)
-                new_range_width = 5
+                new_range_width = 1
                 low_tick = price_to_tick(price * (1 - new_range_width / 100))
                 low_tick = int(low_tick / 4) * 4
 
