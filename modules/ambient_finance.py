@@ -571,8 +571,8 @@ class AmbientFinance(Account):
                      position["bidTick"],
                      position["askTick"],
                      position["concLiq"],
-                     price_to_sqrtp(tick_to_price(position["bidTick"] + 4)),
-                     price_to_sqrtp(tick_to_price(position["askTick"] - 4)),
+                     price_to_sqrtp(tick_to_price(position["bidTick"] - 32)),
+                     price_to_sqrtp(tick_to_price(position["askTick"] + 16)),
                      settleFlags,
                      lpConduit]
                 )
