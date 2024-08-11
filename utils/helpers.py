@@ -124,9 +124,6 @@ async def get_eth_usd_price(chain: str):
                 raise Exception(data["result"])
 
             if "error" in data:
-                print(explorer_api_url)
-                print(params)
-                print(data)
                 raise Exception(data["error"])
 
             return float(data["result"]["ethusd"])
@@ -182,6 +179,9 @@ async def get_account_transfer_tx_list(account_address: str, chain: str):
 
             if "Invalid API Key" in data["result"]:
                 # logger.error("Invalid API Key")
+                print(explorer_api_url)
+                print(params)
+                print(data)                
                 raise Exception(data["result"])
             if "rate limit" in data["result"]:
                 # logger.error("Explorer api max rate limit reached")
