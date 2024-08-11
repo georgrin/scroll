@@ -115,6 +115,9 @@ async def get_eth_usd_price(chain: str):
 
             if "Invalid API Key" in data["result"]:
                 # logger.error("Invalid API Key")
+                print(explorer_api_url)
+                print(params)
+                print(data)
                 raise Exception(data["result"])
             if "rate limit" in data["result"]:
                 # logger.error("Explorer api max rate limit reached")
