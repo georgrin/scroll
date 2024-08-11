@@ -124,6 +124,9 @@ async def get_eth_usd_price(chain: str):
                 raise Exception(data["result"])
 
             if "error" in data:
+                print(explorer_api_url)
+                print(params)
+                print(data)
                 raise Exception(data["error"])
 
             return float(data["result"]["ethusd"])
