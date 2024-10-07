@@ -701,6 +701,12 @@ async def mint_ambient_providoor_badge(account_id, key, recipient):
     )
 
 
+async def withdraw_ambient_and_sell_wrseth(account_id, key, recipient):
+    min_trade_amount_wrseth_wei = 500000000000000  # 0.0005 ETH
+    scenario = Scenarios(account_id, key, recipient)
+    return await scenario.withdraw_ambient_and_sell_wrseth(min_trade_amount_wrseth_wei)
+
+
 async def deposit_ambient_finance(account_id, key, recipient):
     """
     Make deposit on Ambient Finance to wrsETH/ETH pool

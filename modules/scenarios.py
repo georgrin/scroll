@@ -306,6 +306,44 @@ class Scenarios(Account):
         logger.info(
             f"[{self.account_id}][{self.address}] balance after buy wrsETH: {balance_wrseth} wrsETH, {balance_eth} ETH")
 
+    async def withdraw_ambient_and_sell_wrseth(
+            self,
+            min_trade_amount_wrseth_wei: int = 500000000000000,
+    ):
+        logger.info(f"[{self.account_id}][{self.address}] Start adjust Ambient wrsETH/ETH position")
+        ambient_finance = AmbientFinance(self.account_id, self.private_key, self.recipient)
+
+        total_deposit_amount = await ambient_finance.get_total_deposit_amount()
+        balance_wrseth_wei = await self.get_wrseth_balance()
+        balance_wrseth = balance_wrseth_wei / 10 ** 18
+        balance_eth_wei = await self.w3.eth.get_balance(self.address)
+        balance_eth = balance_eth_wei / 10 ** 18
+
+        action = False
+
+        logger.info(
+            f"[{self.account_id}][{self.address}] account have {balance_wrseth} wrsETH, {balance_eth} ETH and {total_deposit_amount} total deposit amount")
+
+        if total_deposit_amount > 0:
+            await ambient_finance.withdrawal()
+            action = True
+        else:
+            logger.info(f"[{self.account_id}][{self.address}] no Ambient Positions to withdraw")
+
+        balance_wrseth_wei = await self.get_wrseth_balance()
+
+        if balance_wrseth_wei > min_trade_amount_wrseth_wei:  # 0.0005 ETH
+            logger.info(f"[{self.account_id}][{self.address}] have wrsETH balance to sell")
+
+            await self._sell_wrseth()
+            action = True
+
+            await sleep(15, 15)
+        else:
+            logger.info(f"[{self.account_id}][{self.address}] no wrsETH balance to sell or too small")
+
+        return action is True
+
     async def adjust_ambient_wrseth_eth_position(self,
                                                  decimal: int,
                                                  ambient_min_amount: float,

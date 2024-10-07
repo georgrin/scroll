@@ -98,7 +98,8 @@ def get_module():
             Choice("52) Mint Scroll Ethereum Year Badge", scroll_mint_ethereum_year_badge),
             Choice("53) Adjust Ambient wrsETH/ETH position", adjust_ambient_wrseth_eth_position_scenario),
             Choice("54) Withdrawal And Mint Ambient Providoor Badge", mint_ambient_providoor_badge),
-            Choice("55) Exit", "exit"),
+            Choice("55) Withdrawal Ambient Finance and sell wrsETH", withdraw_ambient_and_sell_wrseth),
+            Choice("56) Exit", "exit"),
         ],
         qmark="⚙️ ",
         pointer="✅ "
